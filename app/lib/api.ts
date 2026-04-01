@@ -230,9 +230,10 @@ export async function generateQuizRaw(courseId: string): Promise<AiResponse> {
 }
 
 export interface QuizQuestion {
+  id: number;
   question: string;
-  options: string[];
-  answer?: string;
+  options: { letter: string; text: string }[];
+  correctAnswer: string;
   explanation?: string;
 }
 
@@ -242,84 +243,58 @@ export interface Quiz {
 
 /**
  * Parses raw quiz markdown into structured QuizQuestion[].
- * Expected format:
- *   **1. Question text**
- *   A. option one
- *   B. option two
- *   C. option three
- *   D. option four
- *   Correct Answer: A
- *   Explanation: The reason why A is correct.
+ * Expected format (blocks separated by ---):
+ *
+ *   **1. Question text here**
+ *
+ *   A. Option A
+ *   B. Option B
+ *   C. Option C
+ *   D. Option D
+ *
+ *   **Correct Answer: C**
+ *   **Explanation: explanation text here**
  */
 export function parseQuizMarkdown(content: string): QuizQuestion[] {
   const questions: QuizQuestion[] = [];
-  const lines = content.split("\n");
+  const blocks = content.split(/\n\s*---\s*\n|^\s*---\s*$/m);
+  let id = 1;
 
-  let currentQuestion: string | null = null;
-  let currentOptions: string[] = [];
-  let currentAnswer: string | undefined;
-  let currentExplanation: string | undefined;
-  let collectingExplanation = false;
+  for (const block of blocks) {
+    const trimmed = block.trim();
+    if (!trimmed) continue;
 
-  function flush() {
-    if (currentQuestion) {
-      questions.push({
-        question: currentQuestion,
-        options: currentOptions,
-        answer: currentAnswer,
-        explanation: currentExplanation,
-      });
+    // Extract question text from **N. Question text**
+    const questionMatch = trimmed.match(/^\*\*\d+\.\s+([\s\S]+?)\*\*/m);
+    if (!questionMatch) continue;
+    const question = questionMatch[1].trim();
+
+    // Extract options A–D
+    const options: { letter: string; text: string }[] = [];
+    const optionRegex = /^([A-D])\.\s+(.+)$/gm;
+    let optMatch: RegExpExecArray | null;
+    while ((optMatch = optionRegex.exec(trimmed)) !== null) {
+      options.push({ letter: optMatch[1], text: optMatch[2].trim() });
     }
+    if (options.length === 0) continue;
+
+    // Extract correct answer letter from **Correct Answer: X**
+    const answerMatch = trimmed.match(/\*\*Correct Answer:\s*([A-D])\*\*/i);
+    if (!answerMatch) continue;
+    const correctAnswer = answerMatch[1].toUpperCase();
+
+    // Extract explanation from **Explanation: ...**  (may span multiple lines)
+    let explanation: string | undefined;
+    const expIdx = trimmed.search(/\*\*Explanation:/i);
+    if (expIdx !== -1) {
+      const afterPrefix = trimmed.slice(expIdx).replace(/^\*\*Explanation:\s*/i, "");
+      // Remove trailing ** if present
+      explanation = afterPrefix.replace(/\*\*\s*$/, "").trim();
+    }
+
+    questions.push({ id: id++, question, options, correctAnswer, explanation });
   }
 
-  for (const line of lines) {
-    const trimmed = line.trim();
-
-    // Match question line: **1. Question text** or **1. Question text
-    const questionMatch = trimmed.match(/^\*\*\d+\.\s+(.+?)\*?\*?$/);
-    if (questionMatch) {
-      flush();
-      currentQuestion = questionMatch[1].replace(/\*+$/, "").trim();
-      currentOptions = [];
-      currentAnswer = undefined;
-      currentExplanation = undefined;
-      collectingExplanation = false;
-      continue;
-    }
-
-    // Match option line: A. option text
-    const optionMatch = trimmed.match(/^([A-D])\.\s+(.+)$/);
-    if (optionMatch && currentQuestion !== null) {
-      collectingExplanation = false;
-      currentOptions.push(`${optionMatch[1]}. ${optionMatch[2]}`);
-      continue;
-    }
-
-    // Match answer line: "Correct Answer: A", "Answer: A", **Answer: A**, etc.
-    const answerMatch = trimmed.match(/^\*?\*?(?:correct\s+)?answer[:\s]\*?\*?\s*([A-D])/i);
-    if (answerMatch && currentQuestion !== null) {
-      const letter = answerMatch[1].toUpperCase();
-      const matchingOption = currentOptions.find((o) => o.startsWith(`${letter}.`));
-      currentAnswer = matchingOption || letter;
-      collectingExplanation = false;
-      continue;
-    }
-
-    // Match explanation line: "Explanation: ..."
-    const explanationMatch = trimmed.match(/^explanation[:\s]\s*(.*)/i);
-    if (explanationMatch && currentQuestion !== null) {
-      currentExplanation = explanationMatch[1].trim();
-      collectingExplanation = true;
-      continue;
-    }
-
-    // Continue collecting multi-line explanation
-    if (collectingExplanation && trimmed && currentQuestion !== null) {
-      currentExplanation = (currentExplanation ? currentExplanation + " " : "") + trimmed;
-    }
-  }
-
-  flush();
   return questions;
 }
 

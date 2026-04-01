@@ -1044,7 +1044,7 @@ function QuizTab({
 
   const totalQ = quiz?.questions.length ?? 0;
   const answeredCount = Object.keys(revealed).length;
-  const correctCount = quiz?.questions.filter((q, i) => revealed[i] && selected[i] === q.answer).length ?? 0;
+  const correctCount = quiz?.questions.filter((q, i) => revealed[i] && selected[i] === q.correctAnswer).length ?? 0;
 
   return (
     <div>
@@ -1108,10 +1108,12 @@ function QuizTab({
             index={currentQ}
             selected={selected[currentQ]}
             revealed={!!revealed[currentQ]}
-            onSelect={(opt) => {
-              if (!revealed[currentQ]) setSelected((s) => ({ ...s, [currentQ]: opt }));
+            onSelect={(letter) => {
+              if (!revealed[currentQ]) {
+                setSelected((s) => ({ ...s, [currentQ]: letter }));
+                setRevealed((r) => ({ ...r, [currentQ]: true }));
+              }
             }}
-            onReveal={() => setRevealed((r) => ({ ...r, [currentQ]: true }))}
           />
 
           <div className="flex items-center justify-between mt-5">
@@ -1133,7 +1135,7 @@ function QuizTab({
               {Object.keys(revealed).length}/{totalQ} answered
             </span>
 
-            {currentQ < totalQ - 1 ? (
+            {revealed[currentQ] && (currentQ < totalQ - 1 ? (
               <Button
                 variant="primary"
                 size="sm"
@@ -1151,11 +1153,10 @@ function QuizTab({
                 variant="primary"
                 size="sm"
                 onClick={() => setShowResults(true)}
-                disabled={answeredCount < totalQ}
               >
                 See results
               </Button>
-            )}
+            ))}
           </div>
         </div>
       )}
@@ -1176,14 +1177,13 @@ function QuizTab({
 }
 
 function QuizQuestion({
-  question, index, selected, revealed, onSelect, onReveal,
+  question, index, selected, revealed, onSelect,
 }: {
   question: Quiz["questions"][0];
   index: number;
   selected: string | undefined;
   revealed: boolean;
-  onSelect: (opt: string) => void;
-  onReveal: () => void;
+  onSelect: (letter: string) => void;
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 animate-fade-in-up">
@@ -1192,84 +1192,57 @@ function QuizQuestion({
         {question.question}
       </p>
 
-      {question.options && question.options.length > 0 ? (
-        <div className="space-y-2.5">
-          {question.options.map((opt, j) => {
-            const isSelected = selected === opt;
-            const isCorrect = question.answer === opt;
-            return (
-              <button
-                key={j}
-                onClick={() => onSelect(opt)}
-                disabled={revealed}
-                className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press
-                  ${revealed
-                    ? isCorrect
-                      ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                      : isSelected
-                      ? "bg-red-50 border-red-300 text-red-800"
-                      : "bg-slate-50 border-slate-200 text-slate-400"
-                    : isSelected
-                    ? "bg-violet-50 border-violet-400 text-violet-900 shadow-sm"
-                    : "border-slate-200 hover:border-violet-200 hover:bg-violet-50/50 text-slate-700"
-                  }
-                `}
-              >
-                <span className="flex items-center gap-3">
-                  {revealed && isCorrect && (
-                    <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  )}
-                  {revealed && isSelected && !isCorrect && (
-                    <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  )}
-                  {opt}
-                </span>
-              </button>
-            );
-          })}
-          {!revealed && selected && (
+      <div className="space-y-2.5">
+        {question.options.map((opt) => {
+          const isSelected = selected === opt.letter;
+          const isCorrect = question.correctAnswer === opt.letter;
+          return (
             <button
-              onClick={onReveal}
-              className="mt-2 text-sm text-violet-600 hover:text-violet-700 font-semibold flex items-center gap-1.5"
+              key={opt.letter}
+              onClick={() => onSelect(opt.letter)}
+              disabled={revealed}
+              className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press
+                ${revealed
+                  ? isCorrect
+                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
+                    : isSelected
+                    ? "bg-red-50 border-red-300 text-red-800"
+                    : "bg-slate-50 border-slate-200 text-slate-400"
+                  : isSelected
+                  ? "bg-violet-50 border-violet-400 text-violet-900 shadow-sm"
+                  : "border-slate-200 hover:border-violet-200 hover:bg-violet-50/50 text-slate-700"
+                }
+              `}
             >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" /><path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-              </svg>
-              Check answer
+              <span className="flex items-center gap-3">
+                {revealed && isCorrect && (
+                  <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+                {revealed && isSelected && !isCorrect && (
+                  <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                )}
+                <span className="font-bold mr-1">{opt.letter}.</span>
+                {opt.text}
+              </span>
             </button>
-          )}
-          {revealed && question.explanation && (
-            <div className="mt-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
-              <p className="font-semibold mb-0.5 flex items-center gap-1.5">
-                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
-                </svg>
-                Explanation
-              </p>
-              <p className="text-blue-700 leading-relaxed">{question.explanation}</p>
-            </div>
-          )}
-        </div>
-      ) : (
-        <div>
-          {!revealed ? (
-            <Button variant="secondary" size="sm" onClick={onReveal}>
-              Reveal answer
-            </Button>
-          ) : (
-            <div className="px-4 py-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-sm text-emerald-800 font-medium flex items-center gap-2">
-              <svg className="w-4 h-4 text-emerald-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+          );
+        })}
+        {revealed && question.explanation && (
+          <div className="mt-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+            <p className="font-semibold mb-0.5 flex items-center gap-1.5">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
               </svg>
-              {question.answer}
-            </div>
-          )}
-        </div>
-      )}
+              Explanation
+            </p>
+            <p className="text-blue-700 leading-relaxed">{question.explanation}</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -1316,8 +1289,11 @@ function QuizResults({
       <h3 className="text-sm font-semibold text-slate-600 mb-3">Question breakdown</h3>
       <div className="space-y-2">
         {quiz.questions.map((q, i) => {
-          const isCorrect = selected[i] === q.answer;
+          const userLetter = selected[i];
+          const isCorrect = userLetter === q.correctAnswer;
           const wasAnswered = revealed[i];
+          const userOption = userLetter ? q.options.find((o) => o.letter === userLetter) : undefined;
+          const correctOption = q.options.find((o) => o.letter === q.correctAnswer);
           return (
             <div key={i} className={`flex items-start gap-3 p-4 rounded-xl text-sm ${isCorrect && wasAnswered ? "bg-emerald-50 border border-emerald-100" : wasAnswered ? "bg-red-50 border border-red-100" : "bg-slate-50 border border-slate-100"}`}>
               <span className={`flex-shrink-0 mt-0.5 ${isCorrect && wasAnswered ? "text-emerald-500" : wasAnswered ? "text-red-500" : "text-slate-300"}`}>
@@ -1344,11 +1320,11 @@ function QuizResults({
                     <p>
                       Your answer:{" "}
                       <span className={isCorrect ? "text-emerald-700 font-medium" : "text-red-600 font-medium"}>
-                        {selected[i] ?? "—"}
+                        {userOption ? `${userOption.letter}. ${userOption.text}` : (userLetter ?? "—")}
                       </span>
                     </p>
-                    {!isCorrect && q.answer && (
-                      <p>Correct: <span className="text-emerald-700 font-medium">{q.answer}</span></p>
+                    {!isCorrect && correctOption && (
+                      <p>Correct: <span className="text-emerald-700 font-medium">{correctOption.letter}. {correctOption.text}</span></p>
                     )}
                     {q.explanation && (
                       <p className="text-slate-400 mt-1 leading-relaxed">{q.explanation}</p>
