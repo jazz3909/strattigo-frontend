@@ -1,4 +1,4 @@
-export const API_BASE = "http://45.79.221.129:8000";
+export const API_BASE = "/api";
 
 export function getToken(): string | null {
   if (typeof window === "undefined") return null;
