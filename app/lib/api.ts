@@ -58,8 +58,12 @@ async function request<T>(
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;
     try {
-      const err = await res.json();
-      message = err.detail || err.message || message;
+      const body = await res.json();
+      const detail = body.detail;
+      const msg = body.message;
+      if (typeof detail === "string" && detail) message = detail;
+      else if (Array.isArray(detail)) message = detail.map((e: Record<string, unknown>) => String(e.msg ?? e)).join("; ");
+      else if (typeof msg === "string" && msg) message = msg;
     } catch {}
     throw new Error(message);
   }
@@ -115,6 +119,10 @@ export async function apiPostForm<T>(
 
 export async function apiDelete<T>(path: string): Promise<T> {
   return request<T>(path, { method: "DELETE" });
+}
+
+export async function apiPatch<T>(path: string, body: unknown): Promise<T> {
+  return request<T>(path, { method: "PATCH", body: JSON.stringify(body) });
 }
 
 // Auth
@@ -191,6 +199,14 @@ export async function deleteMaterial(materialId: string): Promise<void> {
   return apiDelete<void>(`/materials/${materialId}`);
 }
 
+export async function getMaterialWithDownload(materialId: string): Promise<Material & { download_url: string }> {
+  return apiGet<Material & { download_url: string }>(`/materials/${materialId}`);
+}
+
+export async function renameMaterial(materialId: string, fileName: string): Promise<Material> {
+  return apiPatch<Material>(`/materials/${materialId}`, { file_name: fileName });
+}
+
 // AI Features
 // All AI endpoints return {content, cached, content_id}
 
@@ -217,6 +233,7 @@ export interface QuizQuestion {
   question: string;
   options: string[];
   answer?: string;
+  explanation?: string;
 }
 
 export interface Quiz {
@@ -231,7 +248,8 @@ export interface Quiz {
  *   B. option two
  *   C. option three
  *   D. option four
- *   Answer: A   (optional)
+ *   Correct Answer: A
+ *   Explanation: The reason why A is correct.
  */
 export function parseQuizMarkdown(content: string): QuizQuestion[] {
   const questions: QuizQuestion[] = [];
@@ -240,6 +258,8 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
   let currentQuestion: string | null = null;
   let currentOptions: string[] = [];
   let currentAnswer: string | undefined;
+  let currentExplanation: string | undefined;
+  let collectingExplanation = false;
 
   function flush() {
     if (currentQuestion) {
@@ -247,13 +267,13 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
         question: currentQuestion,
         options: currentOptions,
         answer: currentAnswer,
+        explanation: currentExplanation,
       });
     }
   }
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed) continue;
 
     // Match question line: **1. Question text** or **1. Question text
     const questionMatch = trimmed.match(/^\*\*\d+\.\s+(.+?)\*?\*?$/);
@@ -262,22 +282,40 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
       currentQuestion = questionMatch[1].replace(/\*+$/, "").trim();
       currentOptions = [];
       currentAnswer = undefined;
+      currentExplanation = undefined;
+      collectingExplanation = false;
       continue;
     }
 
     // Match option line: A. option text
     const optionMatch = trimmed.match(/^([A-D])\.\s+(.+)$/);
     if (optionMatch && currentQuestion !== null) {
+      collectingExplanation = false;
       currentOptions.push(`${optionMatch[1]}. ${optionMatch[2]}`);
       continue;
     }
 
-    // Match answer line: Answer: A, Correct: B, **Answer: A**, etc.
+    // Match answer line: "Correct Answer: A", "Answer: A", **Answer: A**, etc.
     const answerMatch = trimmed.match(/^\*?\*?(?:correct\s+)?answer[:\s]\*?\*?\s*([A-D])/i);
     if (answerMatch && currentQuestion !== null) {
       const letter = answerMatch[1].toUpperCase();
       const matchingOption = currentOptions.find((o) => o.startsWith(`${letter}.`));
       currentAnswer = matchingOption || letter;
+      collectingExplanation = false;
+      continue;
+    }
+
+    // Match explanation line: "Explanation: ..."
+    const explanationMatch = trimmed.match(/^explanation[:\s]\s*(.*)/i);
+    if (explanationMatch && currentQuestion !== null) {
+      currentExplanation = explanationMatch[1].trim();
+      collectingExplanation = true;
+      continue;
+    }
+
+    // Continue collecting multi-line explanation
+    if (collectingExplanation && trimmed && currentQuestion !== null) {
+      currentExplanation = (currentExplanation ? currentExplanation + " " : "") + trimmed;
     }
   }
 

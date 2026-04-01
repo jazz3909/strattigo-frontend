@@ -8,6 +8,8 @@ import {
   getMaterials,
   uploadMaterial,
   deleteMaterial,
+  getMaterialWithDownload,
+  renameMaterial,
   generateStudyGuide,
   generateQuiz,
   generateStudyPlan,
@@ -181,6 +183,10 @@ export default function CoursePage({
     } finally {
       if (fileInputRef.current) fileInputRef.current.value = "";
     }
+  }
+
+  function handleRenameSuccess(id: string, newName: string) {
+    setMaterials((prev) => prev.map((m) => m.id === id ? { ...m, file_name: newName } : m));
   }
 
   async function handleDeleteMaterial(id: string, filename: string) {
@@ -429,6 +435,7 @@ export default function CoursePage({
           setConfirmDeleteId={setConfirmDeleteId}
           deletingId={deletingId}
           handleDeleteMaterial={handleDeleteMaterial}
+          onRenameSuccess={handleRenameSuccess}
         />
       )}
 
@@ -574,6 +581,76 @@ function AiErrorBlock({ error, onRetry }: { error: string; onRetry: () => void }
   );
 }
 
+const AI_LOADING_MESSAGES: Record<string, string[]> = {
+  "study-guide": [
+    "Analyzing your materials...",
+    "Identifying key concepts...",
+    "Generating your study guide...",
+    "Almost done...",
+  ],
+  "quiz": [
+    "Analyzing your materials...",
+    "Creating practice questions...",
+    "Generating your quiz...",
+    "Almost done...",
+  ],
+  "study-plan": [
+    "Analyzing your materials...",
+    "Structuring your schedule...",
+    "Building your study plan...",
+    "Almost done...",
+  ],
+};
+
+function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-plan" }) {
+  const messages = AI_LOADING_MESSAGES[type];
+  const [msgIdx, setMsgIdx] = useState(0);
+  const [progress, setProgress] = useState(8);
+
+  useEffect(() => {
+    const msgInterval = setInterval(() => {
+      setMsgIdx((i) => Math.min(i + 1, messages.length - 1));
+    }, 3000);
+    const progressInterval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 90) return p;
+        const inc = p < 40 ? 7 : p < 70 ? 4 : 2;
+        return Math.min(p + inc + Math.random() * 3, 90);
+      });
+    }, 700);
+    return () => {
+      clearInterval(msgInterval);
+      clearInterval(progressInterval);
+    };
+  }, [messages.length]);
+
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 sm:p-10">
+      <div className="flex flex-col items-center text-center gap-5 max-w-sm mx-auto">
+        <div className="relative w-14 h-14">
+          <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-lg">
+            <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </div>
+          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-violet-500" />
+          </span>
+        </div>
+        <div className="space-y-1">
+          <p className="text-sm font-semibold text-slate-800">{messages[msgIdx]}</p>
+          <p className="text-xs text-slate-400">This usually takes 10–30 seconds</p>
+        </div>
+        <div className="w-full">
+          <ProgressBar value={Math.round(progress)} size="sm" variant="gradient" animated />
+          <p className="text-xs text-slate-400 mt-2 text-right">{Math.round(progress)}%</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // MATERIALS TAB
 // ─────────────────────────────────────────────────────────────────────────────
@@ -581,6 +658,7 @@ function AiErrorBlock({ error, onRetry }: { error: string; onRetry: () => void }
 function MaterialsTab({
   materials, uploading, uploadProgress, dragOver, setDragOver,
   fileInputRef, handleFileUpload, confirmDeleteId, setConfirmDeleteId, deletingId, handleDeleteMaterial,
+  onRenameSuccess,
 }: {
   materials: Material[];
   uploading: boolean;
@@ -593,7 +671,41 @@ function MaterialsTab({
   setConfirmDeleteId: (id: string | null) => void;
   deletingId: string | null;
   handleDeleteMaterial: (id: string, filename: string) => void;
+  onRenameSuccess: (id: string, newName: string) => void;
 }) {
+  const { addToast } = useToast();
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const [renameSaving, setRenameSaving] = useState(false);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  async function handleDownload(materialId: string) {
+    setDownloadingId(materialId);
+    try {
+      const data = await getMaterialWithDownload(materialId);
+      window.open(data.download_url, "_blank", "noopener,noreferrer");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to get download link.", "error");
+    } finally {
+      setDownloadingId(null);
+    }
+  }
+
+  async function handleRename(id: string) {
+    if (!renameValue.trim()) return;
+    setRenameSaving(true);
+    try {
+      await renameMaterial(id, renameValue.trim());
+      onRenameSuccess(id, renameValue.trim());
+      setRenamingId(null);
+      addToast("File renamed successfully.", "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to rename file.", "error");
+    } finally {
+      setRenameSaving(false);
+    }
+  }
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5">
@@ -678,60 +790,120 @@ function MaterialsTab({
         <div className="space-y-2">
           {materials.map((m, i) => {
             const icon = fileIcon(m.file_name);
+            const isRenaming = renamingId === m.id;
             return (
               <div
                 key={m.id}
-                className="flex items-center gap-4 bg-white px-5 py-4 rounded-2xl border border-slate-100 shadow-sm hover:shadow-md hover:border-slate-200 transition-all group animate-fade-in-up"
+                className={`flex items-center gap-4 bg-white px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-violet-200" : "border-slate-100 hover:shadow-md hover:border-slate-200"}`}
                 style={{ animationDelay: `${i * 40}ms` }}
               >
                 <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>
                   {icon.icon}
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-slate-800 truncate">{m.file_name}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">
-                    {m.created_at && new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                  </p>
-                </div>
 
-                {/* Delete button */}
-                <div className="relative">
-                  <button
-                    onClick={() => setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id)}
-                    disabled={deletingId === m.id}
-                    className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all opacity-0 group-hover:opacity-100"
-                    aria-label="Delete"
-                  >
-                    {deletingId === m.id ? (
-                      <Spinner size="xs" className="border-red-200 border-t-red-500" />
-                    ) : (
+                {isRenaming ? (
+                  <div className="flex-1 min-w-0 flex items-center gap-2">
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleRename(m.id);
+                        if (e.key === "Escape") setRenamingId(null);
+                      }}
+                      className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
+                    />
+                    <button
+                      onClick={() => handleRename(m.id)}
+                      disabled={renameSaving || !renameValue.trim()}
+                      className="px-2.5 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors flex-shrink-0"
+                    >
+                      {renameSaving ? "Saving…" : "Save"}
+                    </button>
+                    <button
+                      onClick={() => setRenamingId(null)}
+                      className="px-2.5 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex-shrink-0"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-slate-800 truncate">{m.file_name}</p>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      {m.created_at && new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                    </p>
+                  </div>
+                )}
+
+                {!isRenaming && (
+                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                    {/* Rename button */}
+                    <button
+                      onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); }}
+                      className="p-2 rounded-xl text-slate-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
+                      aria-label="Rename"
+                    >
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
                       </svg>
-                    )}
-                  </button>
+                    </button>
 
-                  {/* Confirmation popover */}
-                  {confirmDeleteId === m.id && (
-                    <div className="absolute right-0 top-10 z-10 w-48 bg-white rounded-xl border border-slate-200 shadow-lg p-3 animate-scale-in-fast">
-                      <p className="text-xs text-slate-600 mb-3 font-medium">Delete this file?</p>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setConfirmDeleteId(null)}
-                          className="flex-1 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handleDeleteMaterial(m.id, m.file_name)}
-                          className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600"
-                        >
-                          Delete
-                        </button>
-                      </div>
+                    {/* Download button */}
+                    <button
+                      onClick={() => handleDownload(m.id)}
+                      disabled={downloadingId === m.id}
+                      className="p-2 rounded-xl text-slate-300 hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                      aria-label="Download"
+                    >
+                      {downloadingId === m.id ? (
+                        <Spinner size="xs" className="border-blue-200 border-t-blue-500" />
+                      ) : (
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                        </svg>
+                      )}
+                    </button>
+
+                    {/* Delete button */}
+                    <div className="relative">
+                      <button
+                        onClick={() => setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id)}
+                        disabled={deletingId === m.id}
+                        className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                        aria-label="Delete"
+                      >
+                        {deletingId === m.id ? (
+                          <Spinner size="xs" className="border-red-200 border-t-red-500" />
+                        ) : (
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                          </svg>
+                        )}
+                      </button>
+
+                      {confirmDeleteId === m.id && (
+                        <div className="absolute right-0 top-10 z-10 w-48 bg-white rounded-xl border border-slate-200 shadow-lg p-3 animate-scale-in-fast">
+                          <p className="text-xs text-slate-600 mb-3 font-medium">Delete this file?</p>
+                          <div className="flex gap-2">
+                            <button
+                              onClick={() => setConfirmDeleteId(null)}
+                              className="flex-1 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={() => handleDeleteMaterial(m.id, m.file_name)}
+                              className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600"
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
             );
           })}
@@ -799,7 +971,7 @@ function StudyGuideTab({
         </div>
       </div>
 
-      {loading && <SkeletonStudyGuide />}
+      {loading && <AiLoadingProgress type="study-guide" />}
       {!loading && error && <AiErrorBlock error={error} onRetry={onGenerate} />}
       {!loading && !error && !studyGuide && (
         <EmptyState
@@ -901,18 +1073,7 @@ function QuizTab({
         </Button>
       </div>
 
-      {loading && (
-        <div className="space-y-4">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 space-y-4">
-              <Skeleton className="h-5 w-4/5" />
-              <div className="space-y-2">
-                {[...Array(4)].map((_, j) => <Skeleton key={j} className="h-11 w-full rounded-xl" />)}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <AiLoadingProgress type="quiz" />}
 
       {!loading && error && <AiErrorBlock error={error} onRetry={onGenerate} />}
 
@@ -1081,6 +1242,17 @@ function QuizQuestion({
               Check answer
             </button>
           )}
+          {revealed && question.explanation && (
+            <div className="mt-3 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl text-sm text-blue-800">
+              <p className="font-semibold mb-0.5 flex items-center gap-1.5">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                </svg>
+                Explanation
+              </p>
+              <p className="text-blue-700 leading-relaxed">{question.explanation}</p>
+            </div>
+          )}
         </div>
       ) : (
         <div>
@@ -1167,10 +1339,21 @@ function QuizResults({
               </span>
               <div>
                 <p className="font-medium text-slate-800">{q.question}</p>
-                {wasAnswered && !isCorrect && q.answer && (
-                  <p className="text-xs text-slate-500 mt-1">
-                    Correct: <span className="text-emerald-700 font-medium">{q.answer}</span>
-                  </p>
+                {wasAnswered && (
+                  <div className="text-xs text-slate-500 mt-1.5 space-y-0.5">
+                    <p>
+                      Your answer:{" "}
+                      <span className={isCorrect ? "text-emerald-700 font-medium" : "text-red-600 font-medium"}>
+                        {selected[i] ?? "—"}
+                      </span>
+                    </p>
+                    {!isCorrect && q.answer && (
+                      <p>Correct: <span className="text-emerald-700 font-medium">{q.answer}</span></p>
+                    )}
+                    {q.explanation && (
+                      <p className="text-slate-400 mt-1 leading-relaxed">{q.explanation}</p>
+                    )}
+                  </div>
                 )}
               </div>
             </div>
@@ -1242,19 +1425,7 @@ function StudyPlanTab({
         </div>
       )}
 
-      {loading && (
-        <div className="space-y-3">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="bg-white rounded-2xl border border-slate-100 p-5 flex gap-4">
-              <Skeleton className="w-16 h-8 rounded-lg flex-shrink-0" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-full" />
-                <Skeleton className="h-3 w-3/4" />
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      {loading && <AiLoadingProgress type="study-plan" />}
 
       {!loading && error && <AiErrorBlock error={error} onRetry={onGenerate} />}
 

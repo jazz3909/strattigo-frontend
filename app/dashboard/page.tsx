@@ -109,7 +109,6 @@ export default function DashboardPage() {
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
   const [email, setEmail] = useState("");
-  const [search, setSearch] = useState("");
   const [greeting, setGreeting] = useState("");
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
@@ -179,10 +178,6 @@ export default function DashboardPage() {
   }
 
   const displayName = email.split("@")[0] || email;
-  const filteredCourses = courses.filter((c) =>
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    (c.description ?? "").toLowerCase().includes(search.toLowerCase())
-  );
 
   return (
     <>
@@ -256,23 +251,6 @@ export default function DashboardPage() {
           />
         </div>
 
-        {/* Search bar — always visible when courses exist */}
-        {!loading && courses.length > 0 && (
-          <div className="relative max-w-sm">
-            <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-              </svg>
-            </span>
-            <input
-              type="text"
-              placeholder="Search courses…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all placeholder-slate-400"
-            />
-          </div>
-        )}
       </div>
 
       {/* Loading state */}
@@ -323,9 +301,9 @@ export default function DashboardPage() {
       )}
 
       {/* Course grid */}
-      {!loading && !error && filteredCourses.length > 0 && (
+      {!loading && !error && courses.length > 0 && (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
-          {filteredCourses.map((course, i) => (
+          {courses.map((course, i) => (
             <Link
               key={course.id}
               href={`/dashboard/${course.id}`}
@@ -376,23 +354,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Search empty state */}
-      {!loading && !error && courses.length > 0 && filteredCourses.length === 0 && (
-        <EmptyState
-          icon={
-            <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-            </svg>
-          }
-          title="No courses match your search"
-          description={`No courses found for "${search}". Try a different search term.`}
-          action={
-            <Button variant="secondary" size="sm" onClick={() => setSearch("")}>
-              Clear search
-            </Button>
-          }
-        />
-      )}
 
       {/* Add Course Modal */}
       <Modal
