@@ -1,0 +1,219 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { login, setToken, setUser } from "../lib/api";
+import { Input } from "../components/ui/Input";
+import { Button } from "../components/ui/Button";
+import { useToast } from "../providers/ToastProvider";
+
+export default function LoginPage() {
+  const router = useRouter();
+  const { addToast } = useToast();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [shake, setShake] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string }>({});
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setFieldErrors({});
+    setLoading(true);
+
+    try {
+      const data = await login(email, password);
+      setToken(data.access_token);
+      setUser(data.user_id, data.email);
+      document.cookie = `strattigo_token=${data.access_token}; path=/; max-age=604800; SameSite=Lax`;
+      addToast("Welcome back! Redirecting…", "success");
+      router.push("/dashboard");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Login failed. Please try again.";
+      setShake(true);
+      setTimeout(() => setShake(false), 600);
+      // Show inline error
+      setFieldErrors({ password: msg });
+      addToast(msg, "error");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  return (
+    <div className="min-h-screen flex">
+      {/* Left: Brand Panel */}
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12">
+        {/* Animated gradient background */}
+        <div className="absolute inset-0 gradient-brand-animated" />
+        <div className="absolute inset-0 dot-grid opacity-20" />
+
+        {/* Orbs */}
+        <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl orb-1" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-300/20 rounded-full blur-3xl orb-2" />
+
+        <div className="relative z-10 max-w-sm text-center text-white">
+          {/* Logo */}
+          <Link href="/" className="inline-flex items-center gap-3 mb-10 group">
+            <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 transition-colors">
+              <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <span className="text-xl font-bold">Strattigo</span>
+          </Link>
+
+          <h2 className="text-3xl font-extrabold mb-4 leading-tight">
+            Your AI-powered<br />study partner
+          </h2>
+          <p className="text-white/70 leading-relaxed mb-10">
+            Join 500+ students who study smarter with AI-generated study guides, quizzes, and personalized study plans.
+          </p>
+
+          {/* Feature highlights */}
+          <div className="space-y-3 text-left">
+            {[
+              {
+                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" /></svg>,
+                text: "AI study guides from your notes",
+              },
+              {
+                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
+                text: "Practice quizzes on demand",
+              },
+              {
+                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
+                text: "Personalized study schedules",
+              },
+              {
+                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>,
+                text: "Chat with your course materials",
+              },
+            ].map((item) => (
+              <div key={item.text} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
+                <span className="flex-shrink-0">{item.icon}</span>
+                <span className="text-sm font-medium text-white/90">{item.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Right: Form Panel */}
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-12 bg-white">
+        {/* Mobile logo */}
+        <Link
+          href="/"
+          className="lg:hidden flex items-center gap-2.5 mb-8"
+        >
+          <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">
+            <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold gradient-text">Strattigo</span>
+        </Link>
+
+        <div className={`w-full max-w-[400px] ${shake ? "animate-shake" : ""}`}>
+          {/* Header */}
+          <div className="mb-8">
+            <h1 className="text-2xl font-extrabold text-slate-900 mb-1.5">Welcome back</h1>
+            <p className="text-slate-500 text-sm">Sign in to continue studying</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+            <Input
+              label="Email address"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@university.edu"
+              error={fieldErrors.email}
+              leftIcon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
+                </svg>
+              }
+            />
+
+            <div className="space-y-1.5">
+              <label className="block text-sm font-medium text-slate-700">Password</label>
+              <div className="relative">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                </span>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Your password"
+                  className={`w-full pl-10 pr-12 py-3 text-sm border rounded-xl outline-none transition-all duration-150 ${
+                    fieldErrors.password
+                      ? "border-red-400 bg-red-50/50 focus:ring-2 focus:ring-red-400/40"
+                      : "border-slate-200 bg-white focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((s) => !s)}
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
+                  tabIndex={-1}
+                >
+                  {showPassword ? (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                    </svg>
+                  ) : (
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  )}
+                </button>
+              </div>
+              {fieldErrors.password && (
+                <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                  <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                  </svg>
+                  {fieldErrors.password}
+                </p>
+              )}
+            </div>
+
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={loading}
+            >
+              Sign in
+            </Button>
+          </form>
+
+          <p className="text-center mt-6 text-sm text-slate-500">
+            Don&apos;t have an account?{" "}
+            <Link href="/signup" className="font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+              Sign up for free
+            </Link>
+          </p>
+
+          <p className="text-center mt-8 text-xs text-slate-400">
+            By continuing, you agree to our{" "}
+            <a href="#" className="underline hover:text-slate-600">Terms</a> and{" "}
+            <a href="#" className="underline hover:text-slate-600">Privacy Policy</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}

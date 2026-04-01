@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm run:*)",
+      "Bash(ls:*)",
+      "Bash(npx tsc:*)",
+      "Bash(grep -n \"message\\\\|question\\\\|filename\\\\|file_name\" /root/strattigo-frontend/app/dashboard/[courseId]/page.tsx)",
+      "Bash(python3:*)",
+      "Bash(grep:*)",
+      "Bash(node:*)"
+    ]
+  }
+}
