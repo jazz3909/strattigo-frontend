@@ -256,6 +256,7 @@ export interface Quiz {
  *   **Explanation: explanation text here**
  */
 export function parseQuizMarkdown(content: string): QuizQuestion[] {
+  console.log(content.substring(0, 500));
   const questions: QuizQuestion[] = [];
   const blocks = content.split(/\n\s*---\s*\n|^\s*---\s*$/m);
   let id = 1;
@@ -268,20 +269,25 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
     const questionMatch = trimmed.match(/^\*\*\d+\.\s+([\s\S]+?)\*\*/m);
     if (!questionMatch) continue;
     const question = questionMatch[1].trim();
+    if (!question) continue;
 
     // Extract options A–D
-    const options: { letter: string; text: string }[] = [];
+    const optionMap: Record<string, string> = {};
     const optionRegex = /^([A-D])\.\s+(.+)$/gm;
     let optMatch: RegExpExecArray | null;
     while ((optMatch = optionRegex.exec(trimmed)) !== null) {
-      options.push({ letter: optMatch[1], text: optMatch[2].trim() });
+      optionMap[optMatch[1]] = optMatch[2].trim();
     }
-    if (options.length === 0) continue;
+    // Ensure all 4 options exist, padding with empty string if missing
+    const options: { letter: string; text: string }[] = ["A", "B", "C", "D"].map((letter) => ({
+      letter,
+      text: optionMap[letter] ?? "",
+    }));
+    if (options.every((o) => o.text === "")) continue;
 
-    // Extract correct answer letter from **Correct Answer: X**
+    // Extract correct answer letter from **Correct Answer: X**, default to "A"
     const answerMatch = trimmed.match(/\*\*Correct Answer:\s*([A-D])\*\*/i);
-    if (!answerMatch) continue;
-    const correctAnswer = answerMatch[1].toUpperCase();
+    const correctAnswer = answerMatch ? answerMatch[1].toUpperCase() : "A";
 
     // Extract explanation from **Explanation: ...**  (may span multiple lines)
     let explanation: string | undefined;

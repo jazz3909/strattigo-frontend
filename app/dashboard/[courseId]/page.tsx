@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useRef, useState } from "react";
+import { Component, ReactNode, use, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -30,6 +30,22 @@ import { ProgressBar } from "../../components/ui/ProgressBar";
 import { SkeletonStudyGuide, SkeletonText, Skeleton } from "../../components/ui/Skeleton";
 import { Modal } from "../../components/ui/Modal";
 import { useToast } from "../../providers/ToastProvider";
+
+class QuizErrorBoundary extends Component<{ children: ReactNode }, { crashed: boolean }> {
+  state = { crashed: false };
+  static getDerivedStateFromError() { return { crashed: true }; }
+  componentDidCatch(error: Error) { console.error("Quiz render error:", error); }
+  render() {
+    if (this.state.crashed) {
+      return (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-6 text-center text-red-700 text-sm">
+          Quiz failed to load — please regenerate.
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 type ActiveTab = "materials" | "study-guide" | "quiz" | "study-plan" | "chat";
 
@@ -455,14 +471,16 @@ export default function CoursePage({
 
       {/* ── QUIZ TAB ──────────────────────────────────── */}
       {activeTab === "quiz" && (
-        <QuizTab
-          quiz={quiz}
-          loading={aiLoading}
-          error={aiError}
-          generatedAt={quizGeneratedAt}
-          onGenerate={handleGenerateQuiz}
-          canGenerate={!hasNoMaterials}
-        />
+        <QuizErrorBoundary>
+          <QuizTab
+            quiz={quiz}
+            loading={aiLoading}
+            error={aiError}
+            generatedAt={quizGeneratedAt}
+            onGenerate={handleGenerateQuiz}
+            canGenerate={!hasNoMaterials}
+          />
+        </QuizErrorBoundary>
       )}
 
       {/* ── STUDY PLAN TAB ────────────────────────────── */}
@@ -1094,6 +1112,11 @@ function QuizTab({
 
       {!loading && quiz && !showResults && (
         <div>
+          {(!quiz.questions || quiz.questions.length === 0 || !quiz.questions[currentQ]) ? (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-700 text-sm">
+              Could not parse quiz. Please try regenerating.
+            </div>
+          ) : (<>
           {/* Progress bar */}
           <div className="mb-5">
             <div className="flex justify-between text-xs text-slate-500 mb-2">
@@ -1158,6 +1181,7 @@ function QuizTab({
               </Button>
             ))}
           </div>
+          </>)}
         </div>
       )}
 
