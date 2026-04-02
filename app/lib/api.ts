@@ -216,9 +216,24 @@ export interface AiResponse {
   content_id: string;
 }
 
-export async function generateStudyGuide(courseId: string, forceRegenerate = false): Promise<AiResponse> {
+export interface StudyGuideSaved {
+  id: string;
+  title: string | null;
+  content: string;
+  created_at: string;
+}
+
+export async function getSavedStudyGuides(courseId: string): Promise<StudyGuideSaved[]> {
+  return apiGet<StudyGuideSaved[]>(`/ai/study-guides/${courseId}`);
+}
+
+export async function generateStudyGuide(courseId: string, title: string, forceRegenerate = false): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/study-guide?force_regenerate=true` : `/ai/study-guide`;
-  return apiPost<AiResponse>(path, { course_id: courseId });
+  return apiPost<AiResponse>(path, { course_id: courseId, title });
+}
+
+export async function deleteStudyGuide(contentId: string): Promise<void> {
+  return apiDelete<void>(`/ai/study-guide/${contentId}`);
 }
 
 export async function generateStudyPlan(courseId: string, examDate?: string, forceRegenerate = false): Promise<AiResponse> {
