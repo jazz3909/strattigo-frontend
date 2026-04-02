@@ -217,16 +217,19 @@ export interface AiResponse {
 }
 
 export async function generateStudyGuide(courseId: string, forceRegenerate = false): Promise<AiResponse> {
-  return apiPost<AiResponse>(`/ai/study-guide`, { course_id: courseId, ...(forceRegenerate && { force_regenerate: true }) });
+  const path = forceRegenerate ? `/ai/study-guide?force_regenerate=true` : `/ai/study-guide`;
+  return apiPost<AiResponse>(path, { course_id: courseId });
 }
 
 export async function generateStudyPlan(courseId: string, examDate?: string, forceRegenerate = false): Promise<AiResponse> {
-  return apiPost<AiResponse>(`/ai/study-plan`, { course_id: courseId, exam_date: examDate, ...(forceRegenerate && { force_regenerate: true }) });
+  const path = forceRegenerate ? `/ai/study-plan?force_regenerate=true` : `/ai/study-plan`;
+  return apiPost<AiResponse>(path, { course_id: courseId, exam_date: examDate });
 }
 
 // Quiz: returns {content, cached, content_id} where content is raw markdown
 export async function generateQuizRaw(courseId: string, forceRegenerate = false): Promise<AiResponse> {
-  return apiPost<AiResponse>(`/ai/quiz`, { course_id: courseId, ...(forceRegenerate && { force_regenerate: true }) });
+  const path = forceRegenerate ? `/ai/quiz?force_regenerate=true` : `/ai/quiz`;
+  return apiPost<AiResponse>(path, { course_id: courseId });
 }
 
 export interface QuizQuestion {
