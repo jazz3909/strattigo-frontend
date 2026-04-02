@@ -256,51 +256,47 @@ export interface Quiz {
  *   **Explanation: explanation text here**
  */
 export function parseQuizMarkdown(content: string): QuizQuestion[] {
-  console.log(content.substring(0, 500));
+  // Normalise line endings then split on the exact separator the API uses
+  const normalised = content.replace(/\r\n/g, "\n");
+  const blocks = normalised.split("\n---\n");
   const questions: QuizQuestion[] = [];
-  const blocks = content.split(/\n\s*---\s*\n|^\s*---\s*$/m);
   let id = 1;
 
   for (const block of blocks) {
     const trimmed = block.trim();
     if (!trimmed) continue;
 
-    // Extract question text from **N. Question text**
-    const questionMatch = trimmed.match(/^\*\*\d+\.\s+([\s\S]+?)\*\*/m);
+    // Question: first line is "**N. Question text**" — capture everything after "N. " up to the closing "**"
+    const questionMatch = trimmed.match(/^\*\*\d+\.\s+([\s\S]+?)\*\*/);
     if (!questionMatch) continue;
     const question = questionMatch[1].trim();
     if (!question) continue;
 
-    // Extract options A–D
+    // Options: lines that start with "A. " / "B. " / "C. " / "D. "
     const optionMap: Record<string, string> = {};
-    const optionRegex = /^([A-D])\.\s+(.+)$/gm;
-    let optMatch: RegExpExecArray | null;
-    while ((optMatch = optionRegex.exec(trimmed)) !== null) {
-      optionMap[optMatch[1]] = optMatch[2].trim();
+    for (const line of trimmed.split("\n")) {
+      const m = line.match(/^([A-D])\.\s+(.+)$/);
+      if (m) optionMap[m[1]] = m[2].trim();
     }
-    // Ensure all 4 options exist, padding with empty string if missing
     const options: { letter: string; text: string }[] = ["A", "B", "C", "D"].map((letter) => ({
       letter,
       text: optionMap[letter] ?? "",
     }));
     if (options.every((o) => o.text === "")) continue;
 
-    // Extract correct answer letter from **Correct Answer: X**, default to "A"
+    // Correct answer: single letter from "**Correct Answer: X**"
     const answerMatch = trimmed.match(/\*\*Correct Answer:\s*([A-D])\*\*/i);
     const correctAnswer = answerMatch ? answerMatch[1].toUpperCase() : "A";
 
-    // Extract explanation from **Explanation: ...**  (may span multiple lines)
+    // Explanation: text after "**Explanation:" up to the closing "**" or end of block
     let explanation: string | undefined;
-    const expIdx = trimmed.search(/\*\*Explanation:/i);
-    if (expIdx !== -1) {
-      const afterPrefix = trimmed.slice(expIdx).replace(/^\*\*Explanation:\s*/i, "");
-      // Remove trailing ** if present
-      explanation = afterPrefix.replace(/\*\*\s*$/, "").trim();
-    }
+    const expMatch = trimmed.match(/\*\*Explanation:\s*([\s\S]+?)(\*\*|$)/i);
+    if (expMatch) explanation = expMatch[1].trim();
 
     questions.push({ id: id++, question, options, correctAnswer, explanation });
   }
 
+  console.log("[parseQuizMarkdown] first question:", questions[0]);
   return questions;
 }
 
