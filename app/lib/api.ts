@@ -216,17 +216,17 @@ export interface AiResponse {
   content_id: string;
 }
 
-export async function generateStudyGuide(courseId: string): Promise<AiResponse> {
-  return apiPost<AiResponse>(`/ai/study-guide`, { course_id: courseId });
+export async function generateStudyGuide(courseId: string, forceRegenerate = false): Promise<AiResponse> {
+  return apiPost<AiResponse>(`/ai/study-guide`, { course_id: courseId, ...(forceRegenerate && { force_regenerate: true }) });
 }
 
-export async function generateStudyPlan(courseId: string, examDate?: string): Promise<AiResponse> {
-  return apiPost<AiResponse>(`/ai/study-plan`, { course_id: courseId, exam_date: examDate });
+export async function generateStudyPlan(courseId: string, examDate?: string, forceRegenerate = false): Promise<AiResponse> {
+  return apiPost<AiResponse>(`/ai/study-plan`, { course_id: courseId, exam_date: examDate, ...(forceRegenerate && { force_regenerate: true }) });
 }
 
 // Quiz: returns {content, cached, content_id} where content is raw markdown
-export async function generateQuizRaw(courseId: string): Promise<AiResponse> {
-  return apiPost<AiResponse>(`/ai/quiz`, { course_id: courseId });
+export async function generateQuizRaw(courseId: string, forceRegenerate = false): Promise<AiResponse> {
+  return apiPost<AiResponse>(`/ai/quiz`, { course_id: courseId, ...(forceRegenerate && { force_regenerate: true }) });
 }
 
 export interface QuizQuestion {
@@ -304,8 +304,8 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
   return questions;
 }
 
-export async function generateQuiz(courseId: string): Promise<Quiz> {
-  const raw = await generateQuizRaw(courseId);
+export async function generateQuiz(courseId: string, forceRegenerate = false): Promise<Quiz> {
+  const raw = await generateQuizRaw(courseId, forceRegenerate);
   return { questions: parseQuizMarkdown(raw.content) };
 }
 

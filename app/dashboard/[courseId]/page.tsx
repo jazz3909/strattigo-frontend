@@ -219,12 +219,11 @@ export default function CoursePage({
     }
   }
 
-  async function handleGenerateStudyGuide() {
-    setActiveTab("study-guide");
+  async function doGenerateStudyGuide(force: boolean) {
     setAiLoading(true);
     setAiError("");
     try {
-      const data = await generateStudyGuide(courseId);
+      const data = await generateStudyGuide(courseId, force);
       setStudyGuide(data);
       setStudyGuideGeneratedAt(new Date());
       addToast("Study guide generated!", "success");
@@ -235,12 +234,16 @@ export default function CoursePage({
     }
   }
 
-  async function handleGenerateQuiz() {
-    setActiveTab("quiz");
+  function handleStudyGuideTab() {
+    setActiveTab("study-guide");
+    if (!studyGuide) doGenerateStudyGuide(false);
+  }
+
+  async function doGenerateQuiz(force: boolean) {
     setAiLoading(true);
     setAiError("");
     try {
-      const data = await generateQuiz(courseId);
+      const data = await generateQuiz(courseId, force);
       setQuiz(data);
       setQuizGeneratedAt(new Date());
       addToast("Quiz generated!", "success");
@@ -251,12 +254,16 @@ export default function CoursePage({
     }
   }
 
-  async function handleGenerateStudyPlan() {
-    setActiveTab("study-plan");
+  function handleQuizTab() {
+    setActiveTab("quiz");
+    if (!quiz) doGenerateQuiz(false);
+  }
+
+  async function doGenerateStudyPlan(force: boolean) {
     setAiLoading(true);
     setAiError("");
     try {
-      const data = await generateStudyPlan(courseId, examDate || undefined);
+      const data = await generateStudyPlan(courseId, examDate || undefined, force);
       setStudyPlan(data);
       addToast("Study plan generated!", "success");
     } catch (err: unknown) {
@@ -264,6 +271,11 @@ export default function CoursePage({
     } finally {
       setAiLoading(false);
     }
+  }
+
+  function handleStudyPlanTab() {
+    setActiveTab("study-plan");
+    if (!studyPlan) doGenerateStudyPlan(false);
   }
 
   async function handleChat(question: string) {
@@ -368,19 +380,19 @@ export default function CoursePage({
             {
               label: "Study Guide",
               icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" /></svg>,
-              action: handleGenerateStudyGuide,
+              action: handleStudyGuideTab,
               tab: "study-guide" as ActiveTab,
             },
             {
               label: "Quiz",
               icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
-              action: handleGenerateQuiz,
+              action: handleQuizTab,
               tab: "quiz" as ActiveTab,
             },
             {
               label: "Study Plan",
               icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-              action: handleGenerateStudyPlan,
+              action: handleStudyPlanTab,
               tab: "study-plan" as ActiveTab,
             },
             {
@@ -462,7 +474,8 @@ export default function CoursePage({
           loading={aiLoading}
           error={aiError}
           generatedAt={studyGuideGeneratedAt}
-          onGenerate={handleGenerateStudyGuide}
+          onGenerate={() => doGenerateStudyGuide(false)}
+          onRegenerate={() => doGenerateStudyGuide(true)}
           canGenerate={!hasNoMaterials}
           onCopy={copyToClipboard}
         />
@@ -477,7 +490,8 @@ export default function CoursePage({
             loading={aiLoading}
             error={aiError}
             generatedAt={quizGeneratedAt}
-            onGenerate={handleGenerateQuiz}
+            onGenerate={() => doGenerateQuiz(false)}
+            onRegenerate={() => doGenerateQuiz(true)}
             canGenerate={!hasNoMaterials}
           />
         </QuizErrorBoundary>
@@ -491,7 +505,8 @@ export default function CoursePage({
           error={aiError}
           examDate={examDate}
           setExamDate={setExamDate}
-          onGenerate={handleGenerateStudyPlan}
+          onGenerate={() => doGenerateStudyPlan(false)}
+          onRegenerate={() => doGenerateStudyPlan(true)}
           canGenerate={!hasNoMaterials}
         />
       )}
@@ -936,13 +951,14 @@ function MaterialsTab({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function StudyGuideTab({
-  studyGuide, loading, error, generatedAt, onGenerate, canGenerate, onCopy,
+  studyGuide, loading, error, generatedAt, onGenerate, onRegenerate, canGenerate, onCopy,
 }: {
   studyGuide: AiResponse | null;
   loading: boolean;
   error: string;
   generatedAt: Date | null;
   onGenerate: () => void;
+  onRegenerate: () => void;
   canGenerate: boolean;
   onCopy: (text: string) => void;
 }) {
@@ -975,7 +991,7 @@ function StudyGuideTab({
           <Button
             variant="primary"
             size="sm"
-            onClick={onGenerate}
+            onClick={studyGuide ? onRegenerate : onGenerate}
             loading={loading}
             disabled={loading || !canGenerate}
             leftIcon={!loading ? (
@@ -1035,13 +1051,14 @@ function formatMarkdown(text: string): string {
 // ─────────────────────────────────────────────────────────────────────────────
 
 function QuizTab({
-  quiz, loading, error, generatedAt, onGenerate, canGenerate,
+  quiz, loading, error, generatedAt, onGenerate, onRegenerate, canGenerate,
 }: {
   quiz: Quiz | null;
   loading: boolean;
   error: string;
   generatedAt: Date | null;
   onGenerate: () => void;
+  onRegenerate: () => void;
   canGenerate: boolean;
 }) {
   const [currentQ, setCurrentQ] = useState(0);
@@ -1078,7 +1095,7 @@ function QuizTab({
         <Button
           variant="primary"
           size="sm"
-          onClick={onGenerate}
+          onClick={quiz ? onRegenerate : onGenerate}
           loading={loading}
           disabled={loading || !canGenerate}
           leftIcon={!loading ? (
@@ -1193,7 +1210,7 @@ function QuizTab({
           correctCount={correctCount}
           totalQ={totalQ}
           onRetry={resetQuiz}
-          onRegenerate={onGenerate}
+          onRegenerate={onRegenerate}
         />
       )}
     </div>
@@ -1369,7 +1386,7 @@ function QuizResults({
 // ─────────────────────────────────────────────────────────────────────────────
 
 function StudyPlanTab({
-  studyPlan, loading, error, examDate, setExamDate, onGenerate, canGenerate,
+  studyPlan, loading, error, examDate, setExamDate, onGenerate, onRegenerate, canGenerate,
 }: {
   studyPlan: AiResponse | null;
   loading: boolean;
@@ -1377,6 +1394,7 @@ function StudyPlanTab({
   examDate: string;
   setExamDate: (v: string) => void;
   onGenerate: () => void;
+  onRegenerate: () => void;
   canGenerate: boolean;
 }) {
   const daysUntilExam = examDate ? Math.ceil((new Date(examDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
@@ -1401,7 +1419,7 @@ function StudyPlanTab({
           <Button
             variant="primary"
             size="sm"
-            onClick={onGenerate}
+            onClick={studyPlan ? onRegenerate : onGenerate}
             loading={loading}
             disabled={loading || !canGenerate}
             leftIcon={!loading ? (
