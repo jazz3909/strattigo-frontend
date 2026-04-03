@@ -151,6 +151,7 @@ export default function CoursePage({
   const [streamingQuiz, setStreamingQuiz] = useState(false);
   const [rawQuizContent, setRawQuizContent] = useState("");
   const [streamedQuestions, setStreamedQuestions] = useState<QuizQuestion[]>([]);
+  const [quizGenerationId, setQuizGenerationId] = useState(0);
 
   // Chat
   const [messages, setMessages] = useState<ChatMessage[]>([]);
@@ -248,6 +249,7 @@ export default function CoursePage({
   }
 
   async function doGenerateQuiz(force: boolean) {
+    setQuizGenerationId((id) => id + 1);
     setStreamingQuiz(true);
     setAiError("");
     setQuiz(null);
@@ -549,6 +551,7 @@ export default function CoursePage({
             canGenerate={!hasNoMaterials}
             streamingQuiz={streamingQuiz}
             streamedQuestions={streamedQuestions}
+            quizGenerationId={quizGenerationId}
             collections={collections}
             selectedCollectionId={selectedCollectionId}
             onCollectionChange={setSelectedCollectionId}
@@ -1775,7 +1778,7 @@ const EXPECTED_QUIZ_QUESTIONS = 10;
 
 function QuizTab({
   quiz, loading, error, generatedAt, onGenerate, onRegenerate, canGenerate,
-  streamingQuiz, streamedQuestions, collections, selectedCollectionId, onCollectionChange,
+  streamingQuiz, streamedQuestions, quizGenerationId, collections, selectedCollectionId, onCollectionChange,
 }: {
   quiz: Quiz | null;
   loading: boolean;
@@ -1786,6 +1789,7 @@ function QuizTab({
   canGenerate: boolean;
   streamingQuiz: boolean;
   streamedQuestions: QuizQuestion[];
+  quizGenerationId: number;
   collections: Collection[];
   selectedCollectionId: string | null;
   onCollectionChange: (id: string | null) => void;
@@ -1803,8 +1807,9 @@ function QuizTab({
   }
 
   useEffect(() => {
-    if (!streamingQuiz) resetQuiz();
-  }, [quiz]);
+    resetQuiz();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [quizGenerationId]);
 
   // During streaming use streamedQuestions; once done use quiz.questions
   const effectiveQuestions = streamingQuiz ? streamedQuestions : (quiz?.questions ?? []);

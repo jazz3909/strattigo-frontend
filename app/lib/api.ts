@@ -254,6 +254,11 @@ export async function getCollectionMaterials(collectionId: string): Promise<Mate
 // AI Features
 // All AI endpoints return {content, cached, content_id}
 
+/** Returns true only when the value is a non-empty UUID (not "" or "all"). */
+function isRealCollectionId(id?: string): id is string {
+  return !!id && id !== "all";
+}
+
 export interface AiResponse {
   content: string;
   cached: boolean;
@@ -274,7 +279,7 @@ export async function getSavedStudyGuides(courseId: string): Promise<StudyGuideS
 export async function generateStudyGuide(courseId: string, title: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/study-guide?force_regenerate=true` : `/ai/study-guide`;
   const body: Record<string, unknown> = { course_id: courseId, title };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   return apiPost<AiResponse>(path, body);
 }
 
@@ -285,7 +290,7 @@ export async function deleteStudyGuide(contentId: string): Promise<void> {
 export async function generateStudyPlan(courseId: string, examDate?: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/study-plan?force_regenerate=true` : `/ai/study-plan`;
   const body: Record<string, unknown> = { course_id: courseId, exam_date: examDate };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   return apiPost<AiResponse>(path, body);
 }
 
@@ -293,7 +298,7 @@ export async function generateStudyPlan(courseId: string, examDate?: string, for
 export async function generateQuizRaw(courseId: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/quiz?force_regenerate=true` : `/ai/quiz`;
   const body: Record<string, unknown> = { course_id: courseId };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   return apiPost<AiResponse>(path, body);
 }
 
@@ -433,7 +438,7 @@ export async function chatWithCourse(
   collectionId?: string
 ): Promise<ChatResponse> {
   const body: Record<string, unknown> = { course_id: courseId, question };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   console.log("[chat] Sending request body:", JSON.stringify(body));
   const response = await apiPost<ChatResponse>(`/ai/chat`, body);
   console.log("[chat] Received response:", JSON.stringify(response));
@@ -470,7 +475,7 @@ async function* readSseStream(response: Response): AsyncGenerator<string> {
 export async function* streamQuiz(courseId: string, collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
   const body: Record<string, unknown> = { course_id: courseId };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/quiz/stream`, {
     method: "POST",
     headers: {
@@ -496,7 +501,7 @@ export async function* streamQuiz(courseId: string, collectionId?: string): Asyn
 export async function* streamStudyGuide(courseId: string, title: string, collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
   const body: Record<string, unknown> = { course_id: courseId, title };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/study-guide/stream`, {
     method: "POST",
     headers: {
@@ -522,7 +527,7 @@ export async function* streamStudyGuide(courseId: string, title: string, collect
 export async function* streamChat(courseId: string, question: string, collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
   const body: Record<string, unknown> = { course_id: courseId, question };
-  if (collectionId) body.collection_id = collectionId;
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/chat/stream`, {
     method: "POST",
     headers: {
