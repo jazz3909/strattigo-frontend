@@ -207,6 +207,50 @@ export async function renameMaterial(materialId: string, fileName: string): Prom
   return apiPatch<Material>(`/materials/${materialId}`, { file_name: fileName });
 }
 
+// Collections
+export interface Collection {
+  id: string;
+  course_id: string;
+  user_id?: string;
+  name: string;
+  created_at: string;
+  material_count?: number;
+}
+
+export async function getCollections(courseId: string): Promise<Collection[]> {
+  try {
+    return await apiGet<Collection[]>(`/collections/course/${courseId}`);
+  } catch (err) {
+    if (err instanceof Error && /404|not found/i.test(err.message)) return [];
+    throw err;
+  }
+}
+
+export async function createCollection(courseId: string, name: string): Promise<Collection> {
+  return apiPost<Collection>("/collections", { course_id: courseId, name });
+}
+
+export async function deleteCollection(collectionId: string): Promise<void> {
+  return apiDelete<void>(`/collections/${collectionId}`);
+}
+
+export async function addMaterialToCollection(collectionId: string, materialId: string): Promise<void> {
+  return apiPost<void>(`/collections/${collectionId}/materials`, { material_id: materialId });
+}
+
+export async function removeMaterialFromCollection(collectionId: string, materialId: string): Promise<void> {
+  return apiDelete<void>(`/collections/${collectionId}/materials/${materialId}`);
+}
+
+export async function getCollectionMaterials(collectionId: string): Promise<Material[]> {
+  try {
+    return await apiGet<Material[]>(`/collections/${collectionId}/materials`);
+  } catch (err) {
+    if (err instanceof Error && /404|not found/i.test(err.message)) return [];
+    throw err;
+  }
+}
+
 // AI Features
 // All AI endpoints return {content, cached, content_id}
 
@@ -227,24 +271,30 @@ export async function getSavedStudyGuides(courseId: string): Promise<StudyGuideS
   return apiGet<StudyGuideSaved[]>(`/ai/study-guides/${courseId}`);
 }
 
-export async function generateStudyGuide(courseId: string, title: string, forceRegenerate = false): Promise<AiResponse> {
+export async function generateStudyGuide(courseId: string, title: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/study-guide?force_regenerate=true` : `/ai/study-guide`;
-  return apiPost<AiResponse>(path, { course_id: courseId, title });
+  const body: Record<string, unknown> = { course_id: courseId, title };
+  if (collectionId) body.collection_id = collectionId;
+  return apiPost<AiResponse>(path, body);
 }
 
 export async function deleteStudyGuide(contentId: string): Promise<void> {
   return apiDelete<void>(`/ai/study-guide/${contentId}`);
 }
 
-export async function generateStudyPlan(courseId: string, examDate?: string, forceRegenerate = false): Promise<AiResponse> {
+export async function generateStudyPlan(courseId: string, examDate?: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/study-plan?force_regenerate=true` : `/ai/study-plan`;
-  return apiPost<AiResponse>(path, { course_id: courseId, exam_date: examDate });
+  const body: Record<string, unknown> = { course_id: courseId, exam_date: examDate };
+  if (collectionId) body.collection_id = collectionId;
+  return apiPost<AiResponse>(path, body);
 }
 
 // Quiz: returns {content, cached, content_id} where content is raw markdown
-export async function generateQuizRaw(courseId: string, forceRegenerate = false): Promise<AiResponse> {
+export async function generateQuizRaw(courseId: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
   const path = forceRegenerate ? `/ai/quiz?force_regenerate=true` : `/ai/quiz`;
-  return apiPost<AiResponse>(path, { course_id: courseId });
+  const body: Record<string, unknown> = { course_id: courseId };
+  if (collectionId) body.collection_id = collectionId;
+  return apiPost<AiResponse>(path, body);
 }
 
 export interface QuizQuestion {
@@ -358,8 +408,8 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
   return questions;
 }
 
-export async function generateQuiz(courseId: string, forceRegenerate = false): Promise<Quiz> {
-  const raw = await generateQuizRaw(courseId, forceRegenerate);
+export async function generateQuiz(courseId: string, forceRegenerate = false, collectionId?: string): Promise<Quiz> {
+  const raw = await generateQuizRaw(courseId, forceRegenerate, collectionId);
   return { questions: parseQuizMarkdown(raw.content) };
 }
 
@@ -379,9 +429,11 @@ export interface ChatResponse {
 
 export async function chatWithCourse(
   courseId: string,
-  question: string
+  question: string,
+  collectionId?: string
 ): Promise<ChatResponse> {
-  const body = { course_id: courseId, question };
+  const body: Record<string, unknown> = { course_id: courseId, question };
+  if (collectionId) body.collection_id = collectionId;
   console.log("[chat] Sending request body:", JSON.stringify(body));
   const response = await apiPost<ChatResponse>(`/ai/chat`, body);
   console.log("[chat] Received response:", JSON.stringify(response));
@@ -415,15 +467,17 @@ async function* readSseStream(response: Response): AsyncGenerator<string> {
   }
 }
 
-export async function* streamQuiz(courseId: string): AsyncGenerator<string> {
+export async function* streamQuiz(courseId: string, collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
+  const body: Record<string, unknown> = { course_id: courseId };
+  if (collectionId) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/quiz/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ course_id: courseId }),
+    body: JSON.stringify(body),
   });
 
   if (response.status === 401) {
@@ -439,15 +493,17 @@ export async function* streamQuiz(courseId: string): AsyncGenerator<string> {
   yield* readSseStream(response);
 }
 
-export async function* streamStudyGuide(courseId: string, title: string): AsyncGenerator<string> {
+export async function* streamStudyGuide(courseId: string, title: string, collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
+  const body: Record<string, unknown> = { course_id: courseId, title };
+  if (collectionId) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/study-guide/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ course_id: courseId, title }),
+    body: JSON.stringify(body),
   });
 
   if (response.status === 401) {
@@ -463,15 +519,17 @@ export async function* streamStudyGuide(courseId: string, title: string): AsyncG
   yield* readSseStream(response);
 }
 
-export async function* streamChat(courseId: string, question: string): AsyncGenerator<string> {
+export async function* streamChat(courseId: string, question: string, collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
+  const body: Record<string, unknown> = { course_id: courseId, question };
+  if (collectionId) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/chat/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
-    body: JSON.stringify({ course_id: courseId, question }),
+    body: JSON.stringify(body),
   });
 
   if (response.status === 401) {

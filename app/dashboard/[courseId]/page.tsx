@@ -21,8 +21,15 @@ import {
   generateStudyPlan,
   chatWithCourse,
   streamChat,
+  getCollections,
+  createCollection,
+  deleteCollection,
+  addMaterialToCollection,
+  removeMaterialFromCollection,
+  getCollectionMaterials,
   Course,
   Material,
+  Collection,
   ChatMessage,
   AiResponse,
   StudyGuideSaved,
@@ -118,6 +125,8 @@ export default function CoursePage({
 
   const [course, setCourse] = useState<Course | null>(null);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [collections, setCollections] = useState<Collection[]>([]);
+  const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [activeTab, setActiveTab] = useState<ActiveTab>("materials");
@@ -164,9 +173,10 @@ export default function CoursePage({
     setLoading(true);
     setError("");
     try {
-      const [c, m] = await Promise.all([getCourse(courseId), getMaterials(courseId)]);
+      const [c, m, cols] = await Promise.all([getCourse(courseId), getMaterials(courseId), getCollections(courseId)]);
       setCourse(c);
       setMaterials(m);
+      setCollections(cols);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to load course.");
     } finally {
@@ -247,7 +257,7 @@ export default function CoursePage({
     let accumulated = "";
 
     try {
-      for await (const chunk of streamQuiz(courseId)) {
+      for await (const chunk of streamQuiz(courseId, selectedCollectionId ?? undefined)) {
         accumulated += chunk;
         setRawQuizContent(accumulated);
 
@@ -269,7 +279,7 @@ export default function CoursePage({
     } catch {
       // Fallback to non-streaming
       try {
-        const data = await generateQuiz(courseId, force);
+        const data = await generateQuiz(courseId, force, selectedCollectionId ?? undefined);
         setQuiz(data);
         setStreamedQuestions(data.questions);
         setQuizGeneratedAt(new Date());
@@ -291,7 +301,7 @@ export default function CoursePage({
     setAiLoading(true);
     setAiError("");
     try {
-      const data = await generateStudyPlan(courseId, examDate || undefined, force);
+      const data = await generateStudyPlan(courseId, examDate || undefined, force, selectedCollectionId ?? undefined);
       setStudyPlan(data);
       addToast("Study plan generated!", "success");
     } catch (err: unknown) {
@@ -314,7 +324,7 @@ export default function CoursePage({
 
     try {
       let firstChunk = true;
-      for await (const chunk of streamChat(courseId, question)) {
+      for await (const chunk of streamChat(courseId, question, selectedCollectionId ?? undefined)) {
         if (firstChunk) {
           firstChunk = false;
           setChatLoading(false);
@@ -496,6 +506,7 @@ export default function CoursePage({
       {/* ── MATERIALS TAB ─────────────────────────────── */}
       {activeTab === "materials" && (
         <MaterialsTab
+          courseId={courseId}
           materials={materials}
           uploading={uploading}
           uploadProgress={uploadProgress}
@@ -508,6 +519,8 @@ export default function CoursePage({
           deletingId={deletingId}
           handleDeleteMaterial={handleDeleteMaterial}
           onRenameSuccess={handleRenameSuccess}
+          collections={collections}
+          onCollectionsChange={setCollections}
         />
       )}
 
@@ -516,6 +529,9 @@ export default function CoursePage({
         <StudyGuideTab
           courseId={courseId}
           canGenerate={!hasNoMaterials}
+          collections={collections}
+          selectedCollectionId={selectedCollectionId}
+          onCollectionChange={setSelectedCollectionId}
         />
       )}
 
@@ -533,6 +549,9 @@ export default function CoursePage({
             canGenerate={!hasNoMaterials}
             streamingQuiz={streamingQuiz}
             streamedQuestions={streamedQuestions}
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            onCollectionChange={setSelectedCollectionId}
           />
         </QuizErrorBoundary>
       )}
@@ -548,6 +567,9 @@ export default function CoursePage({
           onGenerate={() => doGenerateStudyPlan(false)}
           onRegenerate={() => doGenerateStudyPlan(true)}
           canGenerate={!hasNoMaterials}
+          collections={collections}
+          selectedCollectionId={selectedCollectionId}
+          onCollectionChange={setSelectedCollectionId}
         />
       )}
 
@@ -563,6 +585,9 @@ export default function CoursePage({
           canChat={!hasNoMaterials}
           chatBottomRef={chatBottomRef}
           chatInputRef={chatInputRef}
+          collections={collections}
+          selectedCollectionId={selectedCollectionId}
+          onCollectionChange={setSelectedCollectionId}
         />
       )}
     </div>
@@ -730,10 +755,11 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
 // ─────────────────────────────────────────────────────────────────────────────
 
 function MaterialsTab({
-  materials, uploading, uploadProgress, dragOver, setDragOver,
+  courseId, materials, uploading, uploadProgress, dragOver, setDragOver,
   fileInputRef, handleFileUpload, confirmDeleteId, setConfirmDeleteId, deletingId, handleDeleteMaterial,
-  onRenameSuccess,
+  onRenameSuccess, collections, onCollectionsChange,
 }: {
+  courseId: string;
   materials: Material[];
   uploading: boolean;
   uploadProgress: number;
@@ -746,12 +772,57 @@ function MaterialsTab({
   deletingId: string | null;
   handleDeleteMaterial: (id: string, filename: string) => void;
   onRenameSuccess: (id: string, newName: string) => void;
+  collections: Collection[];
+  onCollectionsChange: (cols: Collection[]) => void;
 }) {
   const { addToast } = useToast();
+  const [subTab, setSubTab] = useState<"all" | "collections">("all");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [renameSaving, setRenameSaving] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
+
+  // Collection state
+  const [collectionMaterials, setCollectionMaterials] = useState<Record<string, Material[]>>({});
+  const [materialCollectionMap, setMaterialCollectionMap] = useState<Record<string, string[]>>({});
+  const [expandedCollectionId, setExpandedCollectionId] = useState<string | null>(null);
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [deletingCollectionId, setDeletingCollectionId] = useState<string | null>(null);
+  const [confirmDeleteCollectionId, setConfirmDeleteCollectionId] = useState<string | null>(null);
+  const [addToCollectionPopoverId, setAddToCollectionPopoverId] = useState<string | null>(null);
+  const [togglingKey, setTogglingKey] = useState<string | null>(null);
+
+  const collectionIdString = collections.map((c) => c.id).join(",");
+
+  useEffect(() => {
+    if (collections.length === 0) {
+      setMaterialCollectionMap({});
+      setCollectionMaterials({});
+      return;
+    }
+    async function buildMap() {
+      const map: Record<string, string[]> = {};
+      const colMats: Record<string, Material[]> = {};
+      await Promise.all(
+        collections.map(async (col) => {
+          try {
+            const mats = await getCollectionMaterials(col.id);
+            colMats[col.id] = mats;
+            for (const m of mats) {
+              if (!map[m.id]) map[m.id] = [];
+              map[m.id].push(col.id);
+            }
+          } catch {}
+        })
+      );
+      setMaterialCollectionMap(map);
+      setCollectionMaterials(colMats);
+    }
+    buildMap();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [collectionIdString]);
 
   async function handleDownload(materialId: string) {
     setDownloadingId(materialId);
@@ -780,209 +851,505 @@ function MaterialsTab({
     }
   }
 
+  async function handleToggleCollection(materialId: string, collectionId: string) {
+    const isIn = (materialCollectionMap[materialId] ?? []).includes(collectionId);
+    const key = collectionId + ":" + materialId;
+    setTogglingKey(key);
+    try {
+      if (isIn) {
+        await removeMaterialFromCollection(collectionId, materialId);
+        setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: (prev[materialId] ?? []).filter((c) => c !== collectionId) }));
+        setCollectionMaterials((prev) => ({ ...prev, [collectionId]: (prev[collectionId] ?? []).filter((m) => m.id !== materialId) }));
+      } else {
+        await addMaterialToCollection(collectionId, materialId);
+        setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: [...(prev[materialId] ?? []), collectionId] }));
+        const mat = materials.find((m) => m.id === materialId);
+        if (mat) setCollectionMaterials((prev) => ({ ...prev, [collectionId]: [...(prev[collectionId] ?? []), mat] }));
+      }
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to update collection.", "error");
+    } finally {
+      setTogglingKey(null);
+    }
+  }
+
+  async function handleCreateCollection() {
+    if (!newCollectionName.trim()) return;
+    setCreating(true);
+    try {
+      const col = await createCollection(courseId, newCollectionName.trim());
+      onCollectionsChange([...collections, col]);
+      setCollectionMaterials((prev) => ({ ...prev, [col.id]: [] }));
+      setCreateModalOpen(false);
+      setNewCollectionName("");
+      addToast(`Collection "${col.name}" created!`, "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to create collection.", "error");
+    } finally {
+      setCreating(false);
+    }
+  }
+
+  async function handleDeleteCollection(collectionId: string, name: string) {
+    setDeletingCollectionId(collectionId);
+    setConfirmDeleteCollectionId(null);
+    try {
+      await deleteCollection(collectionId);
+      onCollectionsChange(collections.filter((c) => c.id !== collectionId));
+      if (expandedCollectionId === collectionId) setExpandedCollectionId(null);
+      setMaterialCollectionMap((prev) => {
+        const next = { ...prev };
+        for (const matId of Object.keys(next)) next[matId] = (next[matId] ?? []).filter((c) => c !== collectionId);
+        return next;
+      });
+      addToast(`"${name}" deleted`, "info");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to delete collection.", "error");
+    } finally {
+      setDeletingCollectionId(null);
+    }
+  }
+
+  async function handleRemoveFromCollection(collectionId: string, materialId: string) {
+    try {
+      await removeMaterialFromCollection(collectionId, materialId);
+      setCollectionMaterials((prev) => ({ ...prev, [collectionId]: (prev[collectionId] ?? []).filter((m) => m.id !== materialId) }));
+      setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: (prev[materialId] ?? []).filter((c) => c !== collectionId) }));
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to remove from collection.", "error");
+    }
+  }
+
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
-        <div>
-          <h2 className="text-lg font-bold text-slate-900">Course Materials</h2>
-          <p className="text-sm text-slate-400 mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
-        </div>
-        <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-slate-100 text-slate-400" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
-          {uploading ? (
-            <><Spinner size="sm" className="border-slate-300 border-t-slate-600" /> Uploading…</>
-          ) : (
-            <>
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-              </svg>
-              Upload file
-            </>
-          )}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".pdf,.pptx,.docx,.doc,.txt"
-            className="hidden"
-            onChange={(e) => handleFileUpload(e.target.files)}
-            disabled={uploading}
-          />
-        </label>
+      {/* Sub-tabs */}
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-5 w-fit">
+        <button
+          onClick={() => setSubTab("all")}
+          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+        >
+          All Files
+        </button>
+        <button
+          onClick={() => setSubTab("collections")}
+          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "collections" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
+        >
+          Collections{collections.length > 0 ? ` (${collections.length})` : ""}
+        </button>
       </div>
 
-      {/* Upload progress */}
-      {uploading && uploadProgress > 0 && (
-        <div className="mb-5 bg-white rounded-2xl border border-slate-100 p-4">
-          <div className="flex items-center gap-3 mb-3">
-            <Spinner size="sm" />
-            <span className="text-sm font-medium text-slate-600">Uploading file…</span>
-            <span className="text-sm text-slate-400 ml-auto">{uploadProgress}%</span>
+      {/* ── ALL FILES SUB-TAB ─────────────────────────── */}
+      {subTab === "all" && (
+        <>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Course Materials</h2>
+              <p className="text-sm text-slate-400 mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
+            </div>
+            <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-slate-100 text-slate-400" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
+              {uploading ? (
+                <><Spinner size="sm" className="border-slate-300 border-t-slate-600" /> Uploading…</>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                  </svg>
+                  Upload file
+                </>
+              )}
+              <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+            </label>
           </div>
-          <ProgressBar value={uploadProgress} size="sm" />
-        </div>
+
+          {uploading && uploadProgress > 0 && (
+            <div className="mb-5 bg-white rounded-2xl border border-slate-100 p-4">
+              <div className="flex items-center gap-3 mb-3">
+                <Spinner size="sm" />
+                <span className="text-sm font-medium text-slate-600">Uploading file…</span>
+                <span className="text-sm text-slate-400 ml-auto">{uploadProgress}%</span>
+              </div>
+              <ProgressBar value={uploadProgress} size="sm" />
+            </div>
+          )}
+
+          <div
+            onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+            onDragLeave={() => setDragOver(false)}
+            onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileUpload(e.dataTransfer.files); }}
+            className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${dragOver ? "border-violet-400 bg-violet-50 scale-[1.01]" : "border-slate-200 bg-slate-50/50 hover:border-violet-300 hover:bg-violet-50/30"}`}
+          >
+            <label className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-violet-100" : "bg-white border border-slate-200"}`}>
+                <svg className={`w-6 h-6 ${dragOver ? "text-violet-600" : "text-slate-400"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                </svg>
+              </div>
+              <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-violet-700" : "text-slate-600"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
+              <p className="text-xs text-slate-400">PDF, PPTX, DOCX, TXT — up to 25MB</p>
+              <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+            </label>
+          </div>
+
+          {materials.length === 0 ? (
+            <EmptyState
+              icon={<svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
+              title="No materials yet"
+              description="Upload PDFs, PowerPoints, or Word documents to get started with AI features."
+              className="py-10"
+            />
+          ) : (
+            <div className="space-y-2">
+              {materials.map((m, i) => {
+                const icon = fileIcon(m.file_name);
+                const isRenaming = renamingId === m.id;
+                const matCols = (materialCollectionMap[m.id] ?? []).map((cid) => collections.find((c) => c.id === cid)).filter(Boolean) as Collection[];
+                const isPopoverOpen = addToCollectionPopoverId === m.id;
+                return (
+                  <div
+                    key={m.id}
+                    className={`flex items-center gap-4 bg-white px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-violet-200" : "border-slate-100 hover:shadow-md hover:border-slate-200"}`}
+                    style={{ animationDelay: `${i * 40}ms` }}
+                  >
+                    <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
+
+                    {isRenaming ? (
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <input
+                          autoFocus
+                          value={renameValue}
+                          onChange={(e) => setRenameValue(e.target.value)}
+                          onKeyDown={(e) => { if (e.key === "Enter") handleRename(m.id); if (e.key === "Escape") setRenamingId(null); }}
+                          className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
+                        />
+                        <button onClick={() => handleRename(m.id)} disabled={renameSaving || !renameValue.trim()} className="px-2.5 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors flex-shrink-0">
+                          {renameSaving ? "Saving…" : "Save"}
+                        </button>
+                        <button onClick={() => setRenamingId(null)} className="px-2.5 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex-shrink-0">Cancel</button>
+                      </div>
+                    ) : (
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-slate-800 truncate">{m.file_name}</p>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          <p className="text-xs text-slate-400">
+                            {m.created_at && new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                          </p>
+                          {matCols.map((col) => (
+                            <span key={col.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700 border border-violet-100">
+                              {col.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {!isRenaming && (
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        {/* Add to collection button */}
+                        {collections.length > 0 && (
+                          <div className="relative">
+                            <button
+                              onClick={() => { setAddToCollectionPopoverId(isPopoverOpen ? null : m.id); setConfirmDeleteId(null); }}
+                              className="p-2 rounded-xl text-slate-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
+                              aria-label="Add to collection"
+                            >
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                              </svg>
+                            </button>
+                            {isPopoverOpen && (
+                              <div className="absolute right-0 top-10 z-20 w-56 bg-white rounded-xl border border-slate-200 shadow-lg p-2 animate-scale-in-fast">
+                                <p className="text-xs font-semibold text-slate-500 px-2 py-1.5 border-b border-slate-100 mb-1">Add to collection</p>
+                                {collections.map((col) => {
+                                  const isIn = (materialCollectionMap[m.id] ?? []).includes(col.id);
+                                  const isToggling = togglingKey === col.id + ":" + m.id;
+                                  return (
+                                    <button
+                                      key={col.id}
+                                      onClick={() => handleToggleCollection(m.id, col.id)}
+                                      disabled={isToggling}
+                                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors text-sm text-left disabled:opacity-50"
+                                    >
+                                      <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isIn ? "bg-violet-600 border-violet-600" : "border-slate-300"}`}>
+                                        {isIn && (
+                                          <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                                          </svg>
+                                        )}
+                                      </span>
+                                      <span className="flex-1 truncate text-slate-700">{col.name}</span>
+                                      {isToggling && <Spinner size="xs" className="border-slate-200 border-t-slate-500 flex-shrink-0" />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Rename button */}
+                        <button
+                          onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); setAddToCollectionPopoverId(null); }}
+                          className="p-2 rounded-xl text-slate-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
+                          aria-label="Rename"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                          </svg>
+                        </button>
+
+                        {/* Download button */}
+                        <button
+                          onClick={() => handleDownload(m.id)}
+                          disabled={downloadingId === m.id}
+                          className="p-2 rounded-xl text-slate-300 hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                          aria-label="Download"
+                        >
+                          {downloadingId === m.id ? (
+                            <Spinner size="xs" className="border-blue-200 border-t-blue-500" />
+                          ) : (
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                            </svg>
+                          )}
+                        </button>
+
+                        {/* Delete button */}
+                        <div className="relative">
+                          <button
+                            onClick={() => { setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id); setAddToCollectionPopoverId(null); }}
+                            disabled={deletingId === m.id}
+                            className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
+                            aria-label="Delete"
+                          >
+                            {deletingId === m.id ? (
+                              <Spinner size="xs" className="border-red-200 border-t-red-500" />
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                              </svg>
+                            )}
+                          </button>
+                          {confirmDeleteId === m.id && (
+                            <div className="absolute right-0 top-10 z-10 w-48 bg-white rounded-xl border border-slate-200 shadow-lg p-3 animate-scale-in-fast">
+                              <p className="text-xs text-slate-600 mb-3 font-medium">Delete this file?</p>
+                              <div className="flex gap-2">
+                                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+                                <button onClick={() => handleDeleteMaterial(m.id, m.file_name)} className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600">Delete</button>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </>
       )}
 
-      {/* Drag-and-drop zone */}
-      <div
-        onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
-        onDragLeave={() => setDragOver(false)}
-        onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileUpload(e.dataTransfer.files); }}
-        className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${
-          dragOver
-            ? "border-violet-400 bg-violet-50 scale-[1.01]"
-            : "border-slate-200 bg-slate-50/50 hover:border-violet-300 hover:bg-violet-50/30"
-        }`}
-      >
-        <label className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer">
-          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-violet-100" : "bg-white border border-slate-200"}`}>
-            <svg className={`w-6 h-6 ${dragOver ? "text-violet-600" : "text-slate-400"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-            </svg>
+      {/* ── COLLECTIONS SUB-TAB ──────────────────────── */}
+      {subTab === "collections" && (
+        <>
+          <div className="flex items-center justify-between mb-5">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Collections</h2>
+              <p className="text-sm text-slate-400 mt-0.5">Group materials for focused AI generation</p>
+            </div>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => setCreateModalOpen(true)}
+              leftIcon={
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+              }
+            >
+              Create Collection
+            </Button>
           </div>
-          <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-violet-700" : "text-slate-600"}`}>
-            {dragOver ? "Drop to upload" : "Drag & drop files here"}
-          </p>
-          <p className="text-xs text-slate-400">PDF, PPTX, DOCX, TXT — up to 25MB</p>
-          <input
-            type="file"
-            accept=".pdf,.pptx,.docx,.doc,.txt"
-            className="hidden"
-            onChange={(e) => handleFileUpload(e.target.files)}
-            disabled={uploading}
-          />
-        </label>
-      </div>
 
-      {/* File list */}
-      {materials.length === 0 ? (
-        <EmptyState
-          icon={<svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
-          title="No materials yet"
-          description="Upload PDFs, PowerPoints, or Word documents to get started with AI features."
-          className="py-10"
-        />
-      ) : (
-        <div className="space-y-2">
-          {materials.map((m, i) => {
-            const icon = fileIcon(m.file_name);
-            const isRenaming = renamingId === m.id;
-            return (
-              <div
-                key={m.id}
-                className={`flex items-center gap-4 bg-white px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-violet-200" : "border-slate-100 hover:shadow-md hover:border-slate-200"}`}
-                style={{ animationDelay: `${i * 40}ms` }}
-              >
-                <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>
-                  {icon.icon}
-                </div>
-
-                {isRenaming ? (
-                  <div className="flex-1 min-w-0 flex items-center gap-2">
-                    <input
-                      autoFocus
-                      value={renameValue}
-                      onChange={(e) => setRenameValue(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleRename(m.id);
-                        if (e.key === "Escape") setRenamingId(null);
-                      }}
-                      className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
-                    />
-                    <button
-                      onClick={() => handleRename(m.id)}
-                      disabled={renameSaving || !renameValue.trim()}
-                      className="px-2.5 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors flex-shrink-0"
-                    >
-                      {renameSaving ? "Saving…" : "Save"}
-                    </button>
-                    <button
-                      onClick={() => setRenamingId(null)}
-                      className="px-2.5 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex-shrink-0"
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-800 truncate">{m.file_name}</p>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      {m.created_at && new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                    </p>
-                  </div>
-                )}
-
-                {!isRenaming && (
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    {/* Rename button */}
-                    <button
-                      onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); }}
-                      className="p-2 rounded-xl text-slate-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
-                      aria-label="Rename"
-                    >
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
-                      </svg>
-                    </button>
-
-                    {/* Download button */}
-                    <button
-                      onClick={() => handleDownload(m.id)}
-                      disabled={downloadingId === m.id}
-                      className="p-2 rounded-xl text-slate-300 hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
-                      aria-label="Download"
-                    >
-                      {downloadingId === m.id ? (
-                        <Spinner size="xs" className="border-blue-200 border-t-blue-500" />
-                      ) : (
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                        </svg>
-                      )}
-                    </button>
-
-                    {/* Delete button */}
-                    <div className="relative">
-                      <button
-                        onClick={() => setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id)}
-                        disabled={deletingId === m.id}
-                        className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
-                        aria-label="Delete"
-                      >
-                        {deletingId === m.id ? (
-                          <Spinner size="xs" className="border-red-200 border-t-red-500" />
-                        ) : (
-                          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                          </svg>
-                        )}
-                      </button>
-
-                      {confirmDeleteId === m.id && (
-                        <div className="absolute right-0 top-10 z-10 w-48 bg-white rounded-xl border border-slate-200 shadow-lg p-3 animate-scale-in-fast">
-                          <p className="text-xs text-slate-600 mb-3 font-medium">Delete this file?</p>
-                          <div className="flex gap-2">
-                            <button
-                              onClick={() => setConfirmDeleteId(null)}
-                              className="flex-1 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50"
-                            >
-                              Cancel
-                            </button>
-                            <button
-                              onClick={() => handleDeleteMaterial(m.id, m.file_name)}
-                              className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600"
-                            >
-                              Delete
-                            </button>
+          {collections.length === 0 ? (
+            <EmptyState
+              icon={
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                </svg>
+              }
+              title="No collections yet"
+              description="Create a collection to group related files and generate focused AI content from a subset of your materials."
+              action={
+                <Button variant="primary" size="md" onClick={() => setCreateModalOpen(true)}
+                  leftIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
+                >
+                  Create Collection
+                </Button>
+              }
+            />
+          ) : (
+            <>
+              <p className="text-xs text-slate-400 flex items-center gap-1.5 mb-4">
+                <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
+                </svg>
+                Add files from the All Files tab using the + button on each file card
+              </p>
+              <div className="space-y-3">
+                {collections.map((col) => {
+                  const colMats = collectionMaterials[col.id] ?? [];
+                  const isExpanded = expandedCollectionId === col.id;
+                  const isDeleting = deletingCollectionId === col.id;
+                  const confirmDelete = confirmDeleteCollectionId === col.id;
+                  return (
+                    <div key={col.id} className={`bg-white rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-violet-200" : "border-slate-100 hover:shadow-md hover:border-slate-200"}`}>
+                      <div className="flex items-center">
+                        <button
+                          onClick={() => setExpandedCollectionId(isExpanded ? null : col.id)}
+                          className="flex-1 flex items-center gap-3 px-5 py-4 text-left min-w-0"
+                        >
+                          <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-[18px] h-[18px] text-violet-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                            </svg>
                           </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{col.name}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
+                              {colMats.length} file{colMats.length !== 1 ? "s" : ""} · {new Date(col.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                            </p>
+                          </div>
+                          <svg className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                          </svg>
+                        </button>
+                        <div className="flex items-center gap-2 pr-4 pl-2 flex-shrink-0">
+                          {confirmDelete ? (
+                            <>
+                              <span className="text-xs text-slate-500">Delete?</span>
+                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(null); }} className="px-2.5 py-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id, col.name); }} className="px-2.5 py-1 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600">Delete</button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(col.id); }}
+                              disabled={isDeleting}
+                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {isDeleting ? <Spinner size="xs" className="border-red-200 border-t-red-500" /> : (
+                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                                </svg>
+                              )}
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                      {isExpanded && (
+                        <div className="border-t border-slate-100 px-5 py-4">
+                          {colMats.length === 0 ? (
+                            <p className="text-sm text-slate-400 text-center py-4">No files in this collection yet. Add files from the All Files tab.</p>
+                          ) : (
+                            <div className="space-y-2">
+                              {colMats.map((mat) => {
+                                const icon = fileIcon(mat.file_name);
+                                return (
+                                  <div key={mat.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
+                                    <div className={`w-8 h-8 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
+                                    <p className="flex-1 min-w-0 text-sm font-medium text-slate-700 truncate">{mat.file_name}</p>
+                                    <button
+                                      onClick={() => handleRemoveFromCollection(col.id, mat.id)}
+                                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                      aria-label="Remove from collection"
+                                    >
+                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       )}
                     </div>
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            );
-          })}
-        </div>
+            </>
+          )}
+
+          <Modal
+            open={createModalOpen}
+            onClose={() => { setCreateModalOpen(false); setNewCollectionName(""); }}
+            title="Create Collection"
+            description="Group related files for focused AI generation."
+            size="sm"
+          >
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Collection name</label>
+                <input
+                  autoFocus
+                  value={newCollectionName}
+                  onChange={(e) => setNewCollectionName(e.target.value.slice(0, 50))}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleCreateCollection(); }}
+                  placeholder="e.g. Chapter 5, Week 3 Readings"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
+                  maxLength={50}
+                />
+                <p className="text-xs text-slate-400 mt-1.5">{newCollectionName.length}/50 characters</p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => { setCreateModalOpen(false); setNewCollectionName(""); }}>Cancel</Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleCreateCollection}
+                  disabled={!newCollectionName.trim() || creating}
+                  className="flex-1"
+                  leftIcon={creating ? <Spinner size="sm" className="border-white/30 border-t-white" /> : undefined}
+                >
+                  {creating ? "Creating…" : "Create"}
+                </Button>
+              </div>
+            </div>
+          </Modal>
+        </>
       )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// COLLECTION SELECTOR
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CollectionSelector({
+  collections,
+  selectedCollectionId,
+  onChange,
+}: {
+  collections: Collection[];
+  selectedCollectionId: string | null;
+  onChange: (id: string | null) => void;
+}) {
+  if (collections.length === 0) return null;
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Generate from:</span>
+      <select
+        value={selectedCollectionId ?? ""}
+        onChange={(e) => onChange(e.target.value || null)}
+        className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400 cursor-pointer max-w-[160px] truncate"
+      >
+        <option value="">All materials</option>
+        {collections.map((col) => (
+          <option key={col.id} value={col.id}>{col.name}</option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -1001,9 +1368,15 @@ type GuideStreamState = {
 function StudyGuideTab({
   courseId,
   canGenerate,
+  collections,
+  selectedCollectionId,
+  onCollectionChange,
 }: {
   courseId: string;
   canGenerate: boolean;
+  collections: Collection[];
+  selectedCollectionId: string | null;
+  onCollectionChange: (id: string | null) => void;
 }) {
   const { addToast } = useToast();
   const [guides, setGuides] = useState<StudyGuideSaved[]>([]);
@@ -1049,7 +1422,7 @@ function StudyGuideTab({
     setStreamState({ title, content: "", done: false, saving: false });
 
     try {
-      for await (const chunk of streamStudyGuide(courseId, title)) {
+      for await (const chunk of streamStudyGuide(courseId, title, selectedCollectionId ?? undefined)) {
         setStreamState((prev) => prev ? { ...prev, content: prev.content + chunk } : prev);
       }
       setStreamState((prev) => prev ? { ...prev, done: true } : prev);
@@ -1098,27 +1471,34 @@ function StudyGuideTab({
   return (
     <div>
       {/* Header */}
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Study Guides</h2>
           {!loadingGuides && (
             <p className="text-xs text-slate-400 mt-0.5">{guides.length} of 5 guides used</p>
           )}
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={openTitleModal}
-          disabled={isGenerating || !canGenerate || atLimit || showStreamPreview}
-          title={atLimit ? "Delete a guide to generate a new one" : undefined}
-          leftIcon={
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-          }
-        >
-          {atLimit ? "Limit Reached" : "Generate New"}
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <CollectionSelector
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            onChange={onCollectionChange}
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={openTitleModal}
+            disabled={isGenerating || !canGenerate || atLimit || showStreamPreview}
+            title={atLimit ? "Delete a guide to generate a new one" : undefined}
+            leftIcon={
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            }
+          >
+            {atLimit ? "Limit Reached" : selectedCollectionId ? `Generate from: ${collections.find((c) => c.id === selectedCollectionId)?.name ?? "Collection"}` : "Generate New"}
+          </Button>
+        </div>
       </div>
 
       {/* Error */}
@@ -1395,7 +1775,7 @@ const EXPECTED_QUIZ_QUESTIONS = 10;
 
 function QuizTab({
   quiz, loading, error, generatedAt, onGenerate, onRegenerate, canGenerate,
-  streamingQuiz, streamedQuestions,
+  streamingQuiz, streamedQuestions, collections, selectedCollectionId, onCollectionChange,
 }: {
   quiz: Quiz | null;
   loading: boolean;
@@ -1406,6 +1786,9 @@ function QuizTab({
   canGenerate: boolean;
   streamingQuiz: boolean;
   streamedQuestions: QuizQuestion[];
+  collections: Collection[];
+  selectedCollectionId: string | null;
+  onCollectionChange: (id: string | null) => void;
 }) {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<Record<number, string>>({});
@@ -1436,7 +1819,7 @@ function QuizTab({
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-5">
+      <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div>
           <h2 className="text-lg font-bold text-slate-900">Practice Quiz</h2>
           {generatedAt && !loading && (
@@ -1445,20 +1828,29 @@ function QuizTab({
             </p>
           )}
         </div>
-        <Button
-          variant="primary"
-          size="sm"
-          onClick={(quiz || hasQuestions) ? onRegenerate : onGenerate}
-          loading={loading}
-          disabled={loading || !canGenerate}
-          leftIcon={!loading ? (
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-            </svg>
-          ) : undefined}
-        >
-          {(quiz || hasQuestions) ? "Regenerate" : "Generate"}
-        </Button>
+        <div className="flex items-center gap-3 flex-wrap">
+          <CollectionSelector
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            onChange={onCollectionChange}
+          />
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={(quiz || hasQuestions) ? onRegenerate : onGenerate}
+            loading={loading}
+            disabled={loading || !canGenerate}
+            leftIcon={!loading ? (
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            ) : undefined}
+          >
+            {(quiz || hasQuestions)
+              ? (selectedCollectionId ? `Regenerate from: ${collections.find((c) => c.id === selectedCollectionId)?.name ?? "Collection"}` : "Regenerate")
+              : (selectedCollectionId ? `Generate from: ${collections.find((c) => c.id === selectedCollectionId)?.name ?? "Collection"}` : "Generate")}
+          </Button>
+        </div>
       </div>
 
       {isLoadingFirstQuestion && <AiLoadingProgress type="quiz" />}
@@ -1746,6 +2138,7 @@ function QuizResults({
 
 function StudyPlanTab({
   studyPlan, loading, error, examDate, setExamDate, onGenerate, onRegenerate, canGenerate,
+  collections, selectedCollectionId, onCollectionChange,
 }: {
   studyPlan: AiResponse | null;
   loading: boolean;
@@ -1755,6 +2148,9 @@ function StudyPlanTab({
   onGenerate: () => void;
   onRegenerate: () => void;
   canGenerate: boolean;
+  collections: Collection[];
+  selectedCollectionId: string | null;
+  onCollectionChange: (id: string | null) => void;
 }) {
   const daysUntilExam = examDate ? Math.ceil((new Date(examDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)) : null;
 
@@ -1766,6 +2162,11 @@ function StudyPlanTab({
           <p className="text-sm text-slate-400 mt-0.5">Set your exam date for a personalized schedule</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
+          <CollectionSelector
+            collections={collections}
+            selectedCollectionId={selectedCollectionId}
+            onChange={onCollectionChange}
+          />
           <div className="relative">
             <input
               type="date"
@@ -1787,7 +2188,9 @@ function StudyPlanTab({
               </svg>
             ) : undefined}
           >
-            {studyPlan ? "Regenerate" : "Generate"}
+            {studyPlan
+              ? (selectedCollectionId ? `Regenerate from: ${collections.find((c) => c.id === selectedCollectionId)?.name ?? "Collection"}` : "Regenerate")
+              : (selectedCollectionId ? `Generate from: ${collections.find((c) => c.id === selectedCollectionId)?.name ?? "Collection"}` : "Generate")}
           </Button>
         </div>
       </div>
@@ -1958,6 +2361,7 @@ const SUGGESTED_QUESTIONS = [
 
 function ChatTab({
   messages, chatInput, setChatInput, chatLoading, chatStreaming, onSend, canChat, chatBottomRef, chatInputRef,
+  collections, selectedCollectionId, onCollectionChange,
 }: {
   messages: ChatMessage[];
   chatInput: string;
@@ -1968,6 +2372,9 @@ function ChatTab({
   canChat: boolean;
   chatBottomRef: React.RefObject<HTMLDivElement | null>;
   chatInputRef: React.RefObject<HTMLTextAreaElement | null>;
+  collections: Collection[];
+  selectedCollectionId: string | null;
+  onCollectionChange: (id: string | null) => void;
 }) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -1980,18 +2387,23 @@ function ChatTab({
     <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" style={{ height: "calc(100vh - 280px)", minHeight: 500 }}>
       {/* Header */}
       <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 flex-shrink-0">
-        <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">
+        <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0">
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
         </div>
-        <div>
+        <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-slate-900">AI Tutor</p>
           <p className="text-xs text-emerald-500 font-medium flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
             Online
           </p>
         </div>
+        <CollectionSelector
+          collections={collections}
+          selectedCollectionId={selectedCollectionId}
+          onChange={onCollectionChange}
+        />
       </div>
 
       {/* Messages */}
