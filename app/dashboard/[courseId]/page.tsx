@@ -1889,7 +1889,7 @@ function ChatTab({
               }`}
             >
               {msg.role === "assistant" ? (
-                <span dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.content) }} />
+                <MarkdownWithMath content={msg.content} className="text-sm leading-relaxed" />
               ) : (
                 msg.content
               )}
