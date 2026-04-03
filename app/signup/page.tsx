@@ -1,11 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signup } from "../lib/api";
+import { signup, login, setToken, setUser } from "../lib/api";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
-import { ProgressBar } from "../components/ui/ProgressBar";
 import { useToast } from "../providers/ToastProvider";
 
 function getPasswordStrength(pw: string): { score: number; label: string; color: "red" | "amber" | "blue" | "green" } {
@@ -25,13 +25,13 @@ function getPasswordStrength(pw: string): { score: number; label: string; color:
 
 export default function SignupPage() {
   const { addToast } = useToast();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-  const [confirmed, setConfirmed] = useState(false);
 
   const strength = getPasswordStrength(password);
 
@@ -61,7 +61,11 @@ export default function SignupPage() {
 
     try {
       await signup(email, password);
-      setConfirmed(true);
+      const data = await login(email, password);
+      setToken(data.access_token);
+      setUser(data.user_id, data.email);
+      document.cookie = `strattigo_token=${data.access_token}; path=/; max-age=604800; SameSite=Lax`;
+      router.push("/dashboard");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Sign up failed. Please try again.";
       setFieldErrors({ email: msg });
@@ -69,32 +73,6 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
-  }
-
-  if (confirmed) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-4 bg-white">
-        <div className="w-full max-w-[400px] text-center">
-          <div className="w-16 h-16 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center mx-auto mb-6">
-            <svg className="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21.75 6.75v10.5a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25m19.5 0v.243a2.25 2.25 0 01-1.07 1.916l-7.5 4.615a2.25 2.25 0 01-2.36 0L3.32 8.91a2.25 2.25 0 01-1.07-1.916V6.75" />
-            </svg>
-          </div>
-          <h1 className="text-2xl font-extrabold text-slate-900 mb-3">Check your email!</h1>
-          <p className="text-slate-500 text-sm leading-relaxed mb-8">
-            We sent a confirmation link to{" "}
-            <span className="font-semibold text-slate-800">{email}</span>.
-            Click it to activate your account.
-          </p>
-          <Link
-            href="/login"
-            className="inline-flex items-center justify-center gap-2 w-full px-6 py-3 rounded-xl bg-violet-600 text-white font-semibold text-sm hover:bg-violet-700 transition-colors shadow-sm"
-          >
-            Go to Login
-          </Link>
-        </div>
-      </div>
-    );
   }
 
   return (
