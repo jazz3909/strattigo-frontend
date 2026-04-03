@@ -181,6 +181,24 @@ export default function DashboardPage() {
 
   return (
     <>
+      {/* Upgrade banner — shown for free users */}
+      <div className="mb-4 flex items-center justify-between gap-3 bg-gradient-to-r from-violet-600/10 to-blue-600/10 border border-violet-200 rounded-2xl px-5 py-3">
+        <div className="flex items-center gap-2.5">
+          <svg className="w-4 h-4 text-violet-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+          </svg>
+          <span className="text-sm text-slate-700 font-medium">
+            You&apos;re on the free plan — upgrade to Pro for unlimited access
+          </span>
+        </div>
+        <Link
+          href="/pricing"
+          className="flex-shrink-0 text-sm font-semibold text-violet-700 hover:text-violet-900 transition-colors whitespace-nowrap"
+        >
+          Upgrade now →
+        </Link>
+      </div>
+
       {/* Greeting header */}
       <div className="mb-8">
         <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
