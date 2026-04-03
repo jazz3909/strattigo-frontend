@@ -16,6 +16,8 @@ import {
   streamStudyGuide,
   saveStudyGuide,
   generateQuiz,
+  streamQuiz,
+  parseQuizMarkdown,
   generateStudyPlan,
   chatWithCourse,
   streamChat,
@@ -25,6 +27,7 @@ import {
   AiResponse,
   StudyGuideSaved,
   Quiz,
+  type QuizQuestion,
   getToken,
 } from "../../lib/api";
 import { Button } from "../../components/ui/Button";
@@ -135,6 +138,11 @@ export default function CoursePage({
   const [examDate, setExamDate] = useState("");
   const [quizGeneratedAt, setQuizGeneratedAt] = useState<Date | null>(null);
 
+  // Quiz streaming
+  const [streamingQuiz, setStreamingQuiz] = useState(false);
+  const [rawQuizContent, setRawQuizContent] = useState("");
+  const [streamedQuestions, setStreamedQuestions] = useState<QuizQuestion[]>([]);
+
   // Chat
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
@@ -230,23 +238,53 @@ export default function CoursePage({
   }
 
   async function doGenerateQuiz(force: boolean) {
-    setAiLoading(true);
+    setStreamingQuiz(true);
     setAiError("");
+    setQuiz(null);
+    setStreamedQuestions([]);
+    setRawQuizContent("");
+
+    let accumulated = "";
+
     try {
-      const data = await generateQuiz(courseId, force);
-      setQuiz(data);
+      for await (const chunk of streamQuiz(courseId)) {
+        accumulated += chunk;
+        setRawQuizContent(accumulated);
+
+        // Parse complete question blocks (each block ends with "\n---\n")
+        const lastSep = accumulated.lastIndexOf("\n---\n");
+        if (lastSep !== -1) {
+          const completeContent = accumulated.slice(0, lastSep + 5);
+          const parsed = parseQuizMarkdown(completeContent);
+          if (parsed.length > 0) setStreamedQuestions(parsed);
+        }
+      }
+
+      // Stream complete — parse full content
+      const finalQuestions = parseQuizMarkdown(accumulated);
+      setQuiz({ questions: finalQuestions });
+      setStreamedQuestions(finalQuestions);
       setQuizGeneratedAt(new Date());
       addToast("Quiz generated!", "success");
-    } catch (err: unknown) {
-      setAiError(err instanceof Error ? err.message : "Failed to generate quiz.");
+    } catch {
+      // Fallback to non-streaming
+      try {
+        const data = await generateQuiz(courseId, force);
+        setQuiz(data);
+        setStreamedQuestions(data.questions);
+        setQuizGeneratedAt(new Date());
+        addToast("Quiz generated!", "success");
+      } catch (fallbackErr: unknown) {
+        setAiError(fallbackErr instanceof Error ? fallbackErr.message : "Failed to generate quiz.");
+      }
     } finally {
-      setAiLoading(false);
+      setStreamingQuiz(false);
     }
   }
 
   function handleQuizTab() {
     setActiveTab("quiz");
-    if (!quiz) doGenerateQuiz(false);
+    if (!quiz && !streamingQuiz) doGenerateQuiz(false);
   }
 
   async function doGenerateStudyPlan(force: boolean) {
@@ -487,12 +525,14 @@ export default function CoursePage({
         <QuizErrorBoundary>
           <QuizTab
             quiz={quiz}
-            loading={aiLoading}
+            loading={streamingQuiz}
             error={aiError}
             generatedAt={quizGeneratedAt}
             onGenerate={() => doGenerateQuiz(false)}
             onRegenerate={() => doGenerateQuiz(true)}
             canGenerate={!hasNoMaterials}
+            streamingQuiz={streamingQuiz}
+            streamedQuestions={streamedQuestions}
           />
         </QuizErrorBoundary>
       )}
@@ -1351,8 +1391,11 @@ function formatMarkdown(text: string): string {
 // QUIZ TAB
 // ─────────────────────────────────────────────────────────────────────────────
 
+const EXPECTED_QUIZ_QUESTIONS = 10;
+
 function QuizTab({
   quiz, loading, error, generatedAt, onGenerate, onRegenerate, canGenerate,
+  streamingQuiz, streamedQuestions,
 }: {
   quiz: Quiz | null;
   loading: boolean;
@@ -1361,6 +1404,8 @@ function QuizTab({
   onGenerate: () => void;
   onRegenerate: () => void;
   canGenerate: boolean;
+  streamingQuiz: boolean;
+  streamedQuestions: QuizQuestion[];
 }) {
   const [currentQ, setCurrentQ] = useState(0);
   const [selected, setSelected] = useState<Record<number, string>>({});
@@ -1375,12 +1420,19 @@ function QuizTab({
   }
 
   useEffect(() => {
-    resetQuiz();
+    if (!streamingQuiz) resetQuiz();
   }, [quiz]);
 
-  const totalQ = quiz?.questions.length ?? 0;
+  // During streaming use streamedQuestions; once done use quiz.questions
+  const effectiveQuestions = streamingQuiz ? streamedQuestions : (quiz?.questions ?? []);
+  const hasQuestions = effectiveQuestions.length > 0;
+
+  const totalQ = streamingQuiz ? EXPECTED_QUIZ_QUESTIONS : (quiz?.questions.length ?? 0);
   const answeredCount = Object.keys(revealed).length;
-  const correctCount = quiz?.questions.filter((q, i) => revealed[i] && selected[i] === q.correctAnswer).length ?? 0;
+  const correctCount = (quiz?.questions ?? []).filter((q, i) => revealed[i] && selected[i] === q.correctAnswer).length;
+
+  const isLoadingFirstQuestion = streamingQuiz && !hasQuestions;
+  const nextQuestionLoading = streamingQuiz && currentQ >= effectiveQuestions.length;
 
   return (
     <div>
@@ -1396,7 +1448,7 @@ function QuizTab({
         <Button
           variant="primary"
           size="sm"
-          onClick={quiz ? onRegenerate : onGenerate}
+          onClick={(quiz || hasQuestions) ? onRegenerate : onGenerate}
           loading={loading}
           disabled={loading || !canGenerate}
           leftIcon={!loading ? (
@@ -1405,15 +1457,15 @@ function QuizTab({
             </svg>
           ) : undefined}
         >
-          {quiz ? "Regenerate" : "Generate"}
+          {(quiz || hasQuestions) ? "Regenerate" : "Generate"}
         </Button>
       </div>
 
-      {loading && <AiLoadingProgress type="quiz" />}
+      {isLoadingFirstQuestion && <AiLoadingProgress type="quiz" />}
 
-      {!loading && error && <AiErrorBlock error={error} onRetry={onGenerate} />}
+      {!loading && !streamingQuiz && error && <AiErrorBlock error={error} onRetry={onGenerate} />}
 
-      {!loading && !error && !quiz && (
+      {!loading && !streamingQuiz && !error && !quiz && (
         <EmptyState
           icon={<svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>}
           title="No quiz yet"
@@ -1428,11 +1480,11 @@ function QuizTab({
         />
       )}
 
-      {!loading && quiz && !showResults && (
+      {hasQuestions && !showResults && (
         <div>
-          {(!quiz.questions || quiz.questions.length === 0 || !quiz.questions[currentQ]) ? (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 p-6 text-center text-amber-700 text-sm">
-              Could not parse quiz. Please try regenerating.
+          {nextQuestionLoading ? (
+            <div className="rounded-xl border border-violet-100 bg-violet-50 p-8 text-center text-violet-600 text-sm animate-pulse">
+              Loading next question...
             </div>
           ) : (<>
           {/* Progress bar */}
@@ -1445,7 +1497,7 @@ function QuizTab({
           </div>
 
           <QuizQuestion
-            question={quiz.questions[currentQ]}
+            question={effectiveQuestions[currentQ]}
             index={currentQ}
             selected={selected[currentQ]}
             revealed={!!revealed[currentQ]}
@@ -1456,6 +1508,12 @@ function QuizTab({
               }
             }}
           />
+
+          {streamingQuiz && (
+            <p className="text-xs text-slate-400 mt-3 text-center">
+              Loading questions... ({effectiveQuestions.length} of {EXPECTED_QUIZ_QUESTIONS} ready)
+            </p>
+          )}
 
           <div className="flex items-center justify-between mt-5">
             <Button
@@ -1489,7 +1547,7 @@ function QuizTab({
               >
                 Next
               </Button>
-            ) : (
+            ) : !streamingQuiz ? (
               <Button
                 variant="primary"
                 size="sm"
@@ -1497,13 +1555,13 @@ function QuizTab({
               >
                 See results
               </Button>
-            ))}
+            ) : null)}
           </div>
           </>)}
         </div>
       )}
 
-      {!loading && quiz && showResults && (
+      {!streamingQuiz && quiz && showResults && (
         <QuizResults
           quiz={quiz}
           selected={selected}

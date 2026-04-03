@@ -415,6 +415,30 @@ async function* readSseStream(response: Response): AsyncGenerator<string> {
   }
 }
 
+export async function* streamQuiz(courseId: string): AsyncGenerator<string> {
+  const token = getToken();
+  const response = await fetch(`${API_BASE}/ai/quiz/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ course_id: courseId }),
+  });
+
+  if (response.status === 401) {
+    clearToken();
+    if (typeof window !== "undefined") {
+      document.cookie = "strattigo_token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
+  yield* readSseStream(response);
+}
+
 export async function* streamStudyGuide(courseId: string, title: string): AsyncGenerator<string> {
   const token = getToken();
   const response = await fetch(`${API_BASE}/ai/study-guide/stream`, {
