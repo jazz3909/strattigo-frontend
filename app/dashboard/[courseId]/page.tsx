@@ -1459,20 +1459,20 @@ function QuizQuestion({
                 }
               `}
             >
-              <span className="flex items-center gap-3">
+              <div className="flex items-start gap-3">
                 {revealed && isCorrect && (
-                  <svg className="w-4 h-4 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 )}
                 {revealed && isSelected && !isCorrect && (
-                  <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
-                <span className="font-bold mr-1">{opt.letter}.</span>
-                {opt.text}
-              </span>
+                <span className="font-bold flex-shrink-0">{opt.letter}.</span>
+                <MarkdownWithMath content={opt.text} className="flex-1 min-w-0" />
+              </div>
             </button>
           );
         })}
