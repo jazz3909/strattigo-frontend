@@ -1529,10 +1529,10 @@ function QuizQuestion({
 }) {
   return (
     <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 animate-fade-in-up">
-      <p className="font-semibold text-slate-900 mb-5 leading-snug">
-        <span className="text-violet-600 mr-2 font-bold">{index + 1}.</span>
-        {question.question}
-      </p>
+      <div className="font-semibold text-slate-900 mb-5 leading-snug flex items-start gap-1.5">
+        <span className="text-violet-600 font-bold flex-shrink-0">{index + 1}.</span>
+        <MarkdownWithMath content={question.question} className="flex-1 min-w-0" />
+      </div>
 
       <div className="space-y-2.5">
         {question.options.map((opt) => {
@@ -1581,7 +1581,7 @@ function QuizQuestion({
               </svg>
               Explanation
             </p>
-            <p className="text-blue-700 leading-relaxed">{question.explanation}</p>
+            <MarkdownWithMath content={question.explanation} className="text-blue-700 leading-relaxed" />
           </div>
         )}
       </div>
@@ -1656,7 +1656,7 @@ function QuizResults({
                 )}
               </span>
               <div>
-                <p className="font-medium text-slate-800">{q.question}</p>
+                <MarkdownWithMath content={q.question} className="font-medium text-slate-800" />
                 {wasAnswered && (
                   <div className="text-xs text-slate-500 mt-1.5 space-y-0.5">
                     <p>
@@ -1669,7 +1669,7 @@ function QuizResults({
                       <p>Correct: <span className="text-emerald-700 font-medium">{correctOption.letter}. {correctOption.text}</span></p>
                     )}
                     {q.explanation && (
-                      <p className="text-slate-400 mt-1 leading-relaxed">{q.explanation}</p>
+                      <MarkdownWithMath content={q.explanation} className="text-slate-400 mt-1 leading-relaxed" />
                     )}
                   </div>
                 )}

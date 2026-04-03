@@ -284,32 +284,72 @@ export function parseQuizMarkdown(content: string): QuizQuestion[] {
     const trimmed = block.trim();
     if (!trimmed) continue;
 
-    // Question: first line is "**N. Question text**" — capture everything after "N. " up to the closing "**"
-    const questionMatch = trimmed.match(/^\*\*\d+\.\s+([\s\S]+?)\*\*/);
-    if (!questionMatch) continue;
-    const question = questionMatch[1].trim();
+    // ── 1. Question text ──────────────────────────────────────────────────────
+    // Strip the "**N. " prefix with a minimal regex that only touches the prefix,
+    // leaving all LaTeX in the question body completely untouched.
+    const prefixMatch = /^\*\*\d+\.\s*/.exec(trimmed);
+    if (!prefixMatch) continue;
+    const afterPrefix = trimmed.slice(prefixMatch[0].length);
+
+    // Question text ends at the first blank line followed by "A." (double newline)
+    // or, as a fallback, a single newline before "A.".
+    let qEnd = afterPrefix.indexOf("\n\nA.");
+    const hasDoubleNl = qEnd !== -1;
+    if (!hasDoubleNl) qEnd = afterPrefix.indexOf("\nA.");
+    if (qEnd === -1) continue;
+
+    let question = afterPrefix.slice(0, qEnd);
+    // Strip the optional closing "**" that wraps the question header
+    if (question.endsWith("**")) question = question.slice(0, -2);
+    question = question.trim();
     if (!question) continue;
 
-    // Options: lines that start with "A. " / "B. " / "C. " / "D. "
+    // ── 2. Options ────────────────────────────────────────────────────────────
+    // Inspect every line in the remainder; detect "X. " prefix by checking
+    // individual characters — no regex, so LaTeX in the option text is safe.
+    const restStart = qEnd + (hasDoubleNl ? 2 : 1); // skip the blank line(s)
+    const rest = afterPrefix.slice(restStart);
+
     const optionMap: Record<string, string> = {};
-    for (const line of trimmed.split("\n")) {
-      const m = line.match(/^([A-D])\.\s+(.+)$/);
-      if (m) optionMap[m[1]] = m[2].trim();
+    for (const line of rest.split("\n")) {
+      if (
+        line.length > 3 &&
+        "ABCD".includes(line[0]) &&
+        line[1] === "." &&
+        line[2] === " "
+      ) {
+        // Preserve everything after "X. " verbatim — LaTeX included
+        optionMap[line[0]] = line.slice(3);
+      }
     }
-    const options: { letter: string; text: string }[] = ["A", "B", "C", "D"].map((letter) => ({
-      letter,
-      text: optionMap[letter] ?? "",
-    }));
+
+    const options: { letter: string; text: string }[] = ["A", "B", "C", "D"].map(
+      (letter) => ({ letter, text: optionMap[letter] ?? "" })
+    );
     if (options.every((o) => o.text === "")) continue;
 
-    // Correct answer: single letter from "**Correct Answer: X**"
-    const answerMatch = trimmed.match(/\*\*Correct Answer:\s*([A-D])\*\*/i);
-    const correctAnswer = answerMatch ? answerMatch[1].toUpperCase() : "A";
+    // ── 3. Correct answer ─────────────────────────────────────────────────────
+    // Find "**Correct Answer:" then read the very next non-space letter.
+    const answerTag = "**Correct Answer:";
+    const answerIdx = trimmed.indexOf(answerTag);
+    let correctAnswer = "A";
+    if (answerIdx !== -1) {
+      const afterTag = trimmed.slice(answerIdx + answerTag.length).trimStart();
+      if (afterTag.length > 0 && "ABCD".includes(afterTag[0].toUpperCase())) {
+        correctAnswer = afterTag[0].toUpperCase();
+      }
+    }
 
-    // Explanation: text after "**Explanation:" up to the closing "**" or end of block
+    // ── 4. Explanation ────────────────────────────────────────────────────────
+    // Everything after "**Explanation:" to end of block; strip trailing "**".
     let explanation: string | undefined;
-    const expMatch = trimmed.match(/\*\*Explanation:\s*([\s\S]+?)(\*\*|$)/i);
-    if (expMatch) explanation = expMatch[1].trim();
+    const expTag = "**Explanation:";
+    const expIdx = trimmed.indexOf(expTag);
+    if (expIdx !== -1) {
+      let expText = trimmed.slice(expIdx + expTag.length).trimStart();
+      if (expText.endsWith("**")) expText = expText.slice(0, -2);
+      explanation = expText.trim() || undefined;
+    }
 
     questions.push({ id: id++, question, options, correctAnswer, explanation });
   }
