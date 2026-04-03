@@ -624,6 +624,17 @@ body {
   position: relative;
 }
 
+/* ─── Streaming Cursor ───────────────────────────────────────────────────── */
+.streaming-cursor {
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  background: currentColor;
+  margin-left: 1px;
+  vertical-align: text-bottom;
+  animation: blink 1s step-end infinite;
+}
+
 /* ─── Typing Indicator ───────────────────────────────────────────────────── */
 .typing-dot {
   width: 8px;

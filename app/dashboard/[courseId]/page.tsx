@@ -13,9 +13,12 @@ import {
   getSavedStudyGuides,
   generateStudyGuide,
   deleteStudyGuide,
+  streamStudyGuide,
+  saveStudyGuide,
   generateQuiz,
   generateStudyPlan,
   chatWithCourse,
+  streamChat,
   Course,
   Material,
   ChatMessage,
@@ -136,6 +139,7 @@ export default function CoursePage({
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState("");
   const [chatLoading, setChatLoading] = useState(false);
+  const [chatStreaming, setChatStreaming] = useState(false);
   const chatBottomRef = useRef<HTMLDivElement>(null);
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -266,19 +270,35 @@ export default function CoursePage({
 
   async function handleChat(question: string) {
     if (!question.trim()) return;
-    const userMsg: ChatMessage = { role: "user", content: question };
-    setMessages((prev) => [...prev, userMsg]);
+    setMessages((prev) => [...prev, { role: "user", content: question }]);
     setChatInput("");
     setChatLoading(true);
 
     try {
-      const res = await chatWithCourse(courseId, question);
-      const answer = res.content || "No response received.";
-      setMessages((prev) => [...prev, { role: "assistant", content: answer }]);
+      let firstChunk = true;
+      for await (const chunk of streamChat(courseId, question)) {
+        if (firstChunk) {
+          firstChunk = false;
+          setChatLoading(false);
+          setChatStreaming(true);
+          setMessages((prev) => [...prev, { role: "assistant", content: chunk }]);
+        } else {
+          setMessages((prev) => {
+            const last = prev[prev.length - 1];
+            return [...prev.slice(0, -1), { ...last, content: last.content + chunk }];
+          });
+        }
+      }
+      if (firstChunk) {
+        // No chunks received — fall back to non-streaming
+        setChatLoading(false);
+        setMessages((prev) => [...prev, { role: "assistant", content: "No response received." }]);
+      }
     } catch (err: unknown) {
+      setChatLoading(false);
       addToast(err instanceof Error ? err.message : "Chat failed.", "error");
     } finally {
-      setChatLoading(false);
+      setChatStreaming(false);
     }
   }
 
@@ -498,6 +518,7 @@ export default function CoursePage({
           chatInput={chatInput}
           setChatInput={setChatInput}
           chatLoading={chatLoading}
+          chatStreaming={chatStreaming}
           onSend={handleChat}
           canChat={!hasNoMaterials}
           chatBottomRef={chatBottomRef}
@@ -930,6 +951,13 @@ function MaterialsTab({
 // STUDY GUIDE TAB
 // ─────────────────────────────────────────────────────────────────────────────
 
+type GuideStreamState = {
+  title: string;
+  content: string;
+  done: boolean;
+  saving: boolean;
+} | null;
+
 function StudyGuideTab({
   courseId,
   canGenerate,
@@ -943,10 +971,13 @@ function StudyGuideTab({
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [titleModalOpen, setTitleModalOpen] = useState(false);
   const [titleInput, setTitleInput] = useState("");
-  const [generating, setGenerating] = useState(false);
   const [guideError, setGuideError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [streamState, setStreamState] = useState<GuideStreamState>(null);
+
+  const isGenerating = streamState !== null && !streamState.done;
+  const showStreamPreview = streamState !== null;
 
   useEffect(() => {
     fetchGuides();
@@ -974,24 +1005,37 @@ function StudyGuideTab({
     const title = titleInput.trim();
     if (!title) return;
     setTitleModalOpen(false);
-    setGenerating(true);
     setGuideError("");
+    setStreamState({ title, content: "", done: false, saving: false });
+
     try {
-      const result = await generateStudyGuide(courseId, title);
-      const newGuide: StudyGuideSaved = {
-        id: result.content_id,
-        title,
-        content: result.content,
-        created_at: new Date().toISOString(),
-      };
-      setGuides((prev) => [newGuide, ...prev]);
-      setExpandedId(newGuide.id);
-      addToast("Study guide generated!", "success");
+      for await (const chunk of streamStudyGuide(courseId, title)) {
+        setStreamState((prev) => prev ? { ...prev, content: prev.content + chunk } : prev);
+      }
+      setStreamState((prev) => prev ? { ...prev, done: true } : prev);
     } catch (err: unknown) {
+      setStreamState(null);
       setGuideError(err instanceof Error ? err.message : "Failed to generate study guide.");
-    } finally {
-      setGenerating(false);
     }
+  }
+
+  async function handleSave() {
+    if (!streamState || !streamState.done) return;
+    setStreamState((prev) => prev ? { ...prev, saving: true } : prev);
+    try {
+      const saved = await saveStudyGuide(courseId, streamState.title, streamState.content);
+      setGuides((prev) => [saved, ...prev]);
+      setExpandedId(saved.id);
+      setStreamState(null);
+      addToast("Study guide saved!", "success");
+    } catch (err: unknown) {
+      setStreamState((prev) => prev ? { ...prev, saving: false } : prev);
+      addToast(err instanceof Error ? err.message : "Failed to save study guide.", "error");
+    }
+  }
+
+  function handleDiscard() {
+    setStreamState(null);
   }
 
   async function handleDelete(id: string) {
@@ -1025,7 +1069,7 @@ function StudyGuideTab({
           variant="primary"
           size="sm"
           onClick={openTitleModal}
-          disabled={generating || !canGenerate || atLimit}
+          disabled={isGenerating || !canGenerate || atLimit || showStreamPreview}
           title={atLimit ? "Delete a guide to generate a new one" : undefined}
           leftIcon={
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1044,11 +1088,64 @@ function StudyGuideTab({
         </div>
       )}
 
-      {/* Generating progress */}
-      {generating && <AiLoadingProgress type="study-guide" />}
+      {/* Streaming preview */}
+      {showStreamPreview && streamState && (
+        <div className="mb-5 bg-white rounded-2xl border border-violet-200 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-slate-900 truncate">{streamState.title}</p>
+              <p className="text-xs text-violet-500 font-medium">
+                {isGenerating ? "Generating…" : "Ready to save"}
+              </p>
+            </div>
+            {streamState.done && (
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleDiscard}
+                  disabled={streamState.saving}
+                  className="px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
+                >
+                  Discard
+                </button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={streamState.saving}
+                  leftIcon={streamState.saving ? <Spinner size="sm" className="border-white/30 border-t-white" /> : undefined}
+                >
+                  {streamState.saving ? "Saving…" : "Save Guide"}
+                </Button>
+              </div>
+            )}
+          </div>
+          <div className="px-5 py-4 max-h-96 overflow-y-auto">
+            {streamState.content ? (
+              <div className="prose prose-sm prose-slate max-w-none">
+                <MarkdownWithMath content={streamState.content} className="text-sm leading-relaxed" />
+                {isGenerating && <span className="streaming-cursor" />}
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 text-slate-400 text-sm py-2">
+                <div className="flex gap-1">
+                  <div className="typing-dot" style={{ animationDelay: "0ms" }} />
+                  <div className="typing-dot" style={{ animationDelay: "160ms" }} />
+                  <div className="typing-dot" style={{ animationDelay: "320ms" }} />
+                </div>
+                <span>Generating your study guide…</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Skeleton loader */}
-      {!generating && loadingGuides && (
+      {!showStreamPreview && loadingGuides && (
         <div className="space-y-3">
           {[...Array(2)].map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-2xl" />
@@ -1057,7 +1154,7 @@ function StudyGuideTab({
       )}
 
       {/* Guide list */}
-      {!generating && !loadingGuides && (
+      {!showStreamPreview && !loadingGuides && (
         guides.length === 0 ? (
           <EmptyState
             icon={
@@ -1802,12 +1899,13 @@ const SUGGESTED_QUESTIONS = [
 ];
 
 function ChatTab({
-  messages, chatInput, setChatInput, chatLoading, onSend, canChat, chatBottomRef, chatInputRef,
+  messages, chatInput, setChatInput, chatLoading, chatStreaming, onSend, canChat, chatBottomRef, chatInputRef,
 }: {
   messages: ChatMessage[];
   chatInput: string;
   setChatInput: (v: string) => void;
   chatLoading: boolean;
+  chatStreaming: boolean;
   onSend: (q: string) => void;
   canChat: boolean;
   chatBottomRef: React.RefObject<HTMLDivElement | null>;
@@ -1869,40 +1967,46 @@ function ChatTab({
           </div>
         )}
 
-        {messages.map((msg, i) => (
-          <div
-            key={i}
-            className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}
-          >
-            {msg.role === "assistant" && (
-              <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
-                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                </svg>
-              </div>
-            )}
+        {messages.map((msg, i) => {
+          const isLastAssistant = chatStreaming && i === messages.length - 1 && msg.role === "assistant";
+          return (
             <div
-              className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                msg.role === "user"
-                  ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-br-sm"
-                  : "bg-white border border-slate-100 text-slate-800 rounded-bl-sm chat-markdown"
-              }`}
+              key={i}
+              className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}
             >
-              {msg.role === "assistant" ? (
-                <MarkdownWithMath content={msg.content} className="text-sm leading-relaxed" />
-              ) : (
-                msg.content
+              {msg.role === "assistant" && (
+                <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0 mt-0.5 shadow-sm">
+                  <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+                  </svg>
+                </div>
+              )}
+              <div
+                className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                  msg.role === "user"
+                    ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-br-sm"
+                    : "bg-white border border-slate-100 text-slate-800 rounded-bl-sm chat-markdown"
+                }`}
+              >
+                {msg.role === "assistant" ? (
+                  <>
+                    <MarkdownWithMath content={msg.content} className="text-sm leading-relaxed" />
+                    {isLastAssistant && <span className="streaming-cursor" />}
+                  </>
+                ) : (
+                  msg.content
+                )}
+              </div>
+              {msg.role === "user" && (
+                <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-violet-600 font-semibold text-xs">
+                  You
+                </div>
               )}
             </div>
-            {msg.role === "user" && (
-              <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-violet-600 font-semibold text-xs">
-                You
-              </div>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
-        {/* Typing indicator */}
+        {/* Typing indicator — only while waiting for first chunk */}
         {chatLoading && (
           <div className="flex gap-3 justify-start animate-fade-in">
             <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0 shadow-sm">
@@ -1932,7 +2036,7 @@ function ChatTab({
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleKeyDown}
               placeholder={canChat ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Upload materials to start chatting"}
-              disabled={chatLoading || !canChat}
+              disabled={chatLoading || chatStreaming || !canChat}
               rows={1}
               className={`w-full px-4 py-3 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all resize-none max-h-32 disabled:bg-slate-50 disabled:text-slate-400 ${chatLoading ? "border-slate-200" : "border-slate-200"}`}
               style={{ lineHeight: 1.5 }}
@@ -1940,7 +2044,7 @@ function ChatTab({
           </div>
           <button
             onClick={() => onSend(chatInput)}
-            disabled={chatLoading || !chatInput.trim() || !canChat}
+            disabled={chatLoading || chatStreaming || !chatInput.trim() || !canChat}
             className="btn-gradient btn-press flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {chatLoading ? (

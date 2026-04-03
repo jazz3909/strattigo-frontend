@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { InlineMath, BlockMath } from "react-katex";
+import katex from "katex";
 import "katex/dist/katex.min.css";
 
 // Split content into segments: math (inline/block) vs plain text
@@ -49,62 +49,41 @@ function renderMarkdown(text: string): string {
     .replace(/^(\d+)\. (.+)$/gm, "<ol><li>$2</li></ol>");
 }
 
-function MathFallback({ formula }: { formula: string }) {
-  return <code className="text-xs text-slate-500">{formula}</code>;
+function renderKatex(formula: string, displayMode: boolean): string {
+  try {
+    return katex.renderToString(formula, {
+      displayMode,
+      throwOnError: false,
+      // output: 'html' prevents MathML from being emitted alongside the HTML.
+      // Without this, KaTeX 0.16 defaults to 'htmlAndMathml', and browsers
+      // without native MathML support render the MathML as raw text (e.g.
+      // "x ˉ") alongside the HTML output, causing visible duplication.
+      output: "html",
+      strict: false,
+    });
+  } catch (e) {
+    console.error("[KaTeX] render error for formula:", formula, e);
+    return `<code>${formula}</code>`;
+  }
 }
 
 function RenderSegment({ seg }: { seg: Segment }) {
   if (seg.type === "block-math") {
+    const html = renderKatex(seg.value, true);
     return (
-      <div className="my-2">
-        <React.Suspense fallback={<MathFallback formula={seg.value} />}>
-          <BlockMathSafe formula={seg.value} />
-        </React.Suspense>
-      </div>
+      <div
+        className="my-2 overflow-x-auto"
+        dangerouslySetInnerHTML={{ __html: html }}
+      />
     );
   }
   if (seg.type === "inline-math") {
-    return (
-      <React.Suspense fallback={<MathFallback formula={seg.value} />}>
-        <InlineMathSafe formula={seg.value} />
-      </React.Suspense>
-    );
+    const html = renderKatex(seg.value, false);
+    return <span dangerouslySetInnerHTML={{ __html: html }} />;
   }
   // Plain text segment — render with markdown
   return (
     <span dangerouslySetInnerHTML={{ __html: renderMarkdown(seg.value) }} />
-  );
-}
-
-class MathErrorBoundary extends React.Component<
-  { formula: string; block: boolean; children: React.ReactNode },
-  { failed: boolean }
-> {
-  state = { failed: false };
-  static getDerivedStateFromError() {
-    return { failed: true };
-  }
-  render() {
-    if (this.state.failed) {
-      return <MathFallback formula={this.props.formula} />;
-    }
-    return this.props.children;
-  }
-}
-
-function BlockMathSafe({ formula }: { formula: string }) {
-  return (
-    <MathErrorBoundary formula={formula} block>
-      <BlockMath math={formula} />
-    </MathErrorBoundary>
-  );
-}
-
-function InlineMathSafe({ formula }: { formula: string }) {
-  return (
-    <MathErrorBoundary formula={formula} block={false}>
-      <InlineMath math={formula} />
-    </MathErrorBoundary>
   );
 }
 

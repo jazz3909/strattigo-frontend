@@ -348,6 +348,85 @@ export async function chatWithCourse(
   return response;
 }
 
+async function* readSseStream(response: Response): AsyncGenerator<string> {
+  const reader = response.body!.getReader();
+  const decoder = new TextDecoder();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value);
+    const lines = chunk.split("\n");
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const data = line.slice(6);
+      if (data === "[DONE]") return;
+      let parsed: { chunk?: string; error?: string } | null = null;
+      try {
+        parsed = JSON.parse(data);
+      } catch {
+        continue;
+      }
+      if (parsed?.error) throw new Error(parsed.error);
+      if (parsed?.chunk) yield parsed.chunk;
+    }
+  }
+}
+
+export async function* streamStudyGuide(courseId: string, title: string): AsyncGenerator<string> {
+  const token = getToken();
+  const response = await fetch(`${API_BASE}/ai/study-guide/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ course_id: courseId, title }),
+  });
+
+  if (response.status === 401) {
+    clearToken();
+    if (typeof window !== "undefined") {
+      document.cookie = "strattigo_token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
+  yield* readSseStream(response);
+}
+
+export async function* streamChat(courseId: string, question: string): AsyncGenerator<string> {
+  const token = getToken();
+  const response = await fetch(`${API_BASE}/ai/chat/stream`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify({ course_id: courseId, question }),
+  });
+
+  if (response.status === 401) {
+    clearToken();
+    if (typeof window !== "undefined") {
+      document.cookie = "strattigo_token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
+  yield* readSseStream(response);
+}
+
+export async function saveStudyGuide(courseId: string, title: string, content: string): Promise<StudyGuideSaved> {
+  return apiPost<StudyGuideSaved>("/ai/study-guide/save", { course_id: courseId, title, content });
+}
+
 // Analytics
 export interface UsageStats {
   courses: number;
