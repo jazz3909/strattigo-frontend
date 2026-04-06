@@ -7,6 +7,7 @@ import { login, setToken, setUser } from "../lib/api";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../providers/ToastProvider";
+import { ThemeToggle } from "../components/ui/ThemeToggle";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -34,7 +35,6 @@ export default function LoginPage() {
       const msg = err instanceof Error ? err.message : "Login failed. Please try again.";
       setShake(true);
       setTimeout(() => setShake(false), 600);
-      // Show inline error
       setFieldErrors({ password: msg });
       addToast(msg, "error");
     } finally {
@@ -43,19 +43,20 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex">
+    <div className="min-h-screen flex" style={{ background: "var(--background)" }}>
+      {/* Theme toggle - top right */}
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
+
       {/* Left: Brand Panel */}
       <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12">
-        {/* Animated gradient background */}
         <div className="absolute inset-0 gradient-brand-animated" />
         <div className="absolute inset-0 dot-grid opacity-20" />
-
-        {/* Orbs */}
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl orb-1" />
-        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-blue-300/20 rounded-full blur-3xl orb-2" />
+        <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl orb-2" />
 
         <div className="relative z-10 max-w-sm text-center text-white">
-          {/* Logo */}
           <Link href="/" className="inline-flex items-center gap-3 mb-10 group">
             <div className="w-10 h-10 rounded-2xl bg-white/20 backdrop-blur-sm border border-white/30 flex items-center justify-center group-hover:bg-white/30 transition-colors">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -72,28 +73,17 @@ export default function LoginPage() {
             Join 500+ students who study smarter with AI-generated study guides, quizzes, and personalized study plans.
           </p>
 
-          {/* Feature highlights */}
           <div className="space-y-3 text-left">
             {[
-              {
-                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" /></svg>,
-                text: "AI study guides from your notes",
-              },
-              {
-                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
-                text: "Practice quizzes on demand",
-              },
-              {
-                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-                text: "Personalized study schedules",
-              },
-              {
-                icon: <svg className="w-4 h-4 text-white/80" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>,
-                text: "Chat with your course materials",
-              },
+              { text: "AI study guides from your notes" },
+              { text: "Practice quizzes on demand" },
+              { text: "Personalized study schedules" },
+              { text: "Chat with your course materials" },
             ].map((item) => (
               <div key={item.text} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
-                <span className="flex-shrink-0">{item.icon}</span>
+                <svg className="w-4 h-4 text-white/80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
                 <span className="text-sm font-medium text-white/90">{item.text}</span>
               </div>
             ))}
@@ -102,12 +92,9 @@ export default function LoginPage() {
       </div>
 
       {/* Right: Form Panel */}
-      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-12 bg-white">
+      <div className="flex-1 flex flex-col items-center justify-center px-4 sm:px-8 py-12" style={{ background: "var(--surface)" }}>
         {/* Mobile logo */}
-        <Link
-          href="/"
-          className="lg:hidden flex items-center gap-2.5 mb-8"
-        >
+        <Link href="/" className="lg:hidden flex items-center gap-2.5 mb-8">
           <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center">
             <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
@@ -117,10 +104,9 @@ export default function LoginPage() {
         </Link>
 
         <div className={`w-full max-w-[400px] ${shake ? "animate-shake" : ""}`}>
-          {/* Header */}
           <div className="mb-8">
-            <h1 className="text-2xl font-extrabold text-slate-900 mb-1.5">Welcome back</h1>
-            <p className="text-slate-500 text-sm">Sign in to continue studying</p>
+            <h1 className="text-2xl font-extrabold mb-1.5" style={{ color: "var(--text-primary)" }}>Welcome back</h1>
+            <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Sign in to continue studying</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-4" noValidate>
@@ -141,9 +127,9 @@ export default function LoginPage() {
             />
 
             <div className="space-y-1.5">
-              <label className="block text-sm font-medium text-slate-700">Password</label>
+              <label className="block text-sm font-medium" style={{ color: "var(--text-primary)" }}>Password</label>
               <div className="relative">
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--text-tertiary)" }}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
                   </svg>
@@ -155,16 +141,28 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="Your password"
-                  className={`w-full pl-10 pr-12 py-3 text-sm border rounded-xl outline-none transition-all duration-150 ${
-                    fieldErrors.password
-                      ? "border-red-400 bg-red-50/50 focus:ring-2 focus:ring-red-400/40"
-                      : "border-slate-200 bg-white focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500"
-                  }`}
+                  className="w-full pl-10 pr-12 py-3 text-sm border rounded-xl outline-none transition-all duration-150"
+                  style={{
+                    background: "var(--surface-2)",
+                    borderColor: fieldErrors.password ? "var(--danger)" : "var(--border)",
+                    color: "var(--text-primary)",
+                  }}
+                  onFocus={(e) => {
+                    if (!fieldErrors.password) {
+                      e.currentTarget.style.borderColor = "var(--accent)";
+                      e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-dim)";
+                    }
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = fieldErrors.password ? "var(--danger)" : "var(--border)";
+                    e.currentTarget.style.boxShadow = "";
+                  }}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword((s) => !s)}
-                  className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
+                  className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors p-0.5 cursor-pointer"
+                  style={{ color: "var(--text-tertiary)" }}
                   tabIndex={-1}
                 >
                   {showPassword ? (
@@ -180,7 +178,7 @@ export default function LoginPage() {
                 </button>
               </div>
               {fieldErrors.password && (
-                <p className="text-xs text-red-600 flex items-center gap-1 mt-1">
+                <p className="text-xs flex items-center gap-1 mt-1" style={{ color: "var(--danger)" }}>
                   <svg className="w-3.5 h-3.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                   </svg>
@@ -189,28 +187,22 @@ export default function LoginPage() {
               )}
             </div>
 
-            <Button
-              type="submit"
-              variant="primary"
-              size="lg"
-              fullWidth
-              loading={loading}
-            >
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
               Sign in
             </Button>
           </form>
 
-          <p className="text-center mt-6 text-sm text-slate-500">
+          <p className="text-center mt-6 text-sm" style={{ color: "var(--text-secondary)" }}>
             Don&apos;t have an account?{" "}
-            <Link href="/signup" className="font-semibold text-violet-600 hover:text-violet-700 transition-colors">
+            <Link href="/signup" className="font-semibold transition-colors" style={{ color: "var(--accent)" }}>
               Sign up for free
             </Link>
           </p>
 
-          <p className="text-center mt-8 text-xs text-slate-400">
+          <p className="text-center mt-8 text-xs" style={{ color: "var(--text-tertiary)" }}>
             By continuing, you agree to our{" "}
-            <a href="#" className="underline hover:text-slate-600">Terms</a> and{" "}
-            <a href="#" className="underline hover:text-slate-600">Privacy Policy</a>.
+            <a href="#" className="underline" style={{ color: "var(--text-tertiary)" }}>Terms</a> and{" "}
+            <a href="#" className="underline" style={{ color: "var(--text-tertiary)" }}>Privacy Policy</a>.
           </p>
         </div>
       </div>

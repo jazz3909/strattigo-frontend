@@ -7,7 +7,6 @@ interface Feature {
   icon: React.ReactNode;
   title: string;
   description: string;
-  color: string;
   bgColor: string;
 }
 
@@ -21,7 +20,6 @@ const features: Feature[] = [
     title: "AI Study Guides",
     description:
       "Upload your notes, slides, or textbooks and get a beautifully structured study guide in seconds — with key concepts, definitions, and explanations.",
-    color: "text-violet-600",
     bgColor: "from-violet-500 to-purple-600",
   },
   {
@@ -33,7 +31,6 @@ const features: Feature[] = [
     title: "Practice Quizzes",
     description:
       "Test your knowledge with AI-generated multiple choice questions tailored exactly to your course materials. Get instant feedback on every answer.",
-    color: "text-blue-600",
     bgColor: "from-blue-500 to-indigo-600",
   },
   {
@@ -45,7 +42,6 @@ const features: Feature[] = [
     title: "Chat with Materials",
     description:
       "Ask any question about your readings and get instant, context-aware answers backed by your uploaded documents.",
-    color: "text-emerald-600",
     bgColor: "from-emerald-500 to-teal-600",
   },
   {
@@ -57,7 +53,6 @@ const features: Feature[] = [
     title: "Smart Study Plans",
     description:
       "Tell us your exam date. Strattigo builds a personalized, day-by-day study schedule optimized for your course content.",
-    color: "text-pink-600",
     bgColor: "from-pink-500 to-rose-600",
   },
   {
@@ -69,7 +64,6 @@ const features: Feature[] = [
     title: "Canvas Integration",
     description:
       "Connect your Canvas LMS account and automatically import course materials — no manual uploading required.",
-    color: "text-amber-600",
     bgColor: "from-amber-500 to-orange-600",
   },
   {
@@ -81,7 +75,6 @@ const features: Feature[] = [
     title: "Instant Results",
     description:
       "No waiting. Get your study guide, quiz, or plan generated in seconds. Works with PDFs, PowerPoints, Word docs, and plain text.",
-    color: "text-cyan-600",
     bgColor: "from-cyan-500 to-blue-600",
   },
 ];
@@ -92,11 +85,14 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`group bg-white rounded-2xl border border-slate-100 p-6 cursor-default
-        transition-all duration-500 hover:-translate-y-1 hover:shadow-lg hover:border-violet-100
-        ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}
-      `}
-      style={{ transitionDelay: `${index * 80}ms` }}
+      className={`group rounded-2xl p-6 cursor-default transition-all duration-500 hover:-translate-y-1 hover:shadow-lg ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+      style={{
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        transitionDelay: `${index * 80}ms`,
+      }}
+      onMouseEnter={(e) => { e.currentTarget.style.borderColor = "var(--accent-dim)"; }}
+      onMouseLeave={(e) => { e.currentTarget.style.borderColor = "var(--border)"; }}
     >
       {/* Icon */}
       <div className={`inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br ${feature.bgColor} shadow-sm mb-5`}>
@@ -104,10 +100,10 @@ function FeatureCard({ feature, index }: { feature: Feature; index: number }) {
       </div>
 
       {/* Content */}
-      <h3 className="text-base font-bold text-slate-900 mb-2.5 group-hover:text-violet-700 transition-colors">
+      <h3 className="text-base font-bold mb-2.5 transition-colors" style={{ color: "var(--text-primary)" }}>
         {feature.title}
       </h3>
-      <p className="text-sm text-slate-500 leading-relaxed">{feature.description}</p>
+      <p className="text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>{feature.description}</p>
     </div>
   );
 }
@@ -116,20 +112,23 @@ export function FeaturesGrid() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   return (
-    <section id="features" className="py-24 px-4 sm:px-6 bg-slate-50/50">
+    <section id="features" className="py-24 px-4 sm:px-6" style={{ background: "var(--background)" }}>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
           className={`text-center mb-16 transition-all duration-600 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
         >
-          <div className="inline-flex items-center gap-2 bg-violet-100 text-violet-700 text-sm font-semibold px-4 py-2 rounded-full mb-5">
+          <div
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full mb-5"
+            style={{ background: "var(--accent-dim)", color: "var(--accent)" }}
+          >
             Everything you need
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4 leading-tight">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4 leading-tight" style={{ color: "var(--text-primary)" }}>
             Your complete AI study toolkit
           </h2>
-          <p className="text-lg text-slate-500 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-lg max-w-2xl mx-auto leading-relaxed" style={{ color: "var(--text-secondary)" }}>
             Strattigo turns your course materials into powerful study tools with a single click.
             Upload once, study smarter for the whole semester.
           </p>

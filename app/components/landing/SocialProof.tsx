@@ -63,11 +63,11 @@ export function SocialProof() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   return (
-    <section className="py-24 px-4 sm:px-6 bg-gradient-to-br from-slate-900 via-violet-950 to-slate-900 overflow-hidden relative">
+    <section className="py-24 px-4 sm:px-6 overflow-hidden relative" style={{ background: "var(--surface-2)" }}>
       {/* Background decoration */}
       <div className="absolute inset-0 dot-grid opacity-10 pointer-events-none" />
-      <div className="absolute top-0 left-1/4 w-80 h-80 bg-violet-600/20 rounded-full blur-3xl pointer-events-none" />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-blue-600/20 rounded-full blur-3xl pointer-events-none" />
+      <div className="absolute top-0 left-1/4 w-80 h-80 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(255,176,117,0.08)" }} />
+      <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full blur-3xl pointer-events-none" style={{ background: "rgba(255,176,117,0.05)" }} />
 
       <div className="relative max-w-6xl mx-auto">
         {/* Header */}
@@ -75,13 +75,16 @@ export function SocialProof() {
           ref={ref as React.RefObject<HTMLDivElement>}
           className={`text-center mb-16 transition-all duration-600 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
         >
-          <div className="inline-flex items-center gap-2 bg-white/10 text-white/80 text-sm font-semibold px-4 py-2 rounded-full mb-5 border border-white/20">
+          <div
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full mb-5 border"
+            style={{ background: "var(--accent-dim)", borderColor: "var(--accent-dim)", color: "var(--accent)" }}
+          >
             Trusted by students
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-white mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: "var(--text-primary)" }}>
             Join 500+ Florida students
           </h2>
-          <p className="text-lg text-white/60 max-w-xl mx-auto">
+          <p className="text-lg max-w-xl mx-auto" style={{ color: "var(--text-secondary)" }}>
             Students across Florida are using Strattigo to study smarter, not harder.
           </p>
         </div>
@@ -91,15 +94,19 @@ export function SocialProof() {
           {stats.map((stat, i) => (
             <div
               key={stat.label}
-              className={`text-center p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm transition-all duration-500 ${
+              className={`text-center p-6 rounded-2xl transition-all duration-500 ${
                 inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
-              style={{ transitionDelay: `${i * 100}ms` }}
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                transitionDelay: `${i * 100}ms`,
+              }}
             >
-              <div className="text-3xl sm:text-4xl font-extrabold text-white mb-2">
+              <div className="text-3xl sm:text-4xl font-extrabold mb-2" style={{ color: "var(--accent)" }}>
                 <AnimatedCounter target={stat.value} suffix={stat.suffix} />
               </div>
-              <p className="text-sm text-white/50">{stat.label}</p>
+              <p className="text-sm" style={{ color: "var(--text-secondary)" }}>{stat.label}</p>
             </div>
           ))}
         </div>
@@ -109,10 +116,14 @@ export function SocialProof() {
           {testimonials.map((t, i) => (
             <div
               key={t.author}
-              className={`p-6 bg-white/5 border border-white/10 rounded-2xl backdrop-blur-sm transition-all duration-500 ${
+              className={`p-6 rounded-2xl transition-all duration-500 ${
                 inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"
               }`}
-              style={{ transitionDelay: `${400 + i * 100}ms` }}
+              style={{
+                background: "var(--surface)",
+                border: "1px solid var(--border)",
+                transitionDelay: `${400 + i * 100}ms`,
+              }}
             >
               {/* Stars */}
               <div className="flex gap-1 mb-4">
@@ -123,7 +134,7 @@ export function SocialProof() {
                 ))}
               </div>
 
-              <p className="text-sm text-white/80 leading-relaxed mb-5 italic">
+              <p className="text-sm leading-relaxed mb-5 italic" style={{ color: "var(--text-secondary)" }}>
                 &ldquo;{t.text}&rdquo;
               </p>
 
@@ -132,8 +143,8 @@ export function SocialProof() {
                   {t.author[0]}
                 </div>
                 <div>
-                  <p className="text-sm font-semibold text-white">{t.author}</p>
-                  <p className="text-xs text-white/40">{t.role}</p>
+                  <p className="text-sm font-semibold" style={{ color: "var(--text-primary)" }}>{t.author}</p>
+                  <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>{t.role}</p>
                 </div>
               </div>
             </div>

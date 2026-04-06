@@ -63,13 +63,11 @@ export default function CanvasSettingsPage() {
   async function loadSettings() {
     try {
       const data = await getCanvasAssignments<Assignment[] | { assignments?: Assignment[] }>();
-      // If we got data back (not an error), Canvas is connected
       const list = Array.isArray(data) ? data : (data as { assignments?: Assignment[] }).assignments ?? [];
       setAssignments(list);
       setIsConnected(true);
       fetchGrades();
     } catch {
-      // 404 or any error means not connected — show the form
       setIsConnected(false);
     } finally {
       setLoading(false);
@@ -96,7 +94,6 @@ export default function CanvasSettingsPage() {
       await canvasConnect(domain.trim(), token.trim());
       setIsConnected(true);
       addToast("Canvas connected successfully!", "success");
-      // Load data now that we're connected
       setLoading(true);
       await loadSettings();
     } catch (err: unknown) {
@@ -128,7 +125,8 @@ export default function CanvasSettingsPage() {
       {/* Back button */}
       <Link
         href="/dashboard"
-        className="inline-flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-medium mb-6 transition-colors group"
+        className="inline-flex items-center gap-2 text-sm font-medium mb-6 transition-colors group"
+        style={{ color: "var(--text-secondary)" }}
       >
         <svg className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -146,14 +144,14 @@ export default function CanvasSettingsPage() {
         </div>
         <div>
           <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-extrabold text-slate-900">Canvas LMS</h1>
+            <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>Canvas LMS</h1>
             {!loading && (
               <Badge variant={isConnected ? "green" : "gray"} dot>
                 {isConnected ? "Connected" : "Not connected"}
               </Badge>
             )}
           </div>
-          <p className="text-sm text-slate-500">
+          <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
             Connect your Canvas account to automatically import course materials.
           </p>
         </div>
@@ -172,53 +170,56 @@ export default function CanvasSettingsPage() {
       ) : isConnected ? (
         <>
           {/* Connected status bar */}
-          <div className="mb-6 flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4">
-            <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center flex-shrink-0">
-              <svg className="w-5 h-5 text-emerald-600" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+          <div
+            className="mb-6 flex items-center gap-3 rounded-2xl px-5 py-4 border"
+            style={{ background: "var(--color-success-bg)", borderColor: "var(--color-success-border)" }}
+          >
+            <div
+              className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
+              style={{ background: "var(--color-success-bg)" }}
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24" style={{ color: "var(--success)" }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-emerald-800">Canvas is connected</p>
-              <p className="text-xs text-emerald-600">Your assignments and grades are synced below.</p>
+              <p className="text-sm font-semibold" style={{ color: "var(--success)" }}>Canvas is connected</p>
+              <p className="text-xs" style={{ color: "var(--text-secondary)" }}>Your assignments and grades are synced below.</p>
             </div>
-            <Button
-              variant="danger"
-              size="sm"
-              onClick={handleDisconnect}
-              loading={saving}
-            >
+            <Button variant="danger" size="sm" onClick={handleDisconnect} loading={saving}>
               Disconnect
             </Button>
           </div>
 
           {/* Assignments */}
           <Card className="mb-5">
-            <h2 className="text-base font-bold text-slate-800 mb-4">Assignments</h2>
+            <h2 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>Assignments</h2>
             {dataLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-14 w-full rounded-xl" />)}
               </div>
             ) : assignments.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">No assignments found.</p>
+              <p className="text-sm text-center py-6" style={{ color: "var(--text-tertiary)" }}>No assignments found.</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul style={{ borderTop: "1px solid var(--border)" }}>
                 {assignments.map((a, i) => {
                   const name = a.name || a.title || "Untitled";
                   const due = a.due_at || a.due_date;
                   const dueLabel = due ? new Date(due).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }) : null;
                   const points = a.points_possible != null ? `${a.points_possible} pts` : null;
                   return (
-                    <li key={a.id ?? i} className="flex items-start justify-between gap-4 py-3">
+                    <li key={a.id ?? i} className="flex items-start justify-between gap-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
                       <div className="min-w-0">
-                        <p className="text-sm font-medium text-slate-800 truncate">{name}</p>
+                        <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{name}</p>
                         {a.course_name && (
-                          <p className="text-xs text-slate-400">{a.course_name}</p>
+                          <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>{a.course_name}</p>
                         )}
                       </div>
-                      <div className="flex items-center gap-2 flex-shrink-0 text-xs text-slate-500">
+                      <div className="flex items-center gap-2 flex-shrink-0 text-xs" style={{ color: "var(--text-secondary)" }}>
                         {dueLabel && <span>Due {dueLabel}</span>}
-                        {points && <span className="bg-slate-100 rounded-lg px-2 py-0.5 font-medium">{points}</span>}
+                        {points && (
+                          <span className="rounded-lg px-2 py-0.5 font-medium" style={{ background: "var(--surface-2)" }}>{points}</span>
+                        )}
                       </div>
                     </li>
                   );
@@ -229,27 +230,30 @@ export default function CanvasSettingsPage() {
 
           {/* Grades */}
           <Card>
-            <h2 className="text-base font-bold text-slate-800 mb-4">Grades</h2>
+            <h2 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>Grades</h2>
             {dataLoading ? (
               <div className="space-y-3">
                 {[1, 2, 3].map((i) => <Skeleton key={i} className="h-12 w-full rounded-xl" />)}
               </div>
             ) : grades.length === 0 ? (
-              <p className="text-sm text-slate-400 text-center py-6">No grades found.</p>
+              <p className="text-sm text-center py-6" style={{ color: "var(--text-tertiary)" }}>No grades found.</p>
             ) : (
-              <ul className="divide-y divide-slate-100">
+              <ul style={{ borderTop: "1px solid var(--border)" }}>
                 {grades.map((g, i) => {
                   const course = g.course_name || g.course || "Unknown course";
                   const grade = g.final_grade || g.current_grade || g.grade || (g.score != null ? String(g.score) : null);
                   return (
-                    <li key={g.id ?? i} className="flex items-center justify-between gap-4 py-3">
-                      <p className="text-sm font-medium text-slate-800 truncate">{course}</p>
+                    <li key={g.id ?? i} className="flex items-center justify-between gap-4 py-3" style={{ borderBottom: "1px solid var(--border)" }}>
+                      <p className="text-sm font-medium truncate" style={{ color: "var(--text-primary)" }}>{course}</p>
                       {grade ? (
-                        <span className="flex-shrink-0 text-sm font-bold text-violet-700 bg-violet-50 border border-violet-100 rounded-lg px-3 py-0.5">
+                        <span
+                          className="flex-shrink-0 text-sm font-bold rounded-lg px-3 py-0.5 border"
+                          style={{ color: "var(--accent)", background: "var(--accent-dim)", borderColor: "var(--accent-dim)" }}
+                        >
                           {grade}
                         </span>
                       ) : (
-                        <span className="flex-shrink-0 text-xs text-slate-400">—</span>
+                        <span className="flex-shrink-0 text-xs" style={{ color: "var(--text-tertiary)" }}>—</span>
                       )}
                     </li>
                   );
@@ -279,11 +283,11 @@ export default function CanvasSettingsPage() {
               />
 
               <div className="space-y-1.5">
-                <label htmlFor="canvas-token" className="block text-sm font-medium text-slate-700">
+                <label htmlFor="canvas-token" className="block text-sm font-medium" style={{ color: "var(--text-primary)" }}>
                   API Token
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
+                  <span className="absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" style={{ color: "var(--text-tertiary)" }}>
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 5.25a3 3 0 013 3m3 0a6 6 0 01-7.029 5.912c-.563-.097-1.159.026-1.563.43L10.5 17.25H8.25v2.25H6v2.25H2.25v-2.818c0-.597.237-1.17.659-1.591l6.499-6.499c.404-.404.527-1 .43-1.563A6 6 0 1121.75 8.25z" />
                     </svg>
@@ -294,12 +298,26 @@ export default function CanvasSettingsPage() {
                     value={token}
                     onChange={(e) => setToken2(e.target.value)}
                     placeholder="Your Canvas API token"
-                    className="w-full pl-10 pr-12 py-3 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all placeholder-slate-400"
+                    className="w-full pl-10 pr-12 py-3 text-sm border rounded-xl outline-none transition-all"
+                    style={{
+                      background: "var(--surface-2)",
+                      borderColor: "var(--border)",
+                      color: "var(--text-primary)",
+                    }}
+                    onFocus={(e) => {
+                      e.currentTarget.style.borderColor = "var(--accent)";
+                      e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-dim)";
+                    }}
+                    onBlur={(e) => {
+                      e.currentTarget.style.borderColor = "var(--border)";
+                      e.currentTarget.style.boxShadow = "";
+                    }}
                   />
                   <button
                     type="button"
                     onClick={() => setShowToken((s) => !s)}
-                    className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 transition-colors p-0.5"
+                    className="absolute right-3.5 top-1/2 -translate-y-1/2 transition-colors p-0.5 cursor-pointer"
+                    style={{ color: "var(--text-tertiary)" }}
                     tabIndex={-1}
                   >
                     {showToken ? (
@@ -313,7 +331,7 @@ export default function CanvasSettingsPage() {
                     )}
                   </button>
                 </div>
-                <p className="text-xs text-slate-400">Generate in Canvas → Account → Settings → New Access Token</p>
+                <p className="text-xs" style={{ color: "var(--text-tertiary)" }}>Generate in Canvas → Account → Settings → New Access Token</p>
               </div>
 
               <div className="flex gap-3 pt-1">
@@ -336,22 +354,25 @@ export default function CanvasSettingsPage() {
           </Card>
 
           {/* Info card */}
-          <div className="mt-5 bg-blue-50 border border-blue-100 rounded-2xl p-5">
+          <div
+            className="mt-5 rounded-2xl p-5 border"
+            style={{ background: "var(--color-info-bg)", borderColor: "var(--color-info-border)" }}
+          >
             <div className="flex items-start gap-3 mb-3">
-              <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <svg className="w-5 h-5 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: "var(--color-info)" }}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
               </svg>
               <div>
-                <h3 className="text-sm font-bold text-blue-900 mb-1">What Canvas integration does</h3>
-                <p className="text-xs text-blue-700 leading-relaxed">
-                  Connecting Canvas allows Strattigo to automatically import your course materials, so you don't have to upload them manually.
+                <h3 className="text-sm font-bold mb-1" style={{ color: "var(--text-primary)" }}>What Canvas integration does</h3>
+                <p className="text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+                  Connecting Canvas allows Strattigo to automatically import your course materials, so you don&apos;t have to upload them manually.
                 </p>
               </div>
             </div>
 
             <div className="mt-3">
-              <p className="text-xs font-bold text-blue-800 mb-2">How to get your Canvas API token:</p>
-              <ol className="text-xs text-blue-700 space-y-1.5 list-none">
+              <p className="text-xs font-bold mb-2" style={{ color: "var(--text-primary)" }}>How to get your Canvas API token:</p>
+              <ol className="text-xs space-y-1.5 list-none" style={{ color: "var(--text-secondary)" }}>
                 {[
                   "Log in to your Canvas account",
                   "Click your avatar (top-left) → Account → Settings",
@@ -360,7 +381,10 @@ export default function CanvasSettingsPage() {
                   'Enter "Strattigo" as purpose and click Generate',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="flex-shrink-0 w-4 h-4 rounded-full bg-blue-200 text-blue-700 text-[10px] font-bold flex items-center justify-center mt-0.5">
+                    <span
+                      className="flex-shrink-0 w-4 h-4 rounded-full text-[10px] font-bold flex items-center justify-center mt-0.5"
+                      style={{ background: "var(--accent-dim)", color: "var(--accent)" }}
+                    >
                       {i + 1}
                     </span>
                     {step}

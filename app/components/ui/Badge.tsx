@@ -13,25 +13,39 @@ interface BadgeProps {
   className?: string;
 }
 
-const variantStyles: Record<BadgeVariant, string> = {
-  purple: "bg-violet-100 text-violet-700 border-violet-200",
-  blue: "bg-blue-100 text-blue-700 border-blue-200",
-  green: "bg-emerald-100 text-emerald-700 border-emerald-200",
-  red: "bg-red-100 text-red-700 border-red-200",
-  amber: "bg-amber-100 text-amber-700 border-amber-200",
-  gray: "bg-slate-100 text-slate-600 border-slate-200",
-  pink: "bg-pink-100 text-pink-700 border-pink-200",
-};
+function getBadgeStyle(variant: BadgeVariant): React.CSSProperties {
+  switch (variant) {
+    case "purple":
+      return { background: "var(--accent-dim)", color: "var(--accent)", borderColor: "var(--accent-dim)" };
+    case "blue":
+      return { background: "rgba(96,165,250,0.1)", color: "#60a5fa", borderColor: "rgba(96,165,250,0.2)" };
+    case "green":
+      return { background: "rgba(16,185,129,0.1)", color: "var(--success)", borderColor: "rgba(16,185,129,0.2)" };
+    case "red":
+      return { background: "rgba(239,68,68,0.1)", color: "var(--danger)", borderColor: "rgba(239,68,68,0.2)" };
+    case "amber":
+      return { background: "rgba(251,191,36,0.1)", color: "#fbbf24", borderColor: "rgba(251,191,36,0.2)" };
+    case "gray":
+      return { background: "var(--surface-2)", color: "var(--text-secondary)", borderColor: "var(--border)" };
+    case "pink":
+      return { background: "rgba(236,72,153,0.1)", color: "#ec4899", borderColor: "rgba(236,72,153,0.2)" };
+    default:
+      return { background: "var(--surface-2)", color: "var(--text-secondary)", borderColor: "var(--border)" };
+  }
+}
 
-const dotColors: Record<BadgeVariant, string> = {
-  purple: "bg-violet-500",
-  blue: "bg-blue-500",
-  green: "bg-emerald-500",
-  red: "bg-red-500",
-  amber: "bg-amber-500",
-  gray: "bg-slate-400",
-  pink: "bg-pink-500",
-};
+function getDotColor(variant: BadgeVariant): string {
+  switch (variant) {
+    case "purple": return "var(--accent)";
+    case "blue": return "#60a5fa";
+    case "green": return "var(--success)";
+    case "red": return "var(--danger)";
+    case "amber": return "#fbbf24";
+    case "gray": return "var(--text-tertiary)";
+    case "pink": return "#ec4899";
+    default: return "var(--text-tertiary)";
+  }
+}
 
 const sizeStyles: Record<BadgeSize, string> = {
   sm: "px-2 py-0.5 text-xs",
@@ -47,10 +61,14 @@ export function Badge({
 }: BadgeProps) {
   return (
     <span
-      className={`inline-flex items-center gap-1.5 font-medium rounded-full border ${variantStyles[variant]} ${sizeStyles[size]} ${className}`}
+      className={`inline-flex items-center gap-1.5 font-medium rounded-full border ${sizeStyles[size]} ${className}`}
+      style={getBadgeStyle(variant)}
     >
       {dot && (
-        <span className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${dotColors[variant]}`} />
+        <span
+          className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+          style={{ background: getDotColor(variant) }}
+        />
       )}
       {children}
     </span>

@@ -45,19 +45,22 @@ export function HowItWorks() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   return (
-    <section id="how-it-works" className="py-24 px-4 sm:px-6">
+    <section id="how-it-works" className="py-24 px-4 sm:px-6" style={{ background: "var(--surface)" }}>
       <div className="max-w-5xl mx-auto">
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
           className={`text-center mb-16 transition-all duration-600 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
         >
-          <div className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 text-sm font-semibold px-4 py-2 rounded-full mb-5">
+          <div
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full mb-5"
+            style={{ background: "var(--accent-dim)", color: "var(--accent)" }}
+          >
             Simple as 1-2-3
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: "var(--text-primary)" }}>
             Study smarter in 3 steps
           </h2>
-          <p className="text-lg text-slate-500 max-w-xl mx-auto">
+          <p className="text-lg max-w-xl mx-auto" style={{ color: "var(--text-secondary)" }}>
             From setup to studying in under two minutes. No learning curve required.
           </p>
         </div>
@@ -65,7 +68,7 @@ export function HowItWorks() {
         {/* Steps */}
         <div className="relative">
           {/* Connecting line (desktop) */}
-          <div className="hidden lg:block absolute top-12 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px bg-gradient-to-r from-violet-200 via-blue-200 to-emerald-200" />
+          <div className="hidden lg:block absolute top-12 left-[calc(16.67%+24px)] right-[calc(16.67%+24px)] h-px" style={{ background: "var(--border)" }} />
 
           <div className="grid lg:grid-cols-3 gap-8 lg:gap-6">
             {steps.map((step, i) => (
@@ -80,12 +83,12 @@ export function HowItWorks() {
                 </div>
 
                 {/* Step number badge */}
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-x-4 -translate-y-1 text-xs font-bold text-slate-400">
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 translate-x-4 -translate-y-1 text-xs font-bold" style={{ color: "var(--text-tertiary)" }}>
                   {step.number}
                 </div>
 
-                <h3 className="text-lg font-bold text-slate-900 mb-3">{step.title}</h3>
-                <p className="text-sm text-slate-500 leading-relaxed max-w-xs mx-auto">
+                <h3 className="text-lg font-bold mb-3" style={{ color: "var(--text-primary)" }}>{step.title}</h3>
+                <p className="text-sm leading-relaxed max-w-xs mx-auto" style={{ color: "var(--text-secondary)" }}>
                   {step.description}
                 </p>
               </div>

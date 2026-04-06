@@ -11,7 +11,17 @@
       "Bash(npm install:*)",
       "Bash(npm i:*)",
       "Bash(npx next:*)",
-      "Bash(wc:*)"
+      "Bash(wc:*)",
+      "Read(//root/**)",
+      "Bash(npx create-next-app@latest strattigo-v3 --typescript --tailwind --eslint --app --no-src-dir --import-alias \"@/*\" --yes)",
+      "Bash(fuser -k 3001/tcp)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3001/)",
+      "Bash(wait)",
+      "Bash(pkill -f \"next dev\")",
+      "Bash(echo \"Dev server starting on port 3001 \\(PID $!\\)\")",
+      "Bash(echo \"PID $!\")",
+      "Bash(curl -s http://localhost:3001)",
+      "Bash(PORT=3001 npm run dev)"
     ]
   }
 }

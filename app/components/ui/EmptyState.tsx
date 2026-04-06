@@ -24,19 +24,25 @@ export function EmptyState({
       {(icon || iconEmoji) && (
         <div className="mb-5">
           {iconEmoji ? (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-50 to-blue-50 border border-violet-100 flex items-center justify-center text-3xl shadow-sm">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm"
+              style={{ background: "var(--accent-dim)", border: "1px solid var(--border)" }}
+            >
               {iconEmoji}
             </div>
           ) : (
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-50 to-blue-50 border border-violet-100 flex items-center justify-center text-violet-500 shadow-sm">
+            <div
+              className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm"
+              style={{ background: "var(--accent-dim)", border: "1px solid var(--border)", color: "var(--accent)" }}
+            >
               {icon}
             </div>
           )}
         </div>
       )}
-      <h3 className="text-base font-semibold text-slate-800 mb-2">{title}</h3>
+      <h3 className="text-base font-semibold mb-2" style={{ color: "var(--text-primary)" }}>{title}</h3>
       {description && (
-        <p className="text-sm text-slate-400 max-w-sm leading-relaxed mb-6">{description}</p>
+        <p className="text-sm max-w-sm leading-relaxed mb-6" style={{ color: "var(--text-tertiary)" }}>{description}</p>
       )}
       {action && <div>{action}</div>}
     </div>

@@ -378,7 +378,7 @@ export default function CoursePage({
 
   if (error) {
     return (
-      <div className="flex items-center gap-3 border rounded-2xl px-5 py-4" style={{ background: "var(--color-error-bg)", borderColor: "var(--color-error-border)", color: "var(--danger)" }}>
+      <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4">
         <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
         </svg>
@@ -393,17 +393,17 @@ export default function CoursePage({
   return (
     <div className="page-enter">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-5">
-        <Link href="/dashboard" className="hover:text-[var(--accent)] transition-colors flex items-center gap-1.5">
+      <div className="flex items-center gap-2 text-sm text-slate-400 mb-5">
+        <Link href="/dashboard" className="hover:text-violet-600 transition-colors flex items-center gap-1.5">
           <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
           </svg>
           Courses
         </Link>
-        <svg className="w-3.5 h-3.5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <svg className="w-3.5 h-3.5 text-slate-300" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
         </svg>
-        <span className="text-[var(--text-secondary)] font-medium truncate max-w-[200px]">{course?.name}</span>
+        <span className="text-slate-600 font-medium truncate max-w-[200px]">{course?.name}</span>
       </div>
 
       {/* Course header */}
@@ -413,9 +413,9 @@ export default function CoursePage({
             {course?.name?.[0]?.toUpperCase() ?? "C"}
           </div>
           <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-tight">{course?.name}</h1>
+            <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-tight">{course?.name}</h1>
             {course?.description && (
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">{course.description}</p>
+              <p className="text-sm text-slate-400 mt-1">{course.description}</p>
             )}
             <div className="flex items-center gap-3 mt-2">
               <Badge variant="purple" size="sm" dot>
@@ -465,13 +465,12 @@ export default function CoursePage({
               className={`
                 flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold
                 transition-all duration-150 btn-press cursor-pointer
-                ${activeTab === btn.tab ? "shadow-md" : "border"}
+                ${activeTab === btn.tab
+                  ? "bg-gradient-to-r from-violet-600 to-blue-600 text-white shadow-md"
+                  : "border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100"
+                }
                 disabled:opacity-40 disabled:cursor-not-allowed
               `}
-              style={activeTab === btn.tab
-                ? { background: "var(--accent)", color: "#0a0a0f" }
-                : { borderColor: "var(--accent-dim)", color: "var(--accent)", background: "var(--accent-dim)" }
-              }
             >
               {btn.icon}
               {btn.label}
@@ -482,13 +481,13 @@ export default function CoursePage({
 
       {/* No materials warning */}
       {hasNoMaterials && activeTab !== "materials" && (
-        <div className="mb-5 flex items-start gap-3 px-4 py-3.5 border rounded-2xl" style={{ background: "rgba(251,191,36,0.08)", borderColor: "rgba(251,191,36,0.2)" }}>
-          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#fbbf24" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="mb-5 flex items-start gap-3 px-4 py-3.5 bg-amber-50 border border-amber-200 rounded-2xl">
+          <svg className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
           </svg>
           <div>
-            <p className="text-sm font-semibold" style={{ color: "#fbbf24" }}>No materials uploaded</p>
-            <p className="text-xs mt-0.5" style={{ color: "#fbbf24" }}>
+            <p className="text-sm font-semibold text-amber-700">No materials uploaded</p>
+            <p className="text-xs text-amber-600 mt-0.5">
               Upload course materials first to use AI features.{" "}
               <button className="underline font-semibold" onClick={() => setActiveTab("materials")}>
                 Go to Materials →
@@ -657,7 +656,7 @@ function fileIcon(filename: string): { icon: React.ReactNode; color: string } {
         <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
       </svg>
     ),
-    color: "bg-[var(--surface-2)] text-[var(--text-secondary)]",
+    color: "bg-slate-100 text-slate-600",
   };
 }
 
@@ -728,7 +727,7 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
   }, [messages.length]);
 
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-8 sm:p-10">
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-8 sm:p-10">
       <div className="flex flex-col items-center text-center gap-5 max-w-sm mx-auto">
         <div className="relative w-14 h-14">
           <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-lg">
@@ -737,17 +736,17 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
             </svg>
           </div>
           <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[var(--accent)] opacity-75" />
-            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-[var(--accent)]" />
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-violet-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-violet-500" />
           </span>
         </div>
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">{messages[msgIdx]}</p>
-          <p className="text-xs text-[var(--text-tertiary)]">This usually takes 10–30 seconds</p>
+          <p className="text-sm font-semibold text-slate-800">{messages[msgIdx]}</p>
+          <p className="text-xs text-slate-400">This usually takes 10–30 seconds</p>
         </div>
         <div className="w-full">
           <ProgressBar value={Math.round(progress)} size="sm" variant="gradient" animated />
-          <p className="text-xs text-[var(--text-tertiary)] mt-2 text-right">{Math.round(progress)}%</p>
+          <p className="text-xs text-slate-400 mt-2 text-right">{Math.round(progress)}%</p>
         </div>
       </div>
     </div>
@@ -927,16 +926,16 @@ function MaterialsTab({
   return (
     <div>
       {/* Sub-tabs */}
-      <div className="flex gap-1 p-1 bg-[var(--surface-2)] rounded-xl mb-5 w-fit">
+      <div className="flex gap-1 p-1 bg-slate-100 rounded-xl mb-5 w-fit">
         <button
           onClick={() => setSubTab("all")}
-          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "all" ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "all" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
         >
           All Files
         </button>
         <button
           onClick={() => setSubTab("collections")}
-          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "collections" ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "collections" ? "bg-white text-slate-900 shadow-sm" : "text-slate-500 hover:text-slate-700"}`}
         >
           Collections{collections.length > 0 ? ` (${collections.length})` : ""}
         </button>
@@ -947,12 +946,12 @@ function MaterialsTab({
         <>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">Course Materials</h2>
-              <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
+              <h2 className="text-lg font-bold text-slate-900">Course Materials</h2>
+              <p className="text-sm text-slate-400 mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
             </div>
-            <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-[var(--surface-2)] text-[var(--text-tertiary)]" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
+            <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-slate-100 text-slate-400" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
               {uploading ? (
-                <><Spinner size="sm" className="border-[var(--border-hover)] border-t-slate-600" /> Uploading…</>
+                <><Spinner size="sm" className="border-slate-300 border-t-slate-600" /> Uploading…</>
               ) : (
                 <>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -966,11 +965,11 @@ function MaterialsTab({
           </div>
 
           {uploading && uploadProgress > 0 && (
-            <div className="mb-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4">
+            <div className="mb-5 bg-white rounded-2xl border border-slate-100 p-4">
               <div className="flex items-center gap-3 mb-3">
                 <Spinner size="sm" />
-                <span className="text-sm font-medium text-[var(--text-secondary)]">Uploading file…</span>
-                <span className="text-sm text-[var(--text-tertiary)] ml-auto">{uploadProgress}%</span>
+                <span className="text-sm font-medium text-slate-600">Uploading file…</span>
+                <span className="text-sm text-slate-400 ml-auto">{uploadProgress}%</span>
               </div>
               <ProgressBar value={uploadProgress} size="sm" />
             </div>
@@ -980,23 +979,23 @@ function MaterialsTab({
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileUpload(e.dataTransfer.files); }}
-            className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${dragOver ? "border-[var(--accent)] bg-[var(--accent-dim)] scale-[1.01]" : "border-[var(--border)] bg-[var(--background)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)]/30"}`}
+            className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${dragOver ? "border-violet-400 bg-violet-50 scale-[1.01]" : "border-slate-200 bg-slate-50/50 hover:border-violet-300 hover:bg-violet-50/30"}`}
           >
             <label className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-[var(--accent-dim)]" : "bg-[var(--surface)] border border-[var(--border)]"}`}>
-                <svg className={`w-6 h-6 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-violet-100" : "bg-white border border-slate-200"}`}>
+                <svg className={`w-6 h-6 ${dragOver ? "text-violet-600" : "text-slate-400"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
               </div>
-              <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">PDF, PPTX, DOCX, TXT — up to 25MB</p>
+              <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-violet-700" : "text-slate-600"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
+              <p className="text-xs text-slate-400">PDF, PPTX, DOCX, TXT — up to 25MB</p>
               <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </label>
           </div>
 
           {materials.length === 0 ? (
             <EmptyState
-              icon={<svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
+              icon={<svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
               title="No materials yet"
               description="Upload PDFs, PowerPoints, or Word documents to get started with AI features."
               className="py-10"
@@ -1011,7 +1010,7 @@ function MaterialsTab({
                 return (
                   <div
                     key={m.id}
-                    className={`flex items-center gap-4 bg-[var(--surface)] px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md hover:border-[var(--border)]"}`}
+                    className={`flex items-center gap-4 bg-white px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-violet-200" : "border-slate-100 hover:shadow-md hover:border-slate-200"}`}
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
                     <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
@@ -1023,22 +1022,22 @@ function MaterialsTab({
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") handleRename(m.id); if (e.key === "Escape") setRenamingId(null); }}
-                          className="flex-1 min-w-0 text-sm border border-[var(--border)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+                          className="flex-1 min-w-0 text-sm border border-slate-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
                         />
-                        <button onClick={() => handleRename(m.id)} disabled={renameSaving || !renameValue.trim()} className="px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] disabled:opacity-50 transition-colors flex-shrink-0">
+                        <button onClick={() => handleRename(m.id)} disabled={renameSaving || !renameValue.trim()} className="px-2.5 py-1.5 text-xs font-semibold bg-violet-600 text-white rounded-lg hover:bg-violet-700 disabled:opacity-50 transition-colors flex-shrink-0">
                           {renameSaving ? "Saving…" : "Save"}
                         </button>
-                        <button onClick={() => setRenamingId(null)} className="px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)] transition-colors flex-shrink-0">Cancel</button>
+                        <button onClick={() => setRenamingId(null)} className="px-2.5 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors flex-shrink-0">Cancel</button>
                       </div>
                     ) : (
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{m.file_name}</p>
+                        <p className="text-sm font-semibold text-slate-800 truncate">{m.file_name}</p>
                         <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                          <p className="text-xs text-[var(--text-tertiary)]">
+                          <p className="text-xs text-slate-400">
                             {m.created_at && new Date(m.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                           </p>
                           {matCols.map((col) => (
-                            <span key={col.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-[var(--accent-dim)] text-[var(--accent)] border border-[var(--accent-dim)]">
+                            <span key={col.id} className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-violet-50 text-violet-700 border border-violet-100">
                               {col.name}
                             </span>
                           ))}
@@ -1053,7 +1052,7 @@ function MaterialsTab({
                           <div className="relative">
                             <button
                               onClick={() => { setAddToCollectionPopoverId(isPopoverOpen ? null : m.id); setConfirmDeleteId(null); }}
-                              className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                              className="p-2 rounded-xl text-slate-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
                               aria-label="Add to collection"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1061,8 +1060,8 @@ function MaterialsTab({
                               </svg>
                             </button>
                             {isPopoverOpen && (
-                              <div className="absolute right-0 top-10 z-20 w-56 bg-[var(--surface)] rounded-xl border border-[var(--border)] shadow-lg p-2 animate-scale-in-fast">
-                                <p className="text-xs font-semibold text-[var(--text-secondary)] px-2 py-1.5 border-b border-[var(--border)] mb-1">Add to collection</p>
+                              <div className="absolute right-0 top-10 z-20 w-56 bg-white rounded-xl border border-slate-200 shadow-lg p-2 animate-scale-in-fast">
+                                <p className="text-xs font-semibold text-slate-500 px-2 py-1.5 border-b border-slate-100 mb-1">Add to collection</p>
                                 {collections.map((col) => {
                                   const isIn = (materialCollectionMap[m.id] ?? []).includes(col.id);
                                   const isToggling = togglingKey === col.id + ":" + m.id;
@@ -1071,17 +1070,17 @@ function MaterialsTab({
                                       key={col.id}
                                       onClick={() => handleToggleCollection(m.id, col.id)}
                                       disabled={isToggling}
-                                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[var(--background)] transition-colors text-sm text-left disabled:opacity-50"
+                                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-slate-50 transition-colors text-sm text-left disabled:opacity-50"
                                     >
-                                      <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isIn ? "bg-[var(--accent)] border-violet-600" : "border-[var(--border-hover)]"}`}>
+                                      <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isIn ? "bg-violet-600 border-violet-600" : "border-slate-300"}`}>
                                         {isIn && (
                                           <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                                           </svg>
                                         )}
                                       </span>
-                                      <span className="flex-1 truncate text-[var(--text-primary)]">{col.name}</span>
-                                      {isToggling && <Spinner size="xs" className="border-[var(--border)] border-t-slate-500 flex-shrink-0" />}
+                                      <span className="flex-1 truncate text-slate-700">{col.name}</span>
+                                      {isToggling && <Spinner size="xs" className="border-slate-200 border-t-slate-500 flex-shrink-0" />}
                                     </button>
                                   );
                                 })}
@@ -1093,7 +1092,7 @@ function MaterialsTab({
                         {/* Rename button */}
                         <button
                           onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); setAddToCollectionPopoverId(null); }}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                          className="p-2 rounded-xl text-slate-300 hover:text-violet-500 hover:bg-violet-50 transition-all"
                           aria-label="Rename"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1105,7 +1104,7 @@ function MaterialsTab({
                         <button
                           onClick={() => handleDownload(m.id)}
                           disabled={downloadingId === m.id}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                          className="p-2 rounded-xl text-slate-300 hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
                           aria-label="Download"
                         >
                           {downloadingId === m.id ? (
@@ -1122,7 +1121,7 @@ function MaterialsTab({
                           <button
                             onClick={() => { setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id); setAddToCollectionPopoverId(null); }}
                             disabled={deletingId === m.id}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 transition-all"
+                            className="p-2 rounded-xl text-slate-300 hover:text-red-500 hover:bg-red-50 transition-all"
                             aria-label="Delete"
                           >
                             {deletingId === m.id ? (
@@ -1134,10 +1133,10 @@ function MaterialsTab({
                             )}
                           </button>
                           {confirmDeleteId === m.id && (
-                            <div className="absolute right-0 top-10 z-10 w-48 bg-[var(--surface)] rounded-xl border border-[var(--border)] shadow-lg p-3 animate-scale-in-fast">
-                              <p className="text-xs text-[var(--text-secondary)] mb-3 font-medium">Delete this file?</p>
+                            <div className="absolute right-0 top-10 z-10 w-48 bg-white rounded-xl border border-slate-200 shadow-lg p-3 animate-scale-in-fast">
+                              <p className="text-xs text-slate-600 mb-3 font-medium">Delete this file?</p>
                               <div className="flex gap-2">
-                                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)]">Cancel</button>
+                                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-1.5 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
                                 <button onClick={() => handleDeleteMaterial(m.id, m.file_name)} className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600">Delete</button>
                               </div>
                             </div>
@@ -1158,8 +1157,8 @@ function MaterialsTab({
         <>
           <div className="flex items-center justify-between mb-5">
             <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">Collections</h2>
-              <p className="text-sm text-[var(--text-tertiary)] mt-0.5">Group materials for focused AI generation</p>
+              <h2 className="text-lg font-bold text-slate-900">Collections</h2>
+              <p className="text-sm text-slate-400 mt-0.5">Group materials for focused AI generation</p>
             </div>
             <Button
               variant="primary"
@@ -1178,7 +1177,7 @@ function MaterialsTab({
           {collections.length === 0 ? (
             <EmptyState
               icon={
-                <svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+                <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                 </svg>
               }
@@ -1194,7 +1193,7 @@ function MaterialsTab({
             />
           ) : (
             <>
-              <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5 mb-4">
+              <p className="text-xs text-slate-400 flex items-center gap-1.5 mb-4">
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
                 </svg>
@@ -1207,39 +1206,39 @@ function MaterialsTab({
                   const isDeleting = deletingCollectionId === col.id;
                   const confirmDelete = confirmDeleteCollectionId === col.id;
                   return (
-                    <div key={col.id} className={`bg-[var(--surface)] rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md hover:border-[var(--border)]"}`}>
+                    <div key={col.id} className={`bg-white rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-violet-200" : "border-slate-100 hover:shadow-md hover:border-slate-200"}`}>
                       <div className="flex items-center">
                         <button
                           onClick={() => setExpandedCollectionId(isExpanded ? null : col.id)}
                           className="flex-1 flex items-center gap-3 px-5 py-4 text-left min-w-0"
                         >
-                          <div className="w-9 h-9 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
-                            <svg className="w-[18px] h-[18px] text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+                            <svg className="w-[18px] h-[18px] text-violet-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
                             </svg>
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{col.name}</p>
-                            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+                            <p className="text-sm font-semibold text-slate-800 truncate">{col.name}</p>
+                            <p className="text-xs text-slate-400 mt-0.5">
                               {colMats.length} file{colMats.length !== 1 ? "s" : ""} · {new Date(col.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
                             </p>
                           </div>
-                          <svg className={`w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                          <svg className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
                           </svg>
                         </button>
                         <div className="flex items-center gap-2 pr-4 pl-2 flex-shrink-0">
                           {confirmDelete ? (
                             <>
-                              <span className="text-xs text-[var(--text-secondary)]">Delete?</span>
-                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(null); }} className="px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)]">Cancel</button>
+                              <span className="text-xs text-slate-500">Delete?</span>
+                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(null); }} className="px-2.5 py-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50">Cancel</button>
                               <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id, col.name); }} className="px-2.5 py-1 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600">Delete</button>
                             </>
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(col.id); }}
                               disabled={isDeleting}
-                              className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
                             >
                               {isDeleting ? <Spinner size="xs" className="border-red-200 border-t-red-500" /> : (
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1251,20 +1250,20 @@ function MaterialsTab({
                         </div>
                       </div>
                       {isExpanded && (
-                        <div className="border-t border-[var(--border)] px-5 py-4">
+                        <div className="border-t border-slate-100 px-5 py-4">
                           {colMats.length === 0 ? (
-                            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No files in this collection yet. Add files from the All Files tab.</p>
+                            <p className="text-sm text-slate-400 text-center py-4">No files in this collection yet. Add files from the All Files tab.</p>
                           ) : (
                             <div className="space-y-2">
                               {colMats.map((mat) => {
                                 const icon = fileIcon(mat.file_name);
                                 return (
-                                  <div key={mat.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface-2)] transition-colors">
+                                  <div key={mat.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors">
                                     <div className={`w-8 h-8 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
-                                    <p className="flex-1 min-w-0 text-sm font-medium text-[var(--text-primary)] truncate">{mat.file_name}</p>
+                                    <p className="flex-1 min-w-0 text-sm font-medium text-slate-700 truncate">{mat.file_name}</p>
                                     <button
                                       onClick={() => handleRemoveFromCollection(col.id, mat.id)}
-                                      className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                      className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
                                       aria-label="Remove from collection"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1294,17 +1293,17 @@ function MaterialsTab({
           >
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Collection name</label>
+                <label className="block text-sm font-medium text-slate-700 mb-1.5">Collection name</label>
                 <input
                   autoFocus
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value.slice(0, 50))}
                   onKeyDown={(e) => { if (e.key === "Enter") handleCreateCollection(); }}
                   placeholder="e.g. Chapter 5, Week 3 Readings"
-                  className="w-full border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+                  className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
                   maxLength={50}
                 />
-                <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{newCollectionName.length}/50 characters</p>
+                <p className="text-xs text-slate-400 mt-1.5">{newCollectionName.length}/50 characters</p>
               </div>
               <div className="flex gap-2">
                 <Button variant="secondary" size="sm" onClick={() => { setCreateModalOpen(false); setNewCollectionName(""); }}>Cancel</Button>
@@ -1343,12 +1342,11 @@ function CollectionSelector({
   if (collections.length === 0) return null;
   return (
     <div className="flex items-center gap-2">
-      <span className="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">Generate from:</span>
+      <span className="text-xs font-medium text-slate-500 whitespace-nowrap">Generate from:</span>
       <select
         value={selectedCollectionId ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="text-xs border rounded-lg px-2.5 py-1.5 cursor-pointer max-w-[160px] truncate outline-none"
-        style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)" }}
+        className="text-xs border border-slate-200 rounded-lg px-2.5 py-1.5 bg-white text-slate-700 focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400 cursor-pointer max-w-[160px] truncate"
       >
         <option value="">All materials</option>
         {collections.map((col) => (
@@ -1478,9 +1476,9 @@ function StudyGuideTab({
       {/* Header */}
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)]">Study Guides</h2>
+          <h2 className="text-lg font-bold text-slate-900">Study Guides</h2>
           {!loadingGuides && (
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">{guides.length} of 5 guides used</p>
+            <p className="text-xs text-slate-400 mt-0.5">{guides.length} of 5 guides used</p>
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -1515,16 +1513,16 @@ function StudyGuideTab({
 
       {/* Streaming preview */}
       {showStreamPreview && streamState && (
-        <div className="mb-5 bg-[var(--surface)] rounded-2xl border border-[var(--accent-dim)] shadow-sm overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--border)]">
-            <div className="w-8 h-8 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <div className="mb-5 bg-white rounded-2xl border border-violet-200 shadow-sm overflow-hidden">
+          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100">
+            <div className="w-8 h-8 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-violet-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
               </svg>
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{streamState.title}</p>
-              <p className="text-xs text-[var(--accent)] font-medium">
+              <p className="text-sm font-semibold text-slate-900 truncate">{streamState.title}</p>
+              <p className="text-xs text-violet-500 font-medium">
                 {isGenerating ? "Generating…" : "Ready to save"}
               </p>
             </div>
@@ -1533,7 +1531,7 @@ function StudyGuideTab({
                 <button
                   onClick={handleDiscard}
                   disabled={streamState.saving}
-                  className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)] transition-colors disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-medium text-slate-500 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors disabled:opacity-50"
                 >
                   Discard
                 </button>
@@ -1556,7 +1554,7 @@ function StudyGuideTab({
                 {isGenerating && <span className="streaming-cursor" />}
               </div>
             ) : (
-              <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-sm py-2">
+              <div className="flex items-center gap-2 text-slate-400 text-sm py-2">
                 <div className="flex gap-1">
                   <div className="typing-dot" style={{ animationDelay: "0ms" }} />
                   <div className="typing-dot" style={{ animationDelay: "160ms" }} />
@@ -1583,7 +1581,7 @@ function StudyGuideTab({
         guides.length === 0 ? (
           <EmptyState
             icon={
-              <svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
               </svg>
             }
@@ -1635,17 +1633,17 @@ function StudyGuideTab({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Title</label>
+            <label className="block text-sm font-medium text-slate-700 mb-1.5">Title</label>
             <input
               autoFocus
               value={titleInput}
               onChange={(e) => setTitleInput(e.target.value.slice(0, 60))}
               onKeyDown={(e) => { if (e.key === "Enter") handleGenerate(); }}
               placeholder="e.g. Chapter 5 — Organic Chemistry"
-              className="w-full border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+              className="w-full border border-slate-200 rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-400/40 focus:border-violet-400"
               maxLength={60}
             />
-            <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{titleInput.length}/60 characters</p>
+            <p className="text-xs text-slate-400 mt-1.5">{titleInput.length}/60 characters</p>
           </div>
           <div className="flex gap-2">
             <Button variant="secondary" size="sm" onClick={() => setTitleModalOpen(false)}>
@@ -1687,25 +1685,25 @@ function GuideAccordionItem({
   onDelete: () => void;
 }) {
   return (
-    <div className={`bg-[var(--surface)] rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:border-[var(--border)] hover:shadow-md"}`}>
+    <div className={`bg-white rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-violet-200" : "border-slate-100 hover:border-slate-200 hover:shadow-md"}`}>
       <div className="flex items-center">
         <button
           onClick={onToggle}
           className="flex-1 flex items-center gap-3 px-5 py-4 text-left min-w-0"
         >
-          <div className="w-9 h-9 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
-            <svg className="w-[18px] h-[18px] text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <div className="w-9 h-9 rounded-xl bg-violet-50 flex items-center justify-center flex-shrink-0">
+            <svg className="w-[18px] h-[18px] text-violet-600" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{guide.title || "Untitled Guide"}</p>
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+            <p className="text-sm font-semibold text-slate-800 truncate">{guide.title || "Untitled Guide"}</p>
+            <p className="text-xs text-slate-400 mt-0.5">
               {new Date(guide.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
             </p>
           </div>
           <svg
-            className={`w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-slate-400 flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -1715,10 +1713,10 @@ function GuideAccordionItem({
         <div className="flex items-center gap-2 pr-4 pl-2 flex-shrink-0">
           {confirmDelete ? (
             <>
-              <span className="text-xs text-[var(--text-secondary)]">Delete?</span>
+              <span className="text-xs text-slate-500">Delete?</span>
               <button
                 onClick={(e) => { e.stopPropagation(); onCancelDelete(); }}
-                className="px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)] transition-colors"
+                className="px-2.5 py-1 text-xs font-medium text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors"
               >
                 Cancel
               </button>
@@ -1733,7 +1731,7 @@ function GuideAccordionItem({
             <button
               onClick={(e) => { e.stopPropagation(); onConfirmDelete(); }}
               disabled={isDeleting}
-              className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
               aria-label="Delete guide"
             >
               {isDeleting ? (
@@ -1749,10 +1747,10 @@ function GuideAccordionItem({
       </div>
 
       {isExpanded && (
-        <div className="border-t border-[var(--border)] px-5 py-5">
+        <div className="border-t border-slate-100 px-5 py-5">
           <MarkdownWithMath
             content={guide.content}
-            className="study-guide-content text-sm text-[var(--text-primary)] leading-relaxed"
+            className="study-guide-content text-sm text-slate-700 leading-relaxed"
           />
         </div>
       )}
@@ -1828,9 +1826,9 @@ function QuizTab({
     <div>
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
         <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)]">Practice Quiz</h2>
+          <h2 className="text-lg font-bold text-slate-900">Practice Quiz</h2>
           {generatedAt && !loading && (
-            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
+            <p className="text-xs text-slate-400 mt-0.5">
               Generated {generatedAt.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" })}
             </p>
           )}
@@ -1866,7 +1864,7 @@ function QuizTab({
 
       {!loading && !streamingQuiz && !error && !quiz && (
         <EmptyState
-          icon={<svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>}
+          icon={<svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>}
           title="No quiz yet"
           description="Click Generate to create practice questions from your course materials."
           action={
@@ -1882,13 +1880,13 @@ function QuizTab({
       {hasQuestions && !showResults && (
         <div>
           {nextQuestionLoading ? (
-            <div className="rounded-xl border p-8 text-center text-sm animate-pulse" style={{ background: "var(--accent-dim)", borderColor: "var(--accent-dim)", color: "var(--accent)" }}>
+            <div className="rounded-xl border border-violet-100 bg-violet-50 p-8 text-center text-violet-600 text-sm animate-pulse">
               Loading next question...
             </div>
           ) : (<>
           {/* Progress bar */}
           <div className="mb-5">
-            <div className="flex justify-between text-xs text-[var(--text-secondary)] mb-2">
+            <div className="flex justify-between text-xs text-slate-500 mb-2">
               <span>Question {currentQ + 1} of {totalQ}</span>
               <span>{answeredCount} answered</span>
             </div>
@@ -1909,7 +1907,7 @@ function QuizTab({
           />
 
           {streamingQuiz && (
-            <p className="text-xs text-[var(--text-tertiary)] mt-3 text-center">
+            <p className="text-xs text-slate-400 mt-3 text-center">
               Loading questions... ({effectiveQuestions.length} of {EXPECTED_QUIZ_QUESTIONS} ready)
             </p>
           )}
@@ -1929,7 +1927,7 @@ function QuizTab({
               Previous
             </Button>
 
-            <span className="text-sm text-[var(--text-tertiary)] font-medium">
+            <span className="text-sm text-slate-400 font-medium">
               {Object.keys(revealed).length}/{totalQ} answered
             </span>
 
@@ -1985,9 +1983,9 @@ function QuizQuestion({
   onSelect: (letter: string) => void;
 }) {
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-5 sm:p-6 animate-fade-in-up">
-      <div className="font-semibold text-[var(--text-primary)] mb-5 leading-snug flex items-start gap-1.5">
-        <span className="text-[var(--accent)] font-bold flex-shrink-0">{index + 1}.</span>
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-5 sm:p-6 animate-fade-in-up">
+      <div className="font-semibold text-slate-900 mb-5 leading-snug flex items-start gap-1.5">
+        <span className="text-violet-600 font-bold flex-shrink-0">{index + 1}.</span>
         <MarkdownWithMath content={question.question} className="flex-1 min-w-0" />
       </div>
 
@@ -2006,10 +2004,10 @@ function QuizQuestion({
                     ? "bg-emerald-50 border-emerald-300 text-emerald-800"
                     : isSelected
                     ? "bg-red-50 border-red-300 text-red-800"
-                    : "bg-[var(--background)] border-[var(--border)] text-[var(--text-tertiary)]"
+                    : "bg-slate-50 border-slate-200 text-slate-400"
                   : isSelected
-                  ? "bg-[var(--accent-dim)] border-[var(--accent)] text-violet-900 shadow-sm"
-                  : "border-[var(--border)] hover:border-[var(--accent-dim)] hover:bg-[var(--accent-dim)]/50 text-[var(--text-primary)]"
+                  ? "bg-violet-50 border-violet-400 text-violet-900 shadow-sm"
+                  : "border-slate-200 hover:border-violet-200 hover:bg-violet-50/50 text-slate-700"
                 }
               `}
             >
@@ -2064,13 +2062,13 @@ function QuizResults({
 
   return (
     <div className="animate-scale-in">
-      <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-6 sm:p-8 text-center mb-6">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8 text-center mb-6">
         <div className={`inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br ${grade.bg} text-white text-3xl font-extrabold mb-4 shadow-lg`}>
           {pct}%
         </div>
         <h3 className={`text-xl font-extrabold mb-1 ${grade.color}`}>{grade.label}</h3>
-        <p className="text-[var(--text-secondary)] text-sm mb-6">
-          You got <strong className="text-[var(--text-primary)]">{correctCount} out of {totalQ}</strong> questions correct
+        <p className="text-slate-500 text-sm mb-6">
+          You got <strong className="text-slate-800">{correctCount} out of {totalQ}</strong> questions correct
         </p>
         <ProgressBar value={pct} size="lg" />
 
@@ -2085,7 +2083,7 @@ function QuizResults({
       </div>
 
       {/* Question breakdown */}
-      <h3 className="text-sm font-semibold text-[var(--text-secondary)] mb-3">Question breakdown</h3>
+      <h3 className="text-sm font-semibold text-slate-600 mb-3">Question breakdown</h3>
       <div className="space-y-2">
         {quiz.questions.map((q, i) => {
           const userLetter = selected[i];
@@ -2094,8 +2092,8 @@ function QuizResults({
           const userOption = userLetter ? q.options.find((o) => o.letter === userLetter) : undefined;
           const correctOption = q.options.find((o) => o.letter === q.correctAnswer);
           return (
-            <div key={i} className={`flex items-start gap-3 p-4 rounded-xl text-sm ${isCorrect && wasAnswered ? "bg-emerald-50 border border-emerald-100" : wasAnswered ? "bg-red-50 border border-red-100" : "bg-[var(--background)] border border-[var(--border)]"}`}>
-              <span className={`flex-shrink-0 mt-0.5 ${isCorrect && wasAnswered ? "text-emerald-500" : wasAnswered ? "text-red-500" : "text-[var(--text-tertiary)]"}`}>
+            <div key={i} className={`flex items-start gap-3 p-4 rounded-xl text-sm ${isCorrect && wasAnswered ? "bg-emerald-50 border border-emerald-100" : wasAnswered ? "bg-red-50 border border-red-100" : "bg-slate-50 border border-slate-100"}`}>
+              <span className={`flex-shrink-0 mt-0.5 ${isCorrect && wasAnswered ? "text-emerald-500" : wasAnswered ? "text-red-500" : "text-slate-300"}`}>
                 {wasAnswered ? (
                   isCorrect ? (
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -2113,9 +2111,9 @@ function QuizResults({
                 )}
               </span>
               <div>
-                <MarkdownWithMath content={q.question} className="font-medium text-[var(--text-primary)]" />
+                <MarkdownWithMath content={q.question} className="font-medium text-slate-800" />
                 {wasAnswered && (
-                  <div className="text-xs text-[var(--text-secondary)] mt-1.5 space-y-0.5">
+                  <div className="text-xs text-slate-500 mt-1.5 space-y-0.5">
                     <p>
                       Your answer:{" "}
                       <span className={isCorrect ? "text-emerald-700 font-medium" : "text-red-600 font-medium"}>
@@ -2126,7 +2124,7 @@ function QuizResults({
                       <p>Correct: <span className="text-emerald-700 font-medium">{correctOption.letter}. {correctOption.text}</span></p>
                     )}
                     {q.explanation && (
-                      <MarkdownWithMath content={q.explanation} className="text-[var(--text-tertiary)] mt-1 leading-relaxed" />
+                      <MarkdownWithMath content={q.explanation} className="text-slate-400 mt-1 leading-relaxed" />
                     )}
                   </div>
                 )}
@@ -2165,8 +2163,8 @@ function StudyPlanTab({
     <div>
       <div className="flex items-start justify-between gap-4 mb-5 flex-wrap">
         <div>
-          <h2 className="text-lg font-bold text-[var(--text-primary)]">Study Plan</h2>
-          <p className="text-sm text-[var(--text-tertiary)] mt-0.5">Set your exam date for a personalized schedule</p>
+          <h2 className="text-lg font-bold text-slate-900">Study Plan</h2>
+          <p className="text-sm text-slate-400 mt-0.5">Set your exam date for a personalized schedule</p>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           <CollectionSelector
@@ -2180,7 +2178,7 @@ function StudyPlanTab({
               value={examDate}
               min={new Date().toISOString().split("T")[0]}
               onChange={(e) => setExamDate(e.target.value)}
-              className="px-3 py-2.5 text-sm border border-[var(--border)] rounded-xl bg-[var(--surface)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)] transition-all text-[var(--text-primary)]"
+              className="px-3 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all text-slate-700"
             />
           </div>
           <Button
@@ -2204,7 +2202,7 @@ function StudyPlanTab({
 
       {/* Days until exam badge */}
       {daysUntilExam !== null && daysUntilExam > 0 && (
-        <div className="mb-5 inline-flex items-center gap-2 bg-[var(--accent-dim)] border border-[var(--accent-dim)] text-[var(--accent)] text-sm font-semibold px-4 py-2 rounded-full">
+        <div className="mb-5 inline-flex items-center gap-2 bg-violet-50 border border-violet-200 text-violet-700 text-sm font-semibold px-4 py-2 rounded-full">
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
           </svg>
@@ -2218,7 +2216,7 @@ function StudyPlanTab({
 
       {!loading && !error && !studyPlan && (
         <EmptyState
-          icon={<svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>}
+          icon={<svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>}
           title="No study plan yet"
           description="Set your exam date and click Generate for a personalized day-by-day study schedule."
           action={
@@ -2294,10 +2292,10 @@ function StudyPlanTimeline({ content }: { content: string }) {
   // If parsing yields no structured days, fall back to prose rendering
   if (days.length === 0) {
     return (
-      <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-6 sm:p-8">
+      <div className="bg-white rounded-2xl border border-slate-100 shadow-sm p-6 sm:p-8">
         <MarkdownWithMath
           content={content}
-          className="study-guide-content text-sm text-[var(--text-primary)] leading-relaxed"
+          className="study-guide-content text-sm text-slate-700 leading-relaxed"
         />
       </div>
     );
@@ -2315,7 +2313,7 @@ function StudyPlanTimeline({ content }: { content: string }) {
   return (
     <div className="relative">
       {/* Vertical line */}
-      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[var(--accent-dim)] via-[var(--border)] to-[var(--success)] rounded-full" style={{ left: "1.25rem" }} />
+      <div className="absolute left-5 top-0 bottom-0 w-0.5 bg-gradient-to-b from-violet-200 via-blue-200 to-emerald-200 rounded-full" style={{ left: "1.25rem" }} />
 
       <div className="space-y-4">
         {days.map((day, i) => (
@@ -2328,20 +2326,20 @@ function StudyPlanTimeline({ content }: { content: string }) {
             </div>
 
             {/* Content card */}
-            <div className="flex-1 bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-4 hover:shadow-md hover:border-[var(--accent-dim)] transition-all">
+            <div className="flex-1 bg-white rounded-2xl border border-slate-100 shadow-sm p-4 hover:shadow-md hover:border-violet-100 transition-all">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                <h3 className="text-sm font-bold text-slate-900">
                   {day.day}{day.title ? ` — ${day.title}` : ""}
                 </h3>
-                <span className="text-xs text-[var(--text-tertiary)] bg-[var(--background)] px-2 py-0.5 rounded-full">
+                <span className="text-xs text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full">
                   {day.tasks.length} task{day.tasks.length !== 1 ? "s" : ""}
                 </span>
               </div>
               {day.tasks.length > 0 && (
                 <ul className="space-y-1.5">
                   {day.tasks.map((task, j) => (
-                    <li key={j} className="flex items-start gap-2 text-sm text-[var(--text-secondary)]">
-                      <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-[var(--accent)] mt-1.5" />
+                    <li key={j} className="flex items-start gap-2 text-sm text-slate-600">
+                      <span className="flex-shrink-0 w-1.5 h-1.5 rounded-full bg-violet-400 mt-1.5" />
                       {task}
                     </li>
                   ))}
@@ -2391,16 +2389,16 @@ function ChatTab({
   }
 
   return (
-    <div className="flex flex-col bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden" style={{ height: "calc(100vh - 280px)", minHeight: 500 }}>
+    <div className="flex flex-col bg-white rounded-2xl border border-slate-100 shadow-sm overflow-hidden" style={{ height: "calc(100vh - 280px)", minHeight: 500 }}>
       {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--border)] flex-shrink-0">
+      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-slate-100 flex-shrink-0">
         <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0">
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">AI Tutor</p>
+          <p className="text-sm font-semibold text-slate-900">AI Tutor</p>
           <p className="text-xs text-emerald-500 font-medium flex items-center gap-1">
             <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
             Online
@@ -2422,8 +2420,8 @@ function ChatTab({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
               </svg>
             </div>
-            <h3 className="font-semibold text-[var(--text-primary)] mb-1">Ask your AI tutor anything</h3>
-            <p className="text-sm text-[var(--text-tertiary)] mb-6 max-w-xs">
+            <h3 className="font-semibold text-slate-800 mb-1">Ask your AI tutor anything</h3>
+            <p className="text-sm text-slate-400 mb-6 max-w-xs">
               {canChat
                 ? "Ask questions about your course materials and get instant answers."
                 : "Upload materials first to start chatting."}
@@ -2434,7 +2432,7 @@ function ChatTab({
                   <button
                     key={q}
                     onClick={() => onSend(q)}
-                    className="px-3.5 py-2 text-xs font-medium text-[var(--accent)] bg-[var(--accent-dim)] border border-[var(--accent-dim)] rounded-full hover:bg-[var(--accent-dim)] transition-colors"
+                    className="px-3.5 py-2 text-xs font-medium text-violet-700 bg-violet-50 border border-violet-200 rounded-full hover:bg-violet-100 transition-colors"
                   >
                     {q}
                   </button>
@@ -2462,7 +2460,7 @@ function ChatTab({
                 className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
                   msg.role === "user"
                     ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-br-sm"
-                    : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-bl-sm chat-markdown"
+                    : "bg-white border border-slate-100 text-slate-800 rounded-bl-sm chat-markdown"
                 }`}
               >
                 {msg.role === "assistant" ? (
@@ -2475,7 +2473,7 @@ function ChatTab({
                 )}
               </div>
               {msg.role === "user" && (
-                <div className="w-8 h-8 rounded-full bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0 mt-0.5 text-[var(--accent)] font-semibold text-xs">
+                <div className="w-8 h-8 rounded-full bg-violet-100 flex items-center justify-center flex-shrink-0 mt-0.5 text-violet-600 font-semibold text-xs">
                   You
                 </div>
               )}
@@ -2491,7 +2489,7 @@ function ChatTab({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-sm">
+            <div className="bg-white border border-slate-100 px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-sm">
               <div className="flex gap-1.5 items-center">
                 <div className="typing-dot" style={{ animationDelay: "0ms" }} />
                 <div className="typing-dot" style={{ animationDelay: "160ms" }} />
@@ -2504,7 +2502,7 @@ function ChatTab({
       </div>
 
       {/* Input */}
-      <div className="border-t border-[var(--border)] p-4 flex-shrink-0">
+      <div className="border-t border-slate-100 p-4 flex-shrink-0">
         <div className="flex gap-3 items-end">
           <div className="flex-1 relative">
             <textarea
@@ -2515,7 +2513,7 @@ function ChatTab({
               placeholder={canChat ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Upload materials to start chatting"}
               disabled={chatLoading || chatStreaming || !canChat}
               rows={1}
-              className={`w-full px-4 py-3 border rounded-xl text-sm text-[var(--text-primary)] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)] transition-all resize-none max-h-32 disabled:bg-[var(--background)] disabled:text-[var(--text-tertiary)] ${chatLoading ? "border-[var(--border)]" : "border-[var(--border)]"}`}
+              className={`w-full px-4 py-3 border rounded-xl text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-violet-500/30 focus:border-violet-500 transition-all resize-none max-h-32 disabled:bg-slate-50 disabled:text-slate-400 ${chatLoading ? "border-slate-200" : "border-slate-200"}`}
               style={{ lineHeight: 1.5 }}
             />
           </div>
@@ -2533,7 +2531,7 @@ function ChatTab({
             )}
           </button>
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center">
+        <p className="text-xs text-slate-300 mt-2 text-center">
           Enter to send · Shift+Enter for new line
         </p>
       </div>

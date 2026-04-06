@@ -60,7 +60,8 @@ export function Modal({
     >
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-slate-900/50 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 backdrop-blur-sm animate-fade-in"
+        style={{ background: "rgba(0,0,0,0.7)" }}
         onClick={onClose}
       />
 
@@ -68,22 +69,32 @@ export function Modal({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className={`relative w-full ${sizeMap[size]} bg-white rounded-2xl shadow-2xl animate-scale-in outline-none`}
+        className={`relative w-full ${sizeMap[size]} rounded-2xl shadow-2xl animate-scale-in outline-none`}
+        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
       >
         {(title || !hideCloseButton) && (
           <div className="flex items-start justify-between p-6 pb-0">
             <div>
               {title && (
-                <h2 className="text-lg font-bold text-slate-900">{title}</h2>
+                <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{title}</h2>
               )}
               {description && (
-                <p className="mt-1 text-sm text-slate-500">{description}</p>
+                <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>{description}</p>
               )}
             </div>
             {!hideCloseButton && (
               <button
                 onClick={onClose}
-                className="ml-4 p-1.5 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors flex-shrink-0"
+                className="ml-4 p-1.5 rounded-lg transition-colors flex-shrink-0 cursor-pointer"
+                style={{ color: "var(--text-tertiary)" }}
+                onMouseEnter={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-2)";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+                }}
+                onMouseLeave={(e) => {
+                  (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                  (e.currentTarget as HTMLButtonElement).style.color = "var(--text-tertiary)";
+                }}
                 aria-label="Close"
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

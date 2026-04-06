@@ -18,15 +18,15 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 
 const variantStyles: Record<ButtonVariant, string> = {
   primary:
-    "btn-gradient btn-press text-white shadow-sm hover:shadow-md hover:opacity-95 disabled:opacity-50",
+    "btn-press shadow-sm hover:shadow-md hover:opacity-90 disabled:opacity-50",
   secondary:
-    "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-slate-300 shadow-sm btn-press disabled:opacity-50",
+    "border btn-press shadow-sm hover:shadow-md disabled:opacity-50",
   ghost:
-    "text-slate-600 hover:bg-slate-100 hover:text-slate-900 btn-press disabled:opacity-50",
+    "btn-press disabled:opacity-50",
   danger:
-    "bg-red-600 text-white hover:bg-red-700 shadow-sm btn-press disabled:opacity-50",
+    "text-white shadow-sm btn-press disabled:opacity-50",
   "outline-purple":
-    "border border-violet-200 text-violet-700 bg-violet-50 hover:bg-violet-100 hover:border-violet-300 btn-press disabled:opacity-50",
+    "border btn-press disabled:opacity-50",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
@@ -35,6 +35,23 @@ const sizeStyles: Record<ButtonSize, string> = {
   md: "px-4 py-2.5 text-sm rounded-xl gap-2",
   lg: "px-6 py-3.5 text-base rounded-xl gap-2.5",
 };
+
+function getInlineStyle(variant: ButtonVariant): React.CSSProperties {
+  switch (variant) {
+    case "primary":
+      return { background: "var(--accent)", color: "#0a0a0f" };
+    case "secondary":
+      return { background: "var(--surface)", borderColor: "var(--border)", color: "var(--text-primary)" };
+    case "ghost":
+      return { color: "var(--text-secondary)" };
+    case "danger":
+      return { background: "var(--danger)" };
+    case "outline-purple":
+      return { background: "var(--accent-dim)", borderColor: "var(--accent-dim)", color: "var(--accent)" };
+    default:
+      return {};
+  }
+}
 
 export function Button({
   variant = "primary",
@@ -46,6 +63,7 @@ export function Button({
   fullWidth = false,
   className = "",
   disabled,
+  style,
   ...rest
 }: ButtonProps) {
   return (
@@ -54,13 +72,14 @@ export function Button({
       className={`
         inline-flex items-center justify-center font-semibold
         transition-all duration-150 cursor-pointer
-        focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2
+        focus-visible:ring-2 focus-visible:ring-offset-2
         disabled:cursor-not-allowed select-none
         ${variantStyles[variant]}
         ${sizeStyles[size]}
         ${fullWidth ? "w-full" : ""}
         ${className}
       `}
+      style={{ ...getInlineStyle(variant), ...style }}
       {...rest}
     >
       {loading ? (

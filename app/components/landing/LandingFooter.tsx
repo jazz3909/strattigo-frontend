@@ -1,23 +1,25 @@
+"use client";
+
 import Link from "next/link";
 
 export function LandingFooter() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="bg-slate-900 text-slate-400 pt-16 pb-8 px-4 sm:px-6">
+    <footer className="pt-16 pb-8 px-4 sm:px-6" style={{ background: "var(--surface-2)", color: "var(--text-tertiary)" }}>
       <div className="max-w-6xl mx-auto">
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mb-14">
           {/* Brand */}
           <div className="lg:col-span-1">
             <Link href="/" className="flex items-center gap-2.5 mb-4">
               <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center shadow-sm">
-                <svg className="w-4.5 h-4.5 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
                 </svg>
               </div>
-              <span className="text-lg font-bold text-white">Strattigo</span>
+              <span className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>Strattigo</span>
             </Link>
-            <p className="text-sm leading-relaxed text-slate-500 mb-5">
+            <p className="text-sm leading-relaxed mb-5" style={{ color: "var(--text-secondary)" }}>
               Your AI-powered study partner. Study smarter, stress less, and ace your exams.
             </p>
             {/* Social icons */}
@@ -30,7 +32,10 @@ export function LandingFooter() {
                   key={social.label}
                   href="#"
                   aria-label={social.label}
-                  className="w-9 h-9 rounded-xl bg-slate-800 hover:bg-slate-700 flex items-center justify-center text-slate-400 hover:text-white transition-all"
+                  className="w-9 h-9 rounded-xl flex items-center justify-center transition-all cursor-pointer"
+                  style={{ background: "var(--surface-3)", color: "var(--text-secondary)" }}
+                  onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
                 >
                   <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
                     <path d={social.icon} />
@@ -42,7 +47,7 @@ export function LandingFooter() {
 
           {/* Product */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Product</h4>
+            <h4 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Product</h4>
             <ul className="space-y-2.5">
               {[
                 { label: "Features", href: "#features" },
@@ -51,7 +56,10 @@ export function LandingFooter() {
                 { label: "FAQ", href: "#faq" },
               ].map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className="text-sm hover:text-white transition-colors">
+                  <a href={item.href} className="text-sm transition-colors" style={{ color: "var(--text-secondary)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+                  >
                     {item.label}
                   </a>
                 </li>
@@ -61,12 +69,15 @@ export function LandingFooter() {
 
           {/* Study */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Study tools</h4>
+            <h4 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Study tools</h4>
             <ul className="space-y-2.5">
               {["Study Guides", "Practice Quizzes", "Study Plans", "AI Chat", "Canvas Sync"].map(
                 (item) => (
                   <li key={item}>
-                    <Link href="/signup" className="text-sm hover:text-white transition-colors">
+                    <Link href="/signup" className="text-sm transition-colors" style={{ color: "var(--text-secondary)" }}
+                      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+                    >
                       {item}
                     </Link>
                   </li>
@@ -77,7 +88,7 @@ export function LandingFooter() {
 
           {/* Legal */}
           <div>
-            <h4 className="text-sm font-semibold text-white mb-4">Company</h4>
+            <h4 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Company</h4>
             <ul className="space-y-2.5">
               {[
                 { label: "Privacy Policy", href: "#" },
@@ -85,7 +96,10 @@ export function LandingFooter() {
                 { label: "Contact us", href: "#" },
               ].map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className="text-sm hover:text-white transition-colors">
+                  <a href={item.href} className="text-sm transition-colors" style={{ color: "var(--text-secondary)" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
+                  >
                     {item.label}
                   </a>
                 </li>
@@ -94,11 +108,11 @@ export function LandingFooter() {
           </div>
         </div>
 
-        <div className="border-t border-slate-800 pt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-slate-600">
+        <div className="pt-8 flex flex-col sm:flex-row items-center justify-between gap-4" style={{ borderTop: "1px solid var(--border)" }}>
+          <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
             © {year} Strattigo. All rights reserved.
           </p>
-          <p className="text-sm text-slate-600">
+          <p className="text-sm" style={{ color: "var(--text-tertiary)" }}>
             Made for Florida students
           </p>
         </div>

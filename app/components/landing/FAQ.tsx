@@ -43,26 +43,33 @@ function FAQItem({ faq, index }: { faq: typeof faqs[0]; index: number }) {
   return (
     <div
       ref={ref as React.RefObject<HTMLDivElement>}
-      className={`border border-slate-200 rounded-2xl overflow-hidden transition-all duration-500 ${
+      className={`rounded-2xl overflow-hidden transition-all duration-500 ${
         inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
       }`}
-      style={{ transitionDelay: `${index * 60}ms` }}
+      style={{
+        border: "1px solid var(--border)",
+        transitionDelay: `${index * 60}ms`,
+      }}
     >
       <button
         onClick={() => setOpen((o) => !o)}
-        className={`w-full flex items-center justify-between gap-4 px-6 py-5 text-left transition-colors ${
-          open ? "bg-violet-50" : "bg-white hover:bg-slate-50"
-        }`}
+        className="w-full flex items-center justify-between gap-4 px-6 py-5 text-left transition-colors cursor-pointer"
+        style={{
+          background: open ? "var(--accent-dim)" : "var(--surface)",
+        }}
+        onMouseEnter={(e) => { if (!open) e.currentTarget.style.background = "var(--surface-2)"; }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.background = "var(--surface)"; }}
       >
-        <span className={`font-semibold text-sm sm:text-base leading-snug ${open ? "text-violet-800" : "text-slate-800"}`}>
+        <span className="font-semibold text-sm sm:text-base leading-snug" style={{ color: open ? "var(--accent)" : "var(--text-primary)" }}>
           {faq.question}
         </span>
         <span
-          className={`flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200 ${
-            open
-              ? "bg-violet-600 text-white rotate-180"
-              : "bg-slate-100 text-slate-500"
-          }`}
+          className="flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center transition-all duration-200"
+          style={{
+            background: open ? "var(--accent)" : "var(--surface-2)",
+            color: open ? "#0a0a0f" : "var(--text-secondary)",
+            transform: open ? "rotate(180deg)" : "rotate(0deg)",
+          }}
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -71,8 +78,8 @@ function FAQItem({ faq, index }: { faq: typeof faqs[0]; index: number }) {
       </button>
 
       {open && (
-        <div className="px-6 pb-5 bg-white border-t border-slate-100 animate-slide-down">
-          <p className="text-sm text-slate-600 leading-relaxed pt-4">{faq.answer}</p>
+        <div className="px-6 pb-5 animate-slide-down" style={{ background: "var(--surface)", borderTop: "1px solid var(--border)" }}>
+          <p className="text-sm leading-relaxed pt-4" style={{ color: "var(--text-secondary)" }}>{faq.answer}</p>
         </div>
       )}
     </div>
@@ -83,19 +90,22 @@ export function FAQ() {
   const { ref, inView } = useInView({ threshold: 0.1 });
 
   return (
-    <section id="faq" className="py-24 px-4 sm:px-6">
+    <section id="faq" className="py-24 px-4 sm:px-6" style={{ background: "var(--background)" }}>
       <div className="max-w-3xl mx-auto">
         <div
           ref={ref as React.RefObject<HTMLDivElement>}
           className={`text-center mb-12 transition-all duration-600 ${inView ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
         >
-          <div className="inline-flex items-center gap-2 bg-amber-100 text-amber-700 text-sm font-semibold px-4 py-2 rounded-full mb-5">
+          <div
+            className="inline-flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-full mb-5"
+            style={{ background: "var(--accent-dim)", color: "var(--accent)" }}
+          >
             Got questions?
           </div>
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 mb-4">
+          <h2 className="text-3xl sm:text-4xl font-extrabold mb-4" style={{ color: "var(--text-primary)" }}>
             Frequently asked questions
           </h2>
-          <p className="text-lg text-slate-500">
+          <p className="text-lg" style={{ color: "var(--text-secondary)" }}>
             Everything you need to know about Strattigo.
           </p>
         </div>

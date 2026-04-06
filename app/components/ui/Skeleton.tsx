@@ -30,7 +30,7 @@ export function SkeletonText({ lines = 3 }: { lines?: number }) {
 
 export function SkeletonCard() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 space-y-4">
+    <div className="rounded-2xl p-6 space-y-4" style={{ background: "var(--surface)", border: "1px solid var(--border)" }}>
       <div className="flex items-center gap-3">
         <Skeleton variant="circle" className="w-10 h-10" />
         <div className="space-y-2 flex-1">

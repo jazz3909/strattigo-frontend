@@ -37,26 +37,28 @@ export function Tabs({ tabs, activeId, onChange, variant = "pill", className = "
     return (
       <div
         ref={containerRef}
-        className={`relative flex gap-0 border-b border-slate-200 overflow-x-auto ${className}`}
+        className={`relative flex gap-0 overflow-x-auto ${className}`}
+        style={{ borderBottom: "1px solid var(--border)" }}
       >
         {tabs.map((tab) => (
           <button
             key={tab.id}
             data-tab-id={tab.id}
             onClick={() => onChange(tab.id)}
-            className={`
-              flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap
-              transition-colors duration-200
-              ${activeId === tab.id
-                ? "text-violet-700"
-                : "text-slate-500 hover:text-slate-800"
-              }
-            `}
+            className="flex items-center gap-2 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors duration-200 cursor-pointer"
+            style={{ color: activeId === tab.id ? "var(--accent)" : "var(--text-secondary)" }}
           >
             {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
             {tab.label}
             {tab.badge !== undefined && (
-              <span className={`inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold ${activeId === tab.id ? "bg-violet-100 text-violet-700" : "bg-slate-100 text-slate-500"}`}>
+              <span
+                className="inline-flex items-center justify-center min-w-[1.25rem] h-5 px-1 rounded-full text-xs font-semibold"
+                style={
+                  activeId === tab.id
+                    ? { background: "var(--accent-dim)", color: "var(--accent)" }
+                    : { background: "var(--surface-2)", color: "var(--text-secondary)" }
+                }
+              >
                 {tab.badge}
               </span>
             )}
@@ -64,8 +66,8 @@ export function Tabs({ tabs, activeId, onChange, variant = "pill", className = "
         ))}
         {/* Sliding underline indicator */}
         <div
-          className="absolute bottom-0 h-0.5 gradient-brand rounded-full transition-all duration-300 ease-out"
-          style={{ left: sliderStyle.left, width: sliderStyle.width }}
+          className="absolute bottom-0 h-0.5 rounded-full transition-all duration-300 ease-out"
+          style={{ left: sliderStyle.left, width: sliderStyle.width, background: "var(--accent)" }}
         />
       </div>
     );
@@ -73,24 +75,42 @@ export function Tabs({ tabs, activeId, onChange, variant = "pill", className = "
 
   // Pill variant
   return (
-    <div className={`flex gap-1 bg-slate-100 rounded-2xl p-1 overflow-x-auto ${className}`}>
+    <div
+      className={`flex gap-1 rounded-2xl p-1 overflow-x-auto ${className}`}
+      style={{ background: "var(--surface-2)" }}
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}
           onClick={() => onChange(tab.id)}
-          className={`
-            flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap
-            transition-all duration-200 flex-shrink-0
-            ${activeId === tab.id
-              ? "bg-white text-violet-700 shadow-sm"
-              : "text-slate-500 hover:text-slate-700 hover:bg-white/60"
+          className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-medium whitespace-nowrap transition-all duration-200 flex-shrink-0 cursor-pointer"
+          style={
+            activeId === tab.id
+              ? { background: "var(--surface)", color: "var(--accent)", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }
+              : { color: "var(--text-secondary)" }
+          }
+          onMouseEnter={(e) => {
+            if (activeId !== tab.id) {
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
             }
-          `}
+          }}
+          onMouseLeave={(e) => {
+            if (activeId !== tab.id) {
+              (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+            }
+          }}
         >
           {tab.icon && <span className="flex-shrink-0">{tab.icon}</span>}
           {tab.label}
           {tab.badge !== undefined && (
-            <span className={`inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1 rounded-full text-[10px] font-bold ${activeId === tab.id ? "bg-violet-100 text-violet-700" : "bg-slate-200 text-slate-500"}`}>
+            <span
+              className="inline-flex items-center justify-center min-w-[1.25rem] h-4 px-1 rounded-full text-[10px] font-bold"
+              style={
+                activeId === tab.id
+                  ? { background: "var(--accent-dim)", color: "var(--accent)" }
+                  : { background: "var(--surface-3)", color: "var(--text-secondary)" }
+              }
+            >
               {tab.badge}
             </span>
           )}
