@@ -55,7 +55,7 @@ export default function PricingPage() {
     setProLoading(true);
     setCheckoutError("");
     try {
-      await checkoutSession(MONTHLY_PRICE_ID, promoApplied ? promoCode : undefined);
+      await checkoutSession("price_1THvxxGm99mbwFrz8JgalyyA", promoApplied ? promoCode : undefined);
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Checkout failed. Please try again.");
     } finally {
