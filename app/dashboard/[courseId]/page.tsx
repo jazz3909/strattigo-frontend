@@ -326,13 +326,14 @@ export default function CoursePage({
 
   async function handleChat(question: string) {
     if (!question.trim()) return;
+    const historyToSend = messages.slice(-10).map(m => ({ role: m.role, content: m.content }));
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setChatInput("");
     setChatLoading(true);
 
     try {
       let firstChunk = true;
-      for await (const chunk of streamChat(courseId, question, selectedCollectionId ?? undefined)) {
+      for await (const chunk of streamChat(courseId, question, historyToSend, selectedCollectionId ?? undefined)) {
         if (firstChunk) {
           firstChunk = false;
           setChatLoading(false);

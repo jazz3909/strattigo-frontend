@@ -451,12 +451,18 @@ export interface ChatResponse {
   content_id: string;
 }
 
+export interface ChatHistoryMessage {
+  role: "user" | "assistant";
+  content: string;
+}
+
 export async function chatWithCourse(
   courseId: string,
   question: string,
+  history: ChatHistoryMessage[] = [],
   collectionId?: string
 ): Promise<ChatResponse> {
-  const body: Record<string, unknown> = { course_id: courseId, question };
+  const body: Record<string, unknown> = { course_id: courseId, question, history };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   console.log("[chat] Sending request body:", JSON.stringify(body));
   const response = await apiPost<ChatResponse>(`/ai/chat`, body);
@@ -543,9 +549,9 @@ export async function* streamStudyGuide(courseId: string, title: string, collect
   yield* readSseStream(response);
 }
 
-export async function* streamChat(courseId: string, question: string, collectionId?: string): AsyncGenerator<string> {
+export async function* streamChat(courseId: string, question: string, history: ChatHistoryMessage[] = [], collectionId?: string): AsyncGenerator<string> {
   const token = getToken();
-  const body: Record<string, unknown> = { course_id: courseId, question };
+  const body: Record<string, unknown> = { course_id: courseId, question, history };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   const response = await fetch(`${API_BASE}/ai/chat/stream`, {
     method: "POST",
