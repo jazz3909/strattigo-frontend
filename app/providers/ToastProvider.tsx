@@ -39,41 +39,34 @@ export function useToast() {
 function ToastIcon({ type }: { type: ToastType }) {
   if (type === "success")
     return (
-      <svg className="w-5 h-5 text-emerald-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0" style={{ color: "var(--success, #6bffb8)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
     );
   if (type === "error")
     return (
-      <svg className="w-5 h-5 text-red-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0" style={{ color: "var(--danger, #ff6b6b)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
       </svg>
     );
   if (type === "warning")
     return (
-      <svg className="w-5 h-5 text-amber-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <svg className="w-5 h-5 flex-shrink-0" style={{ color: "var(--accent, #ffb075)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
       </svg>
     );
   return (
-    <svg className="w-5 h-5 text-blue-500 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+    <svg className="w-5 h-5 flex-shrink-0" style={{ color: "var(--accent, #ffb075)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
       <path strokeLinecap="round" strokeLinejoin="round" d="M11.25 11.25l.041-.02a.75.75 0 011.063.852l-.708 2.836a.75.75 0 001.063.853l.041-.021M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9-3.75h.008v.008H12V8.25z" />
     </svg>
   );
 }
 
-const toastStyles: Record<ToastType, string> = {
-  success: "border-emerald-200 bg-white",
-  error: "border-red-200 bg-white",
-  warning: "border-amber-200 bg-white",
-  info: "border-blue-200 bg-white",
-};
-
 const progressColors: Record<ToastType, string> = {
-  success: "bg-emerald-500",
-  error: "bg-red-500",
-  warning: "bg-amber-500",
-  info: "bg-blue-500",
+  success: "var(--success, #6bffb8)",
+  error: "var(--danger, #ff6b6b)",
+  warning: "var(--accent, #ffb075)",
+  info: "var(--accent, #ffb075)",
 };
 
 // ── Individual Toast ──────────────────────────────────────────────────────
@@ -105,20 +98,24 @@ function ToastItem({
 
   return (
     <div
-      className={`
-        relative w-80 max-w-full rounded-2xl border shadow-lg overflow-hidden
-        ${toastStyles[toast.type]}
-        ${toast.leaving ? "animate-toast-out" : "animate-toast-in"}
-      `}
+      className={`relative w-80 max-w-full rounded-2xl overflow-hidden ${toast.leaving ? "animate-toast-out" : "animate-toast-in"}`}
+      style={{
+        background: "var(--surface, #111118)",
+        border: "1px solid var(--border, #222230)",
+        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+      }}
     >
       <div className="flex items-start gap-3 p-4">
         <ToastIcon type={toast.type} />
-        <p className="flex-1 text-sm font-medium text-slate-800 leading-relaxed pt-0.5">
+        <p className="flex-1 text-sm font-medium leading-relaxed pt-0.5" style={{ color: "var(--text-primary, #f0f0f5)" }}>
           {toast.message}
         </p>
         <button
           onClick={() => onRemove(toast.id)}
-          className="flex-shrink-0 p-1 rounded-lg text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition-colors"
+          className="flex-shrink-0 p-1 rounded-lg transition-colors cursor-pointer"
+          style={{ color: "var(--text-secondary)" }}
+          onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary, #f0f0f5)")}
+          onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-secondary)")}
           aria-label="Dismiss"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -127,10 +124,10 @@ function ToastItem({
         </button>
       </div>
       {/* Progress bar */}
-      <div className="h-0.5 bg-slate-100">
+      <div className="h-0.5" style={{ background: "var(--border, #222230)" }}>
         <div
-          className={`h-full ${progressColors[toast.type]} transition-none`}
-          style={{ width: `${progress}%` }}
+          className="h-full transition-none"
+          style={{ width: `${progress}%`, background: progressColors[toast.type] }}
         />
       </div>
     </div>
