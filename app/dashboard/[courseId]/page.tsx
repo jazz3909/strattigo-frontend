@@ -2002,25 +2002,42 @@ function QuizQuestion({
               disabled={revealed}
               className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press
                 ${revealed
-                  ? isCorrect
-                    ? "bg-emerald-50 border-emerald-300 text-emerald-800"
-                    : isSelected
-                    ? "bg-red-50 border-red-300 text-red-800"
-                    : "bg-[var(--background)] border-[var(--border)] text-[var(--text-tertiary)]"
+                  ? isSelected && isCorrect
+                    ? "answer-correct-pulse"
+                    : isSelected && !isCorrect
+                    ? "answer-shake"
+                    : ""
                   : isSelected
                   ? "bg-[var(--accent-dim)] border-[var(--accent)] text-violet-900 shadow-sm"
                   : "border-[var(--border)] hover:border-[var(--accent-dim)] hover:bg-[var(--accent-dim)]/50 text-[var(--text-primary)]"
                 }
               `}
+              style={revealed ? {
+                background: isCorrect
+                  ? "rgba(107, 255, 184, 0.08)"
+                  : isSelected
+                  ? "rgba(255, 107, 107, 0.08)"
+                  : "var(--surface)",
+                borderColor: isCorrect
+                  ? "rgba(107, 255, 184, 0.3)"
+                  : isSelected
+                  ? "rgba(255, 107, 107, 0.3)"
+                  : "var(--border)",
+                color: isCorrect
+                  ? "#6bffb8"
+                  : isSelected
+                  ? "#ff6b6b"
+                  : "var(--text-secondary)",
+              } : undefined}
             >
               <div className="flex items-start gap-3">
                 {revealed && isCorrect && (
-                  <svg className="w-4 h-4 text-emerald-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#6bffb8" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 )}
                 {revealed && isSelected && !isCorrect && (
-                  <svg className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#ff6b6b" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
