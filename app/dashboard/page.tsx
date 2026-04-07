@@ -286,25 +286,25 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Background gradient orbs */}
+      {/* Background gradient orbs — NO border-radius (avoids visible edges) */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden" style={{ zIndex: 0 }}>
         <div style={{
           position: "absolute",
-          top: "-100px",
-          left: "-100px",
-          width: "600px",
-          height: "600px",
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(255,176,117,0.07) 0%, transparent 70%)",
+          top: "-200px",
+          left: "-200px",
+          width: "900px",
+          height: "900px",
+          background: "radial-gradient(ellipse at center, rgba(255,176,117,0.05) 0%, rgba(255,176,117,0.01) 50%, transparent 70%)",
+          pointerEvents: "none",
         }} />
         <div style={{
           position: "absolute",
-          bottom: "-80px",
-          right: "-80px",
-          width: "400px",
-          height: "400px",
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(255,176,117,0.05) 0%, transparent 70%)",
+          bottom: "-150px",
+          right: "-150px",
+          width: "700px",
+          height: "700px",
+          background: "radial-gradient(ellipse at center, rgba(255,176,117,0.04) 0%, rgba(255,176,117,0.01) 50%, transparent 70%)",
+          pointerEvents: "none",
         }} />
       </div>
 

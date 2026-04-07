@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { clearToken, getEmail } from "../lib/api";
+import { clearToken, getEmail, getCourses } from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
 import { useEffect, useState } from "react";
 import { Avatar } from "../components/ui/Avatar";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
+import { OnboardingModal } from "../components/OnboardingModal";
 
 const NAV_LINKS = [
   {
@@ -46,6 +47,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [email, setEmail] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [subChecked, setSubChecked] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
     const e = getEmail();
@@ -59,12 +61,35 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           router.replace("/pricing");
         } else {
           setSubChecked(true);
+          checkOnboarding();
         }
       })
       .catch(() => {
         router.replace("/pricing");
       });
   }, [router]);
+
+  async function checkOnboarding() {
+    if (typeof window === "undefined") return;
+    const done = localStorage.getItem("strattigo_onboarding_complete");
+    if (done) return;
+
+    try {
+      const courses = await getCourses();
+      if (courses.length > 0) {
+        localStorage.setItem("strattigo_onboarding_complete", "true");
+        return;
+      }
+    } catch {
+      // non-critical
+    }
+    setShowOnboarding(true);
+  }
+
+  function handleOnboardingComplete() {
+    setShowOnboarding(false);
+    localStorage.setItem("strattigo_onboarding_complete", "true");
+  }
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 4);
@@ -80,18 +105,51 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!subChecked) {
     return (
-      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
-        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6" style={{ background: "var(--background)" }}>
+        <span
+          style={{
+            fontSize: "24px",
+            fontWeight: 800,
+            letterSpacing: "0.12em",
+            color: "var(--accent)",
+            animation: "fadeIn 0.5s ease-out both",
+          }}
+        >
+          STRATTIGO
+        </span>
+        {/* Loading bar */}
+        <div style={{ width: "120px", height: "2px", background: "var(--surface-3)", borderRadius: "1px", overflow: "hidden" }}>
+          <div
+            className="animate-shimmer"
+            style={{
+              height: "100%",
+              background: "var(--accent)",
+              borderRadius: "1px",
+            }}
+          />
+        </div>
       </div>
     );
   }
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
+      {/* Onboarding modal */}
+      <OnboardingModal
+        isOpen={showOnboarding}
+        onComplete={handleOnboardingComplete}
+      />
+
       {/* Top nav */}
       <header
-        className={`sticky top-0 z-40 transition-all duration-200 ${scrolled ? "glass border-b shadow-sm" : "border-b"}`}
-        style={{ borderColor: "var(--border)" }}
+        className={`sticky top-0 z-40 transition-all duration-200`}
+        style={{
+          background: scrolled ? "rgba(10,10,15,0.9)" : "var(--background)",
+          borderBottom: "1px solid var(--border)",
+          backdropFilter: scrolled ? "blur(16px) saturate(180%)" : "none",
+          WebkitBackdropFilter: scrolled ? "blur(16px) saturate(180%)" : "none",
+          boxShadow: scrolled ? "0 1px 0 var(--border)" : "none",
+        }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           {/* Logo + nav */}
@@ -102,7 +160,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
                 </svg>
               </div>
-              <span className="text-base font-bold gradient-text">Strattigo</span>
+              <span className="text-base font-bold gradient-text" style={{ letterSpacing: "0.02em" }}>Strattigo</span>
             </Link>
 
             {/* Desktop nav links */}
@@ -115,7 +173,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <Link
                     key={link.href}
                     href={link.href}
-                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all"
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all relative group"
                     style={isActive
                       ? { background: "var(--accent-dim)", color: "var(--accent)" }
                       : { color: "var(--text-secondary)" }
@@ -146,7 +204,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             <ThemeToggle />
             {email && (
               <div className="hidden sm:flex items-center gap-2.5 ml-1">
-                <Avatar name={email} size="sm" />
+                <div
+                  style={{ transition: "filter 200ms ease" }}
+                  onMouseEnter={(e) => { (e.currentTarget as HTMLDivElement).style.filter = "drop-shadow(0 0 6px rgba(255,176,117,0.5))"; }}
+                  onMouseLeave={(e) => { (e.currentTarget as HTMLDivElement).style.filter = "none"; }}
+                >
+                  <Avatar name={email} size="sm" />
+                </div>
                 <span className="text-xs truncate max-w-[140px] font-medium" style={{ color: "var(--text-secondary)" }}>
                   {email}
                 </span>
@@ -154,11 +218,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-xl cursor-pointer"
+              className="flex items-center gap-1.5 text-sm font-medium transition-all px-3 py-1.5 rounded-xl cursor-pointer"
               style={{ color: "var(--text-secondary)" }}
               onMouseEnter={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-2)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--danger)";
               }}
               onMouseLeave={(e) => {
                 (e.currentTarget as HTMLButtonElement).style.background = "transparent";

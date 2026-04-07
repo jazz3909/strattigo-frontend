@@ -802,3 +802,86 @@ body {
 .orb-3 {
   animation: orb3 10s ease-in-out infinite;
 }
+
+/* ─── Focus: remove outline for mouse clicks ────────────────────────────── */
+*:focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ─── No-transition utility ─────────────────────────────────────────────── */
+.no-transition,
+.no-transition * {
+  transition: none !important;
+}
+
+/* ─── Input Autofill Dark Mode Fix ──────────────────────────────────────── */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--text-primary);
+  -webkit-box-shadow: 0 0 0px 1000px var(--surface-2) inset;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* ─── Skeleton Shimmer (named variant) ──────────────────────────────────── */
+@keyframes skeleton-shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface) 25%, var(--surface-2) 50%, var(--surface) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+  border-radius: 6px;
+}
+
+/* ─── Accent Pulse ───────────────────────────────────────────────────────── */
+@keyframes accent-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 176, 117, 0); }
+  50% { box-shadow: 0 0 0 8px rgba(255, 176, 117, 0.1); }
+}
+
+.animate-accent-pulse {
+  animation: accent-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Onboarding Step Transition ────────────────────────────────────────── */
+@keyframes step-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-step-enter {
+  animation: step-enter 200ms ease-out both;
+}
+
+/* ─── Celebration Sparkle Pulse ─────────────────────────────────────────── */
+@keyframes sparkle-pulse {
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255,176,117,0.4)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,176,117,0.7)); }
+}
+
+.animate-sparkle-pulse {
+  animation: sparkle-pulse 2s ease-in-out infinite;
+}
+
+/* ─── Micro: Button Active Press ────────────────────────────────────────── */
+button:not(.no-btn-press):active {
+  transform: scale(0.97);
+}
+
+/* ─── Text rendering ─────────────────────────────────────────────────────── */
+body {
+  text-rendering: optimizeLegibility;
+}
+
+/* ─── Upload zone drag animation ────────────────────────────────────────── */
+@keyframes drag-pulse {
+  0%, 100% { border-color: var(--accent); }
+  50% { border-color: rgba(255,176,117,0.5); }
+}
+
+.drag-active {
+  animation: drag-pulse 1s ease-in-out infinite;
+}

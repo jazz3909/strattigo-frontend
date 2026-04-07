@@ -98,11 +98,12 @@ function ToastItem({
 
   return (
     <div
-      className={`relative w-80 max-w-full rounded-2xl overflow-hidden ${toast.leaving ? "animate-toast-out" : "animate-toast-in"}`}
+      className={`relative w-80 max-w-full rounded-[10px] overflow-hidden ${toast.leaving ? "animate-toast-out" : "animate-toast-in"}`}
       style={{
         background: "var(--surface, #111118)",
         border: "1px solid var(--border, #222230)",
-        boxShadow: "0 4px 24px rgba(0,0,0,0.4)",
+        borderLeft: `4px solid ${progressColors[toast.type]}`,
+        boxShadow: "0 8px 32px rgba(0,0,0,0.4)",
       }}
     >
       <div className="flex items-start gap-3 p-4">
@@ -124,10 +125,10 @@ function ToastItem({
         </button>
       </div>
       {/* Progress bar */}
-      <div className="h-0.5" style={{ background: "var(--border, #222230)" }}>
+      <div className="h-[3px]" style={{ background: "var(--surface-3, #222230)" }}>
         <div
           className="h-full transition-none"
-          style={{ width: `${progress}%`, background: progressColors[toast.type] }}
+          style={{ width: `${progress}%`, background: progressColors[toast.type], opacity: 0.7 }}
         />
       </div>
     </div>
