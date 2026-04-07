@@ -47,7 +47,7 @@ function getGreeting(): string {
 
 function CourseCardSkeleton() {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-6 shadow-sm">
+    <div className="rounded-2xl border p-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
       <div className="flex items-start gap-4 mb-4">
         <Skeleton className="w-12 h-12 rounded-2xl flex-shrink-0" />
         <div className="flex-1 space-y-2">
@@ -76,7 +76,7 @@ function StatCard({
   color: string;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm flex items-center gap-4">
+    <div className="rounded-2xl border p-4 flex items-center gap-4" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
       <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${color} flex items-center justify-center flex-shrink-0 shadow-sm`}>
         {icon}
       </div>
@@ -88,8 +88,8 @@ function StatCard({
           </>
         ) : (
           <>
-            <p className="text-xl font-extrabold text-slate-900 leading-none">{value ?? "—"}</p>
-            <p className="text-xs text-slate-400 mt-0.5">{label}</p>
+            <p className="text-xl font-extrabold leading-none" style={{ color: "var(--text-primary)" }}>{value ?? "—"}</p>
+            <p className="text-xs mt-0.5" style={{ color: "var(--text-secondary)" }}>{label}</p>
           </>
         )}
       </div>
@@ -182,18 +182,19 @@ export default function DashboardPage() {
   return (
     <>
       {/* Upgrade banner — shown for free users */}
-      <div className="mb-4 flex items-center justify-between gap-3 bg-gradient-to-r from-violet-600/10 to-blue-600/10 border border-violet-200 rounded-2xl px-5 py-3">
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl px-5 py-3 border" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
         <div className="flex items-center gap-2.5">
-          <svg className="w-4 h-4 text-violet-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: "var(--accent)" }}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
-          <span className="text-sm text-slate-700 font-medium">
+          <span className="text-sm font-medium" style={{ color: "var(--text-secondary)" }}>
             You&apos;re on the free plan — upgrade to Pro for unlimited access
           </span>
         </div>
         <Link
           href="/pricing"
-          className="flex-shrink-0 text-sm font-semibold text-violet-700 hover:text-violet-900 transition-colors whitespace-nowrap"
+          className="flex-shrink-0 text-sm font-semibold whitespace-nowrap transition-colors"
+          style={{ color: "var(--accent)" }}
         >
           Upgrade now →
         </Link>
@@ -205,10 +206,10 @@ export default function DashboardPage() {
           <div className="flex items-center gap-3">
             <Avatar name={email || "User"} size="md" />
             <div>
-              <h1 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+              <h1 className="text-xl sm:text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>
                 {greeting ? `${greeting}, ${displayName}!` : `Hi, ${displayName}!`}
               </h1>
-              <p className="text-sm text-slate-400 mt-0.5">
+              <p className="text-sm mt-0.5" style={{ color: "var(--text-secondary)" }}>
                 {loading
                   ? "Loading your courses…"
                   : courses.length === 0
@@ -325,8 +326,18 @@ export default function DashboardPage() {
             <Link
               key={course.id}
               href={`/dashboard/${course.id}`}
-              className="group block bg-white rounded-2xl border border-slate-100 p-6 shadow-sm hover:shadow-lg hover:border-violet-100 hover:-translate-y-1 transition-all duration-200 animate-fade-in-up cursor-pointer"
-              style={{ animationDelay: `${i * 60}ms` }}
+              className="group block rounded-2xl border p-6 transition-all duration-200 animate-fade-in-up cursor-pointer"
+              style={{ background: "var(--surface)", borderColor: "var(--border)", animationDelay: `${i * 60}ms` }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "var(--surface-2)";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "translateY(-2px)";
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "var(--shadow-lg)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLAnchorElement).style.background = "var(--surface)";
+                (e.currentTarget as HTMLAnchorElement).style.transform = "";
+                (e.currentTarget as HTMLAnchorElement).style.boxShadow = "";
+              }}
             >
               {/* Icon */}
               <div className="flex items-start justify-between mb-4">
@@ -339,20 +350,20 @@ export default function DashboardPage() {
               </div>
 
               {/* Info */}
-              <h2 className="font-bold text-slate-900 group-hover:text-violet-700 transition-colors mb-1.5 line-clamp-1">
+              <h2 className="font-bold mb-1.5 line-clamp-1" style={{ color: "var(--text-primary)" }}>
                 {course.name}
               </h2>
               {course.description ? (
-                <p className="text-sm text-slate-400 line-clamp-2 leading-relaxed mb-4">
+                <p className="text-sm line-clamp-2 leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
                   {course.description}
                 </p>
               ) : (
-                <p className="text-sm text-slate-300 italic mb-4">No description</p>
+                <p className="text-sm italic mb-4" style={{ color: "var(--text-secondary)" }}>No description</p>
               )}
 
               {/* Footer */}
-              <div className="flex items-center justify-between pt-3 border-t border-slate-50">
-                <span className="text-xs text-slate-400 flex items-center gap-1.5">
+              <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+                <span className="text-xs flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -360,7 +371,7 @@ export default function DashboardPage() {
                     ? new Date(course.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
                     : "Recently added"}
                 </span>
-                <span className="text-xs font-semibold text-violet-600 group-hover:text-violet-700 flex items-center gap-1 transition-all group-hover:gap-2">
+                <span className="text-xs font-semibold flex items-center gap-1 transition-all group-hover:gap-2" style={{ color: "var(--accent)" }}>
                   Study now
                   <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />

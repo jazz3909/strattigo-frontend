@@ -52,13 +52,10 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
+    <div className="min-h-screen flex flex-col" style={{ background: "var(--background)" }}>
       <header
-        className={`sticky top-0 z-40 transition-all duration-200 ${
-          scrolled
-            ? "glass border-b border-white/60 shadow-sm"
-            : "bg-white/80 backdrop-blur-sm border-b border-slate-100"
-        }`}
+        className={`sticky top-0 z-40 transition-all duration-200 ${scrolled ? "glass border-b shadow-sm" : "border-b"}`}
+        style={{ borderColor: "var(--border)" }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
           <div className="flex items-center gap-6">
@@ -78,11 +75,23 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all ${
-                      isActive
-                        ? "bg-violet-50 text-violet-700"
-                        : "text-slate-500 hover:text-slate-800 hover:bg-slate-100"
-                    }`}
+                    className="flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium transition-all"
+                    style={isActive
+                      ? { background: "var(--accent-dim)", color: "var(--accent)" }
+                      : { color: "var(--text-secondary)" }
+                    }
+                    onMouseEnter={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLAnchorElement).style.background = "var(--surface-2)";
+                        (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-primary)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) {
+                        (e.currentTarget as HTMLAnchorElement).style.background = "transparent";
+                        (e.currentTarget as HTMLAnchorElement).style.color = "var(--text-secondary)";
+                      }
+                    }}
                   >
                     {link.icon}
                     {link.label}
@@ -96,12 +105,21 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
             {email && (
               <div className="hidden sm:flex items-center gap-2.5">
                 <Avatar name={email} size="sm" />
-                <span className="text-xs text-slate-500 truncate max-w-[140px] font-medium">{email}</span>
+                <span className="text-xs truncate max-w-[140px] font-medium" style={{ color: "var(--text-secondary)" }}>{email}</span>
               </div>
             )}
             <button
               onClick={handleLogout}
-              className="flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 font-medium transition-colors px-3 py-1.5 rounded-xl hover:bg-slate-100"
+              className="flex items-center gap-1.5 text-sm font-medium transition-colors px-3 py-1.5 rounded-xl cursor-pointer"
+              style={{ color: "var(--text-secondary)" }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--surface-2)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "transparent";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+              }}
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
@@ -113,7 +131,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
       </header>
 
       {/* Mobile bottom nav */}
-      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t border-slate-200/80 shadow-lg">
+      <div className="sm:hidden fixed bottom-0 left-0 right-0 z-40 glass border-t shadow-lg" style={{ borderColor: "var(--border)" }}>
         <div className="flex items-center justify-around h-16 max-w-sm mx-auto px-4">
           {NAV_LINKS.map((link) => {
             const isActive = pathname.startsWith(link.href);
@@ -121,9 +139,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
               <Link
                 key={link.href}
                 href={link.href}
-                className={`flex flex-col items-center gap-1 px-5 py-2 rounded-xl text-xs font-medium transition-all min-h-[44px] min-w-[44px] justify-center ${
-                  isActive ? "text-violet-700" : "text-slate-400 hover:text-slate-600"
-                }`}
+                className="flex flex-col items-center gap-1 px-5 py-2 rounded-xl text-xs font-medium transition-all min-h-[44px] min-w-[44px] justify-center"
+                style={{ color: isActive ? "var(--accent)" : "var(--text-tertiary)" }}
               >
                 {link.icon}
                 {link.label}
@@ -132,7 +149,8 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
           })}
           <button
             onClick={handleLogout}
-            className="flex flex-col items-center gap-1 px-5 py-2 text-xs font-medium text-slate-400 hover:text-slate-600 transition-colors min-h-[44px] min-w-[44px] justify-center"
+            className="flex flex-col items-center gap-1 px-5 py-2 text-xs font-medium transition-colors min-h-[44px] min-w-[44px] justify-center cursor-pointer"
+            style={{ color: "var(--text-tertiary)" }}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
