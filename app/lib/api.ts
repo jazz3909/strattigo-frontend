@@ -619,7 +619,7 @@ export interface CanvasFileItem {
   size: number;
   content_type: string;
   url?: string;
-  item_type: "file" | "link";
+  item_type: "file" | "link" | "page";
 }
 
 export interface CanvasModule {
@@ -635,11 +635,18 @@ export interface CanvasLinkItem {
   url: string;
 }
 
+export interface CanvasPageItem {
+  file_id: number;
+  display_name: string;
+  url: string;
+}
+
 export interface CanvasImportModule {
   module_id: number;
   collection_name: string;
   file_ids: number[];
   link_items: CanvasLinkItem[];
+  page_items: CanvasPageItem[];
 }
 
 export interface CanvasImportResult {
@@ -658,11 +665,13 @@ export async function getCanvasModules(canvasCourseId: number): Promise<CanvasMo
 
 export async function importCanvasModules(
   courseId: string,
+  canvasCourseId: number,
   modules: CanvasImportModule[],
   overwrite: boolean,
 ): Promise<CanvasImportResult> {
   return apiPost<CanvasImportResult>("/canvas/import", {
     course_id: courseId,
+    canvas_course_id: canvasCourseId,
     modules,
     overwrite,
   });

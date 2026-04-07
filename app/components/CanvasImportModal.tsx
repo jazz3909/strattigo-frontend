@@ -12,6 +12,7 @@ import {
   type CanvasModule,
   type CanvasImportModule,
   type CanvasLinkItem,
+  type CanvasPageItem,
   type Material,
 } from "../lib/api";
 
@@ -47,11 +48,18 @@ function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
-function FileTypeIcon({ contentType, name, itemType }: { contentType: string; name: string; itemType?: "file" | "link" }) {
+function FileTypeIcon({ contentType, name, itemType }: { contentType: string; name: string; itemType?: "file" | "link" | "page" }) {
   if (itemType === "link") return (
     <span style={{ color: "#6366f1" }}>
       <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+      </svg>
+    </span>
+  );
+  if (itemType === "page") return (
+    <span style={{ color: "#a855f7" }}>
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
       </svg>
     </span>
   );
@@ -267,8 +275,8 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
           module_id: m.module_id,
           module_name: m.module_name,
           collection_name: m.suggested_collection_name,
-          selected_files: new Set(m.items.map((i) => i.file_id)),
-          expanded: true,
+          selected_files: new Set<number>(),
+          expanded: false,
         }))
       );
     } catch (err) {
@@ -290,10 +298,10 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
     return mod.items
       .filter((item) => {
         if (!ms.selected_files.has(item.file_id)) return false;
-        const storedName = item.item_type === "link" ? item.display_name + ".txt" : item.display_name;
+        const storedName = item.item_type === "link" || item.item_type === "page" ? item.display_name + ".txt" : item.display_name;
         return existingNames.has(storedName);
       })
-      .map((item) => item.item_type === "link" ? item.display_name + ".txt" : item.display_name);
+      .map((item) => item.item_type === "link" || item.item_type === "page" ? item.display_name + ".txt" : item.display_name);
   });
 
   function toggleModuleExpand(moduleId: number) {
@@ -370,11 +378,14 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
         const mod = modules.find((mod) => mod.module_id === m.module_id);
         const fileIds: number[] = [];
         const linkItems: CanvasLinkItem[] = [];
+        const pageItems: CanvasPageItem[] = [];
         Array.from(m.selected_files).forEach((id) => {
           const item = mod?.items.find((i) => i.file_id === id);
           if (!item) return;
           if (item.item_type === "link") {
             linkItems.push({ file_id: item.file_id, display_name: item.display_name, url: item.url! });
+          } else if (item.item_type === "page") {
+            pageItems.push({ file_id: item.file_id, display_name: item.display_name, url: item.url! });
           } else {
             fileIds.push(id);
           }
@@ -384,6 +395,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
           collection_name: m.collection_name.trim() || m.module_name,
           file_ids: fileIds,
           link_items: linkItems,
+          page_items: pageItems,
         };
       });
 
@@ -392,7 +404,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
     }, 400);
 
     try {
-      const result = await importCanvasModules(courseId, modulesToImport, overwrite);
+      const result = await importCanvasModules(courseId, selectedCourseId!, modulesToImport, overwrite);
       clearInterval(progressInterval);
       setImportProgress(100);
       setImportResult(result);
@@ -646,7 +658,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                               <FileTypeIcon contentType={item.content_type} name={item.display_name} itemType={item.item_type} />
                               <span className="flex-1 text-sm truncate" style={{ color: "var(--text-primary)" }}>
                                 {item.display_name}
-                                {existingNames.has(item.item_type === "link" ? item.display_name + ".txt" : item.display_name) && (
+                                {existingNames.has(item.item_type === "link" || item.item_type === "page" ? item.display_name + ".txt" : item.display_name) && (
                                   <span
                                     className="ml-1.5 text-xs px-1.5 py-0.5 rounded font-medium"
                                     style={{ background: "rgba(251,191,36,0.1)", color: "#f59e0b" }}
@@ -656,7 +668,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                                 )}
                               </span>
                               <span className="text-xs flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>
-                                {item.item_type === "link" ? "Link" : formatSize(item.size)}
+                                {item.item_type === "link" ? "Link" : item.item_type === "page" ? "Page" : formatSize(item.size)}
                               </span>
                             </div>
                           ))}
