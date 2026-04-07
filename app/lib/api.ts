@@ -272,8 +272,27 @@ export interface StudyGuideSaved {
   created_at: string;
 }
 
+export interface QuizSaved {
+  id: string;
+  title: string | null;
+  content: string;
+  created_at: string;
+}
+
 export async function getSavedStudyGuides(courseId: string): Promise<StudyGuideSaved[]> {
   return apiGet<StudyGuideSaved[]>(`/ai/study-guides/${courseId}`);
+}
+
+export async function getSavedQuizzes(courseId: string): Promise<QuizSaved[]> {
+  return apiGet<QuizSaved[]>(`/ai/quizzes/${courseId}`);
+}
+
+export async function saveQuiz(courseId: string, title: string, content: string): Promise<QuizSaved> {
+  return apiPost<QuizSaved>("/ai/quiz/save", { course_id: courseId, title, content });
+}
+
+export async function deleteSavedQuiz(contentId: string): Promise<void> {
+  return apiDelete<void>(`/ai/quiz/${contentId}`);
 }
 
 export async function generateStudyGuide(courseId: string, title: string, forceRegenerate = false, collectionId?: string): Promise<AiResponse> {
