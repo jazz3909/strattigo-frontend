@@ -374,11 +374,16 @@ export default function CanvasSettingsPage() {
               <p className="text-xs font-bold mb-2" style={{ color: "var(--text-primary)" }}>How to get your Canvas API token:</p>
               <ol className="text-xs space-y-1.5 list-none" style={{ color: "var(--text-secondary)" }}>
                 {[
-                  "Log in to your Canvas account",
-                  "Click your avatar (top-left) → Account → Settings",
-                  "Scroll to Approved Integrations",
-                  "Click + New Access Token",
-                  'Enter "Strattigo" as purpose and click Generate',
+                  "Log in to your Canvas account at your institution's Canvas URL",
+                  "Click your profile picture or name in the top-left corner",
+                  'Select "Settings" from the dropdown menu',
+                  'Scroll down to the "Approved Integrations" section',
+                  'Click "+ New Access Token"',
+                  'In the "Purpose" field, enter "Strattigo"',
+                  "Set an expiration date — Canvas allows a maximum of 120 days",
+                  'Click "Generate Token"',
+                  "Copy the token immediately — Canvas will only show it once",
+                  'Paste the token in the field above and click "Connect Canvas"',
                 ].map((step, i) => (
                   <li key={i} className="flex items-start gap-2">
                     <span
@@ -387,11 +392,37 @@ export default function CanvasSettingsPage() {
                     >
                       {i + 1}
                     </span>
-                    {step}
+                    <span>
+                      {step}
+                      {i === 6 && (
+                        <span className="block mt-1 space-y-0.5">
+                          <span className="block" style={{ color: "var(--accent)" }}>Tip: Set it to the maximum (120 days) so you don&apos;t have to reconnect frequently</span>
+                          <span className="block" style={{ color: "var(--text-tertiary)" }}>Note: You will need to generate a new token after it expires</span>
+                        </span>
+                      )}
+                    </span>
                   </li>
                 ))}
               </ol>
             </div>
+
+            {/* Warning box */}
+            <div
+              className="mt-4 flex items-start gap-2.5 rounded-xl px-4 py-3 border"
+              style={{ background: "var(--accent-dim)", borderColor: "var(--accent)" }}
+            >
+              <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: "var(--accent)" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <p className="text-xs leading-relaxed" style={{ color: "var(--accent)" }}>
+                Your token expires after the date you set (max 120 days). When it expires, return here to reconnect with a new token.
+              </p>
+            </div>
+
+            {/* Read-only note */}
+            <p className="mt-3 text-xs leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+              Canvas API tokens give Strattigo read-only access to your course materials, assignments, and grades. We never modify your Canvas data.
+            </p>
           </div>
         </>
       )}
