@@ -168,19 +168,25 @@ function Checkbox({ checked, onChange, indeterminate }: {
   return (
     <button
       type="button"
-      onClick={onChange}
-      className="w-4 h-4 rounded flex-shrink-0 flex items-center justify-center transition-all"
+      onClick={(e) => { e.stopPropagation(); onChange(); }}
+      className="flex-shrink-0 flex items-center justify-center transition-all"
       style={{
-        background: checked || indeterminate ? "var(--accent)" : "var(--surface-3)",
-        border: checked || indeterminate ? "none" : "1.5px solid var(--border)",
+        width: "18px",
+        height: "18px",
+        minWidth: "18px",
+        borderRadius: "4px",
+        background: checked || indeterminate ? "#ffb075" : "#222230",
+        border: checked || indeterminate ? "2px solid #ffb075" : "2px solid #333345",
+        cursor: "pointer",
+        position: "relative",
       }}
     >
       {indeterminate ? (
-        <svg className="w-2.5 h-2.5" fill="none" stroke="#0a0a0f" strokeWidth={3} viewBox="0 0 24 24">
+        <svg style={{ width: "10px", height: "10px" }} fill="none" stroke="#0a0a0f" strokeWidth={3} viewBox="0 0 24 24">
           <path strokeLinecap="round" d="M5 12h14" />
         </svg>
       ) : checked ? (
-        <svg className="w-2.5 h-2.5" fill="none" stroke="#0a0a0f" strokeWidth={3} viewBox="0 0 24 24">
+        <svg style={{ width: "10px", height: "10px" }} fill="none" stroke="#0a0a0f" strokeWidth={3} viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
         </svg>
       ) : null}
@@ -207,6 +213,10 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
   const [modulesLoading, setModulesLoading] = useState(false);
   const [modulesError, setModulesError] = useState("");
 
+  // Step 2 — grouping
+  const [grouping, setGrouping] = useState<"by_module" | "single">("by_module");
+  const [singleCollectionName, setSingleCollectionName] = useState("");
+
   // Step 4 — import
   const [importing, setImporting] = useState(false);
   const [importProgress, setImportProgress] = useState(0);
@@ -229,6 +239,8 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
       setModuleStates([]);
       setModulesLoading(false);
       setModulesError("");
+      setGrouping("by_module");
+      setSingleCollectionName("");
       setImporting(false);
       setImportProgress(0);
       setImportError("");
@@ -264,6 +276,8 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
 
   async function handleNextFromStep1() {
     if (!selectedCourseId) return;
+    const course = courses.find((c) => c.canvas_id === selectedCourseId);
+    setSingleCollectionName(course ? course.name.slice(0, 40) : "");
     setStep(2);
     setModulesLoading(true);
     setModulesError("");
@@ -372,13 +386,14 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
     setImportProgress(0);
     setImportError("");
 
-    const modulesToImport: CanvasImportModule[] = moduleStates
-      .filter((m) => m.selected_files.size > 0)
-      .map((m) => {
+    let modulesToImport: CanvasImportModule[];
+    if (grouping === "single") {
+      const fileIds: number[] = [];
+      const linkItems: CanvasLinkItem[] = [];
+      const pageItems: CanvasPageItem[] = [];
+      moduleStates.forEach((m) => {
+        if (m.selected_files.size === 0) return;
         const mod = modules.find((mod) => mod.module_id === m.module_id);
-        const fileIds: number[] = [];
-        const linkItems: CanvasLinkItem[] = [];
-        const pageItems: CanvasPageItem[] = [];
         Array.from(m.selected_files).forEach((id) => {
           const item = mod?.items.find((i) => i.file_id === id);
           if (!item) return;
@@ -390,14 +405,42 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
             fileIds.push(id);
           }
         });
-        return {
-          module_id: m.module_id,
-          collection_name: m.collection_name.trim() || m.module_name,
-          file_ids: fileIds,
-          link_items: linkItems,
-          page_items: pageItems,
-        };
       });
+      modulesToImport = [{
+        module_id: 0,
+        collection_name: singleCollectionName.trim() || "Imported Files",
+        file_ids: fileIds,
+        link_items: linkItems,
+        page_items: pageItems,
+      }];
+    } else {
+      modulesToImport = moduleStates
+        .filter((m) => m.selected_files.size > 0)
+        .map((m) => {
+          const mod = modules.find((mod) => mod.module_id === m.module_id);
+          const fileIds: number[] = [];
+          const linkItems: CanvasLinkItem[] = [];
+          const pageItems: CanvasPageItem[] = [];
+          Array.from(m.selected_files).forEach((id) => {
+            const item = mod?.items.find((i) => i.file_id === id);
+            if (!item) return;
+            if (item.item_type === "link") {
+              linkItems.push({ file_id: item.file_id, display_name: item.display_name, url: item.url! });
+            } else if (item.item_type === "page") {
+              pageItems.push({ file_id: item.file_id, display_name: item.display_name, url: item.url! });
+            } else {
+              fileIds.push(id);
+            }
+          });
+          return {
+            module_id: m.module_id,
+            collection_name: m.collection_name.trim() || m.module_name,
+            file_ids: fileIds,
+            link_items: linkItems,
+            page_items: pageItems,
+          };
+        });
+    }
 
     const progressInterval = setInterval(() => {
       setImportProgress((p) => Math.min(p + 3, 88));
@@ -522,7 +565,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
             Select modules to import
           </h2>
           <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
-            Each module becomes a collection. Edit collection names inline.
+            {grouping === "single" ? "All selected files will be imported into a single collection." : "Each module becomes a collection. Edit collection names inline."}
           </p>
 
           {modulesLoading && (
@@ -549,6 +592,59 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
 
           {!modulesLoading && modules.length > 0 && (
             <>
+              {/* Grouping selector */}
+              <div className="mb-4 p-3 rounded-xl" style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}>
+                <p className="text-xs font-semibold mb-2" style={{ color: "var(--text-tertiary)" }}>
+                  HOW DO YOU WANT TO ORGANIZE IMPORTED FILES?
+                </p>
+                <div className="flex gap-2 mb-3">
+                  <button
+                    type="button"
+                    onClick={() => setGrouping("by_module")}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+                    style={{
+                      background: grouping === "by_module" ? "var(--accent-dim)" : "var(--surface-3)",
+                      border: `1.5px solid ${grouping === "by_module" ? "var(--accent)" : "transparent"}`,
+                      color: grouping === "by_module" ? "var(--accent)" : "var(--text-secondary)",
+                    }}
+                  >
+                    By module
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setGrouping("single")}
+                    className="flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all cursor-pointer"
+                    style={{
+                      background: grouping === "single" ? "var(--accent-dim)" : "var(--surface-3)",
+                      border: `1.5px solid ${grouping === "single" ? "var(--accent)" : "transparent"}`,
+                      color: grouping === "single" ? "var(--accent)" : "var(--text-secondary)",
+                    }}
+                  >
+                    One collection
+                  </button>
+                </div>
+                {grouping === "single" && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>Collection name:</span>
+                    <input
+                      type="text"
+                      value={singleCollectionName}
+                      onChange={(e) => setSingleCollectionName(e.target.value)}
+                      maxLength={60}
+                      placeholder="Collection name"
+                      className="flex-1 text-sm px-3 py-1.5 rounded-lg outline-none"
+                      style={{
+                        background: "var(--surface-2)",
+                        border: "1.5px solid var(--border)",
+                        color: "var(--text-primary)",
+                      }}
+                      onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--accent)"; }}
+                      onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; }}
+                    />
+                  </div>
+                )}
+              </div>
+
               {/* Controls row */}
               <div className="flex items-center justify-between mb-3">
                 <div className="flex gap-2">
@@ -589,18 +685,17 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                       style={{ background: "var(--surface-2)", border: "1px solid var(--border)" }}
                     >
                       {/* Module header */}
-                      <div className="flex items-center gap-2.5 px-3.5 py-3">
+                      <div
+                        className="flex items-center gap-2.5 px-3.5 py-3 cursor-pointer"
+                        onClick={() => toggleModuleAllFiles(ms.module_id)}
+                      >
                         <Checkbox
                           checked={allChecked}
                           indeterminate={someChecked}
                           onChange={() => toggleModuleAllFiles(ms.module_id)}
                         />
-                        <button
-                          type="button"
-                          className="flex-1 min-w-0 flex items-center gap-2 cursor-pointer"
-                          onClick={() => toggleModuleExpand(ms.module_id)}
-                        >
-                          <span className="text-sm font-semibold truncate text-left" style={{ color: "var(--text-primary)" }}>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <span className="text-sm font-semibold truncate" style={{ color: "var(--text-primary)" }}>
                             {ms.module_name}
                           </span>
                           <span
@@ -609,37 +704,48 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                           >
                             {mod.items.length} item{mod.items.length !== 1 ? "s" : ""}
                           </span>
-                          <svg
-                            className={`w-4 h-4 flex-shrink-0 transition-transform ${ms.expanded ? "rotate-180" : ""}`}
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            viewBox="0 0 24 24"
+                          <button
+                            type="button"
+                            className="ml-auto flex-shrink-0 p-0.5 rounded"
+                            onClick={(e) => { e.stopPropagation(); toggleModuleExpand(ms.module_id); }}
                             style={{ color: "var(--text-tertiary)" }}
                           >
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                          </svg>
-                        </button>
-                        {/* Editable collection name */}
-                        <div className="flex items-center gap-1 flex-shrink-0">
-                          <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: "var(--text-tertiary)" }}>
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                          </svg>
-                          <input
-                            type="text"
-                            value={ms.collection_name}
-                            onChange={(e) => updateCollectionName(ms.module_id, e.target.value)}
-                            maxLength={60}
-                            className="text-xs px-2 py-1 rounded-lg w-32 outline-none"
-                            style={{
-                              background: "var(--surface-3)",
-                              border: "1px solid var(--border)",
-                              color: "var(--text-primary)",
-                            }}
-                            onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--accent)"; }}
-                            onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; }}
-                          />
+                            <svg
+                              className={`w-4 h-4 transition-transform ${ms.expanded ? "rotate-180" : ""}`}
+                              fill="none"
+                              stroke="currentColor"
+                              strokeWidth={2}
+                              viewBox="0 0 24 24"
+                            >
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+                            </svg>
+                          </button>
                         </div>
+                        {/* Editable collection name — hidden when grouping is "single" */}
+                        {grouping === "by_module" && (
+                          <div
+                            className="flex items-center gap-1 flex-shrink-0"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <svg className="w-3 h-3 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24" style={{ color: "var(--text-tertiary)" }}>
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                            </svg>
+                            <input
+                              type="text"
+                              value={ms.collection_name}
+                              onChange={(e) => updateCollectionName(ms.module_id, e.target.value)}
+                              maxLength={60}
+                              className="text-xs px-2 py-1 rounded-lg w-32 outline-none"
+                              style={{
+                                background: "var(--surface-3)",
+                                border: "1px solid var(--border)",
+                                color: "var(--text-primary)",
+                              }}
+                              onFocus={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--accent)"; }}
+                              onBlur={(e) => { (e.target as HTMLInputElement).style.borderColor = "var(--border)"; }}
+                            />
+                          </div>
+                        )}
                       </div>
 
                       {/* Expanded file list */}
