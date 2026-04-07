@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signup, login, setToken, setUser } from "../lib/api";
+import { getSubscriptionStatus } from "../lib/stripe";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { useToast } from "../providers/ToastProvider";
@@ -66,7 +67,8 @@ export default function SignupPage() {
       setToken(data.access_token);
       setUser(data.user_id, data.email);
       document.cookie = `strattigo_token=${data.access_token}; path=/; max-age=604800; SameSite=Lax`;
-      router.push("/dashboard");
+      const { plan } = await getSubscriptionStatus();
+      router.push(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Sign up failed. Please try again.";
       setFieldErrors({ email: msg });

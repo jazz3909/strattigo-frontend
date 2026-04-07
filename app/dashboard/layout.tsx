@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { clearToken, getEmail } from "../lib/api";
+import { getSubscriptionStatus } from "../lib/stripe";
 import { useEffect, useState } from "react";
 import { Avatar } from "../components/ui/Avatar";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
@@ -44,11 +45,26 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const pathname = usePathname();
   const [email, setEmail] = useState("");
   const [scrolled, setScrolled] = useState(false);
+  const [subChecked, setSubChecked] = useState(false);
 
   useEffect(() => {
     const e = getEmail();
     if (e) setEmail(e);
   }, []);
+
+  useEffect(() => {
+    getSubscriptionStatus()
+      .then(({ plan }) => {
+        if (plan !== "pro" && plan !== "annual") {
+          router.replace("/pricing");
+        } else {
+          setSubChecked(true);
+        }
+      })
+      .catch(() => {
+        router.replace("/pricing");
+      });
+  }, [router]);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 4);
@@ -60,6 +76,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     clearToken();
     document.cookie = "strattigo_token=; path=/; max-age=0";
     router.push("/login");
+  }
+
+  if (!subChecked) {
+    return (
+      <div className="min-h-screen flex items-center justify-center" style={{ background: "var(--background)" }}>
+        <div className="w-8 h-8 rounded-full border-2 border-t-transparent animate-spin" style={{ borderColor: "var(--accent)", borderTopColor: "transparent" }} />
+      </div>
+    );
   }
 
   return (
