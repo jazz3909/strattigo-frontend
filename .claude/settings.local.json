@@ -23,7 +23,10 @@
       "Bash(curl -s http://localhost:3001)",
       "Bash(PORT=3001 npm run dev)",
       "Bash(systemctl restart:*)",
-      "Bash(systemctl is-active:*)"
+      "Bash(systemctl is-active:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }
