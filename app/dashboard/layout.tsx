@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   function handleLogout() {
     clearToken();
     document.cookie = "strattigo_token=; path=/; max-age=0";
-    router.push("/login");
+    window.location.href = "/login";
   }
 
   if (!subChecked) {
