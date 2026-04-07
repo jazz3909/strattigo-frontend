@@ -11,6 +11,7 @@ import {
   type CanvasCourse,
   type CanvasModule,
   type CanvasImportModule,
+  type CanvasLinkItem,
   type Material,
 } from "../lib/api";
 
@@ -46,7 +47,14 @@ function formatSize(bytes: number): string {
   return `${bytes} B`;
 }
 
-function FileTypeIcon({ contentType, name }: { contentType: string; name: string }) {
+function FileTypeIcon({ contentType, name, itemType }: { contentType: string; name: string; itemType?: "file" | "link" }) {
+  if (itemType === "link") return (
+    <span style={{ color: "#6366f1" }}>
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M13.19 8.688a4.5 4.5 0 011.242 7.244l-4.5 4.5a4.5 4.5 0 01-6.364-6.364l1.757-1.757m13.35-.622l1.757-1.757a4.5 4.5 0 00-6.364-6.364l-4.5 4.5a4.5 4.5 0 001.242 7.244" />
+      </svg>
+    </span>
+  );
   const ext = name.split(".").pop()?.toLowerCase() ?? "";
   const isPdf = ext === "pdf" || contentType.includes("pdf");
   const isDoc = ext === "docx" || ext === "doc" || contentType.includes("word");
@@ -280,8 +288,12 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
     const mod = modules.find((m) => m.module_id === ms.module_id);
     if (!mod) return [];
     return mod.items
-      .filter((item) => ms.selected_files.has(item.file_id) && existingNames.has(item.display_name))
-      .map((item) => item.display_name);
+      .filter((item) => {
+        if (!ms.selected_files.has(item.file_id)) return false;
+        const storedName = item.item_type === "link" ? item.display_name + ".txt" : item.display_name;
+        return existingNames.has(storedName);
+      })
+      .map((item) => item.item_type === "link" ? item.display_name + ".txt" : item.display_name);
   });
 
   function toggleModuleExpand(moduleId: number) {
@@ -354,11 +366,26 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
 
     const modulesToImport: CanvasImportModule[] = moduleStates
       .filter((m) => m.selected_files.size > 0)
-      .map((m) => ({
-        module_id: m.module_id,
-        collection_name: m.collection_name.trim() || m.module_name,
-        file_ids: Array.from(m.selected_files),
-      }));
+      .map((m) => {
+        const mod = modules.find((mod) => mod.module_id === m.module_id);
+        const fileIds: number[] = [];
+        const linkItems: CanvasLinkItem[] = [];
+        Array.from(m.selected_files).forEach((id) => {
+          const item = mod?.items.find((i) => i.file_id === id);
+          if (!item) return;
+          if (item.item_type === "link") {
+            linkItems.push({ file_id: item.file_id, display_name: item.display_name, url: item.url! });
+          } else {
+            fileIds.push(id);
+          }
+        });
+        return {
+          module_id: m.module_id,
+          collection_name: m.collection_name.trim() || m.module_name,
+          file_ids: fileIds,
+          link_items: linkItems,
+        };
+      });
 
     const progressInterval = setInterval(() => {
       setImportProgress((p) => Math.min(p + 3, 88));
@@ -504,7 +531,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
 
           {!modulesLoading && !modulesError && modules.length === 0 && (
             <div className="text-center py-8" style={{ color: "var(--text-tertiary)" }}>
-              <p className="text-sm">No modules with files found in this course.</p>
+              <p className="text-sm">No modules with files or links found in this course.</p>
             </div>
           )}
 
@@ -531,7 +558,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                   </button>
                 </div>
                 <span className="text-xs" style={{ color: "var(--text-tertiary)" }}>
-                  {totalSelected} file{totalSelected !== 1 ? "s" : ""} across {modulesWithFiles} module{modulesWithFiles !== 1 ? "s" : ""}
+                  {totalSelected} item{totalSelected !== 1 ? "s" : ""} across {modulesWithFiles} module{modulesWithFiles !== 1 ? "s" : ""}
                 </span>
               </div>
 
@@ -568,7 +595,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                             className="text-xs px-1.5 py-0.5 rounded-md font-medium flex-shrink-0"
                             style={{ background: "var(--surface-3)", color: "var(--text-tertiary)" }}
                           >
-                            {mod.items.length} file{mod.items.length !== 1 ? "s" : ""}
+                            {mod.items.length} item{mod.items.length !== 1 ? "s" : ""}
                           </span>
                           <svg
                             className={`w-4 h-4 flex-shrink-0 transition-transform ${ms.expanded ? "rotate-180" : ""}`}
@@ -616,10 +643,10 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                                 checked={ms.selected_files.has(item.file_id)}
                                 onChange={() => toggleFile(ms.module_id, item.file_id)}
                               />
-                              <FileTypeIcon contentType={item.content_type} name={item.display_name} />
+                              <FileTypeIcon contentType={item.content_type} name={item.display_name} itemType={item.item_type} />
                               <span className="flex-1 text-sm truncate" style={{ color: "var(--text-primary)" }}>
                                 {item.display_name}
-                                {existingNames.has(item.display_name) && (
+                                {existingNames.has(item.item_type === "link" ? item.display_name + ".txt" : item.display_name) && (
                                   <span
                                     className="ml-1.5 text-xs px-1.5 py-0.5 rounded font-medium"
                                     style={{ background: "rgba(251,191,36,0.1)", color: "#f59e0b" }}
@@ -629,7 +656,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                                 )}
                               </span>
                               <span className="text-xs flex-shrink-0" style={{ color: "var(--text-tertiary)" }}>
-                                {formatSize(item.size)}
+                                {item.item_type === "link" ? "Link" : formatSize(item.size)}
                               </span>
                             </div>
                           ))}
@@ -655,7 +682,7 @@ export function CanvasImportModal({ isOpen, onClose, courseId, onImportComplete,
                 </svg>
               }
             >
-              Import {totalSelected > 0 ? `${totalSelected} file${totalSelected !== 1 ? "s" : ""}` : ""} →
+              Import {totalSelected > 0 ? `${totalSelected} item${totalSelected !== 1 ? "s" : ""}` : ""} →
             </Button>
           </div>
         </div>

@@ -618,7 +618,8 @@ export interface CanvasFileItem {
   display_name: string;
   size: number;
   content_type: string;
-  url: string;
+  url?: string;
+  item_type: "file" | "link";
 }
 
 export interface CanvasModule {
@@ -628,10 +629,17 @@ export interface CanvasModule {
   items: CanvasFileItem[];
 }
 
+export interface CanvasLinkItem {
+  file_id: number;
+  display_name: string;
+  url: string;
+}
+
 export interface CanvasImportModule {
   module_id: number;
   collection_name: string;
   file_ids: number[];
+  link_items: CanvasLinkItem[];
 }
 
 export interface CanvasImportResult {
