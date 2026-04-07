@@ -30,6 +30,7 @@ import {
   addMaterialToCollection,
   removeMaterialFromCollection,
   getCollectionMaterials,
+  getCanvasCourses,
   Course,
   Material,
   Collection,
@@ -41,6 +42,7 @@ import {
   type QuizQuestion,
   getToken,
 } from "../../lib/api";
+import { CanvasImportModal } from "../../components/CanvasImportModal";
 import { Button } from "../../components/ui/Button";
 import { Tabs } from "../../components/ui/Tabs";
 import { Badge } from "../../components/ui/Badge";
@@ -528,6 +530,7 @@ export default function CoursePage({
           onRenameSuccess={handleRenameSuccess}
           collections={collections}
           onCollectionsChange={setCollections}
+          onImportComplete={loadPage}
         />
       )}
 
@@ -767,7 +770,7 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
 function MaterialsTab({
   courseId, materials, uploading, uploadProgress, dragOver, setDragOver,
   fileInputRef, handleFileUpload, confirmDeleteId, setConfirmDeleteId, deletingId, handleDeleteMaterial,
-  onRenameSuccess, collections, onCollectionsChange,
+  onRenameSuccess, collections, onCollectionsChange, onImportComplete,
 }: {
   courseId: string;
   materials: Material[];
@@ -784,9 +787,12 @@ function MaterialsTab({
   onRenameSuccess: (id: string, newName: string) => void;
   collections: Collection[];
   onCollectionsChange: (cols: Collection[]) => void;
+  onImportComplete: () => void;
 }) {
   const { addToast } = useToast();
   const [subTab, setSubTab] = useState<"all" | "collections">("all");
+  const [canvasImportOpen, setCanvasImportOpen] = useState(false);
+  const [canvasConnected, setCanvasConnected] = useState(false);
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
   const [renameSaving, setRenameSaving] = useState(false);
@@ -805,6 +811,10 @@ function MaterialsTab({
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
 
   const collectionIdString = collections.map((c) => c.id).join(",");
+
+  useEffect(() => {
+    getCanvasCourses().then(() => setCanvasConnected(true)).catch(() => setCanvasConnected(false));
+  }, []);
 
   useEffect(() => {
     if (collections.length === 0) {
@@ -956,19 +966,32 @@ function MaterialsTab({
               <h2 className="text-lg font-bold text-[var(--text-primary)]">Course Materials</h2>
               <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
             </div>
-            <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-[var(--surface-2)] text-[var(--text-tertiary)]" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
-              {uploading ? (
-                <><Spinner size="sm" className="border-[var(--border-hover)] border-t-slate-600" /> Uploading…</>
-              ) : (
-                <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+            <div className="flex items-center gap-2">
+              {canvasConnected && (
+                <button
+                  onClick={() => setCanvasImportOpen(true)}
+                  className="btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
                   </svg>
-                  Upload file
-                </>
+                  Import from Canvas
+                </button>
               )}
-              <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
-            </label>
+              <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-[var(--surface-2)] text-[var(--text-tertiary)]" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
+                {uploading ? (
+                  <><Spinner size="sm" className="border-[var(--border-hover)] border-t-slate-600" /> Uploading…</>
+                ) : (
+                  <>
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                    </svg>
+                    Upload file
+                  </>
+                )}
+                <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+              </label>
+            </div>
           </div>
 
           {uploading && uploadProgress > 0 && (
@@ -1329,6 +1352,14 @@ function MaterialsTab({
           </Modal>
         </>
       )}
+
+      <CanvasImportModal
+        isOpen={canvasImportOpen}
+        onClose={() => setCanvasImportOpen(false)}
+        courseId={courseId}
+        onImportComplete={() => { setCanvasImportOpen(false); onImportComplete(); }}
+        existingMaterials={materials}
+      />
     </div>
   );
 }

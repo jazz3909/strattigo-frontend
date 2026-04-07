@@ -604,3 +604,58 @@ export async function getCanvasAssignments<T>(): Promise<T> {
 export async function getCanvasGrades<T>(): Promise<T> {
   return apiGet<T>("/canvas/grades");
 }
+
+// Canvas module import
+
+export interface CanvasCourse {
+  canvas_id: number;
+  name: string;
+  course_code: string;
+}
+
+export interface CanvasFileItem {
+  file_id: number;
+  display_name: string;
+  size: number;
+  content_type: string;
+  url: string;
+}
+
+export interface CanvasModule {
+  module_id: number;
+  module_name: string;
+  suggested_collection_name: string;
+  items: CanvasFileItem[];
+}
+
+export interface CanvasImportModule {
+  module_id: number;
+  collection_name: string;
+  file_ids: number[];
+}
+
+export interface CanvasImportResult {
+  imported: { file_name: string; collection_name: string }[];
+  skipped: { file_name: string; reason: string }[];
+  failed: { file_name: string; error: string }[];
+}
+
+export async function getCanvasCourses(): Promise<CanvasCourse[]> {
+  return apiGet<CanvasCourse[]>("/canvas/courses");
+}
+
+export async function getCanvasModules(canvasCourseId: number): Promise<CanvasModule[]> {
+  return apiGet<CanvasModule[]>(`/canvas/courses/${canvasCourseId}/modules`);
+}
+
+export async function importCanvasModules(
+  courseId: string,
+  modules: CanvasImportModule[],
+  overwrite: boolean,
+): Promise<CanvasImportResult> {
+  return apiPost<CanvasImportResult>("/canvas/import", {
+    course_id: courseId,
+    modules,
+    overwrite,
+  });
+}
