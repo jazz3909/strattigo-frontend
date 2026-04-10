@@ -26,7 +26,12 @@
       "Bash(systemctl is-active:*)",
       "Bash(git add:*)",
       "Bash(git commit:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(pkill -f \"next build\")",
+      "Bash(echo \"exit: $?\")",
+      "Bash(jobs -l)",
+      "Bash(kill -0 199614)",
+      "Bash(awk '{print \"PID:\", $1, \"Running:\", $10, \"CPU:\", $3\"%\", \"MEM:\", $4\"%\"}')"
     ]
   }
 }

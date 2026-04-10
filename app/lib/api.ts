@@ -523,10 +523,17 @@ export async function* streamQuiz(courseId: string, collectionId?: string): Asyn
   yield* readSseStream(response);
 }
 
-export async function* streamStudyGuide(courseId: string, title: string, collectionId?: string): AsyncGenerator<string> {
+export async function* streamStudyGuide(
+  courseId: string,
+  title: string,
+  collectionId?: string,
+  focusTopics?: string,
+  style: "detailed" | "bullet" = "detailed",
+): AsyncGenerator<string> {
   const token = getToken();
-  const body: Record<string, unknown> = { course_id: courseId, title };
+  const body: Record<string, unknown> = { course_id: courseId, title, style };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
+  if (focusTopics && focusTopics.trim()) body.focus_topics = focusTopics.trim();
   const response = await fetch(`${API_BASE}/ai/study-guide/stream`, {
     method: "POST",
     headers: {
@@ -681,4 +688,149 @@ export async function importCanvasModules(
     modules,
     overwrite,
   });
+}
+
+// ============================================================
+// Study Events
+// ============================================================
+
+export interface StudyEvent {
+  id: string;
+  user_id: string;
+  course_id: string;
+  title: string;
+  event_type: "exam" | "quiz" | "assignment" | "other";
+  event_date: string; // ISO date "YYYY-MM-DD"
+  notes?: string | null;
+  created_at: string;
+}
+
+export async function getStudyEvents(courseId: string): Promise<StudyEvent[]> {
+  return apiGet<StudyEvent[]>(`/study-plan/events?course_id=${courseId}`);
+}
+
+export async function createStudyEvent(
+  courseId: string,
+  title: string,
+  eventType: StudyEvent["event_type"],
+  eventDate: string,
+  notes?: string,
+): Promise<StudyEvent> {
+  return apiPost<StudyEvent>("/study-plan/events", {
+    course_id: courseId,
+    title,
+    event_type: eventType,
+    event_date: eventDate,
+    notes: notes || null,
+  });
+}
+
+export async function updateStudyEvent(
+  eventId: string,
+  updates: Partial<Pick<StudyEvent, "title" | "event_type" | "event_date" | "notes">>,
+): Promise<StudyEvent> {
+  return apiPatch<StudyEvent>(`/study-plan/events/${eventId}`, updates);
+}
+
+export async function deleteStudyEvent(eventId: string): Promise<void> {
+  return apiDelete<void>(`/study-plan/events/${eventId}`);
+}
+
+export async function getEventPlan(eventId: string): Promise<{ content: string | null; created_at?: string }> {
+  return apiGet(`/study-plan/events/${eventId}/plan`);
+}
+
+export async function* streamEventPlan(
+  eventId: string,
+  hoursPerDay: number,
+  collectionId?: string,
+): AsyncGenerator<string> {
+  const token = getToken();
+  const body: Record<string, unknown> = { event_id: eventId, hours_per_day: hoursPerDay };
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
+
+  const response = await fetch(`${API_BASE}/study-plan/events/${eventId}/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (response.status === 401) {
+    clearToken();
+    if (typeof window !== "undefined") {
+      document.cookie = "strattigo_token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
+  yield* readSseStream(response);
+}
+
+// ============================================================
+// Flashcards
+// ============================================================
+
+export interface FlashcardSet {
+  id: string;
+  user_id: string;
+  course_id: string;
+  title: string;
+  created_at: string;
+  flashcard_count?: number;
+}
+
+export interface Flashcard {
+  id: string;
+  set_id: string;
+  front: string;
+  back: string;
+  created_at: string;
+}
+
+export async function getFlashcardSets(courseId: string): Promise<FlashcardSet[]> {
+  return apiGet<FlashcardSet[]>(`/flashcards/sets?course_id=${courseId}`);
+}
+
+export async function getFlashcards(setId: string): Promise<Flashcard[]> {
+  return apiGet<Flashcard[]>(`/flashcards/sets/${setId}/cards`);
+}
+
+export async function deleteFlashcardSet(setId: string): Promise<void> {
+  return apiDelete<void>(`/flashcards/sets/${setId}`);
+}
+
+export async function* streamGenerateFlashcards(
+  courseId: string,
+  title: string,
+  collectionId?: string,
+): AsyncGenerator<string> {
+  const token = getToken();
+  const body: Record<string, unknown> = { course_id: courseId, title };
+  if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
+
+  const response = await fetch(`${API_BASE}/flashcards/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    },
+    body: JSON.stringify(body),
+  });
+
+  if (response.status === 401) {
+    clearToken();
+    if (typeof window !== "undefined") {
+      document.cookie = "strattigo_token=; path=/; max-age=0";
+      window.location.href = "/login";
+    }
+    throw new Error("Session expired. Please log in again.");
+  }
+
+  if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
+  yield* readSseStream(response);
 }
