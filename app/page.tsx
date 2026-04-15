@@ -155,7 +155,7 @@ export default function HomePage() {
         #hero {
           position: relative;
           width: 100%;
-          height: 100vh;
+          height: 110vh;
           min-height: 700px;
           padding-top: 80px;
           overflow: hidden;
