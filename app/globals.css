@@ -67,6 +67,46 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+
+  /* === EIN UI — OKLCH MASTER PALETTE (Salmon anchor #E19485 ≈ oklch(0.74 0.096 32)) === */
+  /* 7 lightness stops with chroma-tapering: factor = 1 − (|L−0.74| / 0.54) × 0.7 */
+  --color-1: oklch(0.95 0.070 32);   /* Lightest — warm white tint */
+  --color-2: oklch(0.85 0.082 32);   /* Light salmon blush */
+  --color-3: oklch(0.73 0.095 32);   /* Soft salmon — near anchor */
+  --color-4: oklch(0.60 0.079 32);   /* Salmon / terracotta */
+  --color-5: oklch(0.48 0.064 32);   /* Deep salmon / dark terracotta */
+  --color-6: oklch(0.35 0.048 32);   /* Dark terracotta brown */
+  --color-7: oklch(0.20 0.029 32);   /* Near-black warm tone — Darkest */
+
+  /* === EIN UI — SEMANTIC MAPPINGS (reference master colors only) === */
+  --background: var(--color-7);
+  --foreground: var(--color-1);
+  --primary: var(--color-4);
+  --primary-foreground: var(--color-1);
+  --secondary: var(--color-6);
+  --secondary-foreground: var(--color-2);
+  --muted: var(--color-6);
+  --muted-foreground: var(--color-3);
+  --ring: var(--color-4);
+  --card: var(--color-7);
+  --card-foreground: var(--color-1);
+  --popover: var(--color-7);
+  --popover-foreground: var(--color-1);
+  --destructive: oklch(0.55 0.22 27);
+  --success: oklch(0.60 0.17 145);
+  --warning: oklch(0.75 0.15 85);
+
+  /* === EIN UI — GLASS EFFECTS === */
+  --glass-bg: oklch(from var(--color-7) l c h / 0.4);
+  --glass-border: oklch(from var(--color-3) l c h / 0.15);
+  --glass-blur: 16px;
+  --glow-primary: oklch(from var(--color-4) l c h / 0.3);
+  --glow-secondary: oklch(from var(--color-5) l c h / 0.3);
+
+  /* === RESTORE STRATTIGO BRAND VARS (override Shadcn/Ein UI defaults) === */
+  --accent: #E19485;
+  --accent-foreground: #0D1018;
+  --border: rgba(255, 255, 255, 0.07);
 }
 
 .dark {
@@ -113,6 +153,45 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+
+  /* === EIN UI — OKLCH MASTER PALETTE (Salmon anchor #E19485) === */
+  --color-1: oklch(0.95 0.070 32);
+  --color-2: oklch(0.85 0.082 32);
+  --color-3: oklch(0.73 0.095 32);
+  --color-4: oklch(0.60 0.079 32);
+  --color-5: oklch(0.48 0.064 32);
+  --color-6: oklch(0.35 0.048 32);
+  --color-7: oklch(0.20 0.029 32);
+
+  /* === EIN UI — SEMANTIC MAPPINGS === */
+  --background: var(--color-7);
+  --foreground: var(--color-1);
+  --primary: var(--color-4);
+  --primary-foreground: var(--color-1);
+  --secondary: var(--color-6);
+  --secondary-foreground: var(--color-2);
+  --muted: var(--color-6);
+  --muted-foreground: var(--color-3);
+  --ring: var(--color-4);
+  --card: var(--color-7);
+  --card-foreground: var(--color-1);
+  --popover: var(--color-7);
+  --popover-foreground: var(--color-1);
+  --destructive: oklch(0.55 0.22 27);
+  --success: oklch(0.60 0.17 145);
+  --warning: oklch(0.75 0.15 85);
+
+  /* === EIN UI — GLASS EFFECTS === */
+  --glass-bg: oklch(from var(--color-7) l c h / 0.4);
+  --glass-border: oklch(from var(--color-3) l c h / 0.15);
+  --glass-blur: 16px;
+  --glow-primary: oklch(from var(--color-4) l c h / 0.3);
+  --glow-secondary: oklch(from var(--color-5) l c h / 0.3);
+
+  /* === RESTORE STRATTIGO BRAND VARS === */
+  --accent: #E19485;
+  --accent-foreground: #0D1018;
+  --border: rgba(255, 255, 255, 0.07);
 }
 
 @theme inline {

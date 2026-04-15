@@ -18,6 +18,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { Avatar } from "../components/ui/Avatar";
 import { Badge } from "../components/ui/Badge";
 import { useToast } from "../providers/ToastProvider";
+import { GlassCard } from "@/components/liquid-glass/glass-card";
 
 const COURSE_GRADIENTS = [
   "from-violet-500 to-purple-600",
@@ -130,130 +131,101 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const [hovered, setHovered] = useState(false);
   const gradient = courseGradient(course.name);
 
-  const baseStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(6px) saturate(120%) brightness(1.08)',
-    WebkitBackdropFilter: 'blur(6px) saturate(120%) brightness(1.08)',
-    borderRadius: '24px',
-    border: 'none',
-    boxShadow: `
-      0 0 0 1px rgba(255,255,255,0.18),
-      0 0 0 1.5px rgba(255,255,255,0.06),
-      inset 0 1.5px 0 rgba(255,255,255,0.35),
-      inset 1.5px 0 0 rgba(255,255,255,0.2),
-      inset 0 -1.5px 0 rgba(0,0,0,0.15),
-      inset -1.5px 0 0 rgba(0,0,0,0.1),
-      0 8px 32px rgba(0,0,0,0.25),
-      0 2px 8px rgba(0,0,0,0.15)
-    `,
-    transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-    cursor: 'pointer',
-    position: 'relative',
-    padding: '32px',
-    overflow: 'hidden',
-    animationDelay: `${index * 60}ms`,
-  };
-
-  const hoverStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.06)',
-    backdropFilter: 'blur(8px) saturate(140%) brightness(1.12)',
-    WebkitBackdropFilter: 'blur(8px) saturate(140%) brightness(1.12)',
-    boxShadow: `
-      0 0 0 1px rgba(255,255,255,0.28),
-      0 0 0 1.5px rgba(255,255,255,0.1),
-      inset 0 1.5px 0 rgba(255,255,255,0.5),
-      inset 1.5px 0 0 rgba(255,255,255,0.3),
-      inset 0 -1.5px 0 rgba(0,0,0,0.2),
-      inset -1.5px 0 0 rgba(0,0,0,0.15),
-      0 20px 60px rgba(0,0,0,0.4),
-      0 4px 12px rgba(0,0,0,0.2)
-    `,
-    transform: 'translateY(-4px) scale(1.03)',
-  };
-
   return (
     <Link
       href={`/dashboard/${course.id}`}
       className="block animate-fade-in-up"
-      style={hovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
+      style={{ animationDelay: `${index * 60}ms` }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Top highlight line */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: '10%',
-        right: '10%',
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
-        pointerEvents: 'none',
-        borderRadius: '1px',
-      }} />
-      {/* Rim light */}
-      <div className="card-rim-light" />
-      {/* Border shimmer trace */}
-      <div className={`card-shimmer ${hovered ? 'active' : ''}`} />
-      {/* Inner border ring */}
-      <div className={`card-inner-border ${hovered ? 'active' : ''}`} />
+      <div
+        style={{
+          transition: 'transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+          transform: hovered ? 'translateY(-4px) scale(1.03)' : 'translateY(0) scale(1)',
+        }}
+      >
+        <GlassCard
+          glowEffect={hovered}
+          style={{ padding: '32px', overflow: 'hidden', cursor: 'pointer' }}
+        >
+          {/* Top highlight line */}
+          <div style={{
+            position: 'absolute',
+            top: 0,
+            left: '10%',
+            right: '10%',
+            height: '1px',
+            background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
+            pointerEvents: 'none',
+            borderRadius: '1px',
+          }} />
+          {/* Rim light */}
+          <div className="card-rim-light" />
+          {/* Border shimmer trace */}
+          <div className={`card-shimmer ${hovered ? 'active' : ''}`} />
+          {/* Inner border ring */}
+          <div className={`card-inner-border ${hovered ? 'active' : ''}`} />
 
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Icon */}
-        <div className="flex items-start justify-between mb-4">
-          <div
-            className={`bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-lg transition-all duration-200`}
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "14px",
-              flexShrink: 0,
-              boxShadow: hovered
-                ? "0 4px 20px rgba(225,148,133,0.35)"
-                : "0 2px 8px rgba(0,0,0,0.2)",
-            }}
-          >
-            {course.name[0]?.toUpperCase() ?? "C"}
+          {/* Content */}
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            {/* Icon */}
+            <div className="flex items-start justify-between mb-4">
+              <div
+                className={`bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-lg transition-all duration-200`}
+                style={{
+                  width: "56px",
+                  height: "56px",
+                  borderRadius: "14px",
+                  flexShrink: 0,
+                  boxShadow: hovered
+                    ? "0 4px 20px rgba(225,148,133,0.35)"
+                    : "0 2px 8px rgba(0,0,0,0.2)",
+                }}
+              >
+                {course.name[0]?.toUpperCase() ?? "C"}
+              </div>
+              <Badge variant="purple" size="sm" className={`transition-opacity duration-200 ${hovered ? "opacity-100" : "opacity-0"}`}>
+                Open →
+              </Badge>
+            </div>
+
+            {/* Info */}
+            <div>
+              <h2
+                className="line-clamp-1 mb-1.5"
+                style={{
+                  color: "var(--text-primary)",
+                  fontFamily: "var(--font-fraunces)",
+                  fontWeight: 700,
+                  fontSize: "20px",
+                }}
+              >
+                {course.name}
+              </h2>
+              {course.description ? (
+                <p className="text-sm line-clamp-2 leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
+                  {course.description}
+                </p>
+              ) : null}
+
+              {/* Footer */}
+              <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+                <span className="flex items-center gap-1.5" style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
+                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  {course.created_at
+                    ? new Date(course.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                    : "Recently added"}
+                </span>
+                <span className="flex items-center gap-1" style={{ color: "var(--accent)", fontWeight: 600, fontSize: "13px" }}>
+                  Study now →
+                </span>
+              </div>
+            </div>
           </div>
-          <Badge variant="purple" size="sm" className={`transition-opacity duration-200 ${hovered ? "opacity-100" : "opacity-0"}`}>
-            Open →
-          </Badge>
-        </div>
-
-        {/* Info */}
-        <div>
-          <h2
-            className="line-clamp-1 mb-1.5"
-            style={{
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-fraunces)",
-              fontWeight: 700,
-              fontSize: "20px",
-            }}
-          >
-            {course.name}
-          </h2>
-          {course.description ? (
-            <p className="text-sm line-clamp-2 leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
-              {course.description}
-            </p>
-          ) : null}
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--border)" }}>
-            <span className="flex items-center gap-1.5" style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {course.created_at
-                ? new Date(course.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : "Recently added"}
-            </span>
-            <span className="flex items-center gap-1" style={{ color: "var(--accent)", fontWeight: 600, fontSize: "13px" }}>
-              Study now →
-            </span>
-          </div>
-        </div>
+        </GlassCard>
       </div>
     </Link>
   );
