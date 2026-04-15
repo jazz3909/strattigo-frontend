@@ -3,6 +3,7 @@ import { Fraunces, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "./providers/ToastProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
+import { MeshBackground } from "./components/MeshBackground";
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -39,6 +40,7 @@ export default function RootLayout({
       className={`${fraunces.variable} ${outfit.variable} ${jetbrainsMono.variable}`}
     >
       <body className="min-h-full flex flex-col" style={{ color: "var(--text-primary)" }}>
+        <MeshBackground />
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
