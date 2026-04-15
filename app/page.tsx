@@ -250,7 +250,7 @@ export default function HomePage() {
         }
 
         .hero-ctas {
-          margin-top: 32px;
+          margin-top: 12px;
           display: flex;
           align-items: center;
           gap: 16px;
