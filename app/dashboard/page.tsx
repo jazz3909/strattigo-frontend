@@ -48,18 +48,23 @@ const shimmerStyle = `
     0%   { background-position: 200% 0%; }
     100% { background-position: -200% 0%; }
   }
+  @keyframes rimLight {
+    0%   { opacity: 0; transform: translateX(-100%); }
+    50%  { opacity: 1; }
+    100% { opacity: 0; transform: translateX(100%); }
+  }
   .card-shimmer {
     position: absolute;
     inset: 0;
     border-radius: 24px;
-    padding: 2px;
+    padding: 1.5px;
     background: linear-gradient(
       270deg,
       transparent 0%,
       transparent 30%,
       rgba(255,255,255,0.0) 38%,
-      rgba(255,255,255,0.9) 50%,
-      rgba(220,220,255,0.7) 56%,
+      rgba(255,255,255,0.95) 50%,
+      rgba(220,230,255,0.8) 56%,
       rgba(255,255,255,0.0) 62%,
       transparent 70%,
       transparent 100%
@@ -74,7 +79,6 @@ const shimmerStyle = `
     opacity: 0;
     animation: borderTrace 2.4s linear infinite;
     animation-play-state: paused;
-    transition: opacity 0ms ease;
   }
   .card-shimmer.active {
     opacity: 1;
@@ -84,12 +88,23 @@ const shimmerStyle = `
     position: absolute;
     inset: 3px;
     border-radius: 21px;
-    border: 1px solid rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255,255,255,0.06);
     pointer-events: none;
     transition: border-color 300ms ease;
   }
   .card-inner-border.active {
-    border-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255,255,255,0.12);
+  }
+  .card-rim-light {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 50%, transparent 100%);
+    border-radius: 24px 24px 0 0;
+    pointer-events: none;
+    opacity: 0.4;
   }
 `;
 
@@ -116,24 +131,43 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const gradient = courseGradient(course.name);
 
   const baseStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.01)',
-    backdropFilter: 'blur(6px) saturate(120%)',
-    WebkitBackdropFilter: 'blur(6px) saturate(120%)',
-    border: '1px solid rgba(255, 255, 255, 0.08)',
+    background: 'rgba(255, 255, 255, 0.03)',
+    backdropFilter: 'blur(6px) saturate(120%) brightness(1.08)',
+    WebkitBackdropFilter: 'blur(6px) saturate(120%) brightness(1.08)',
     borderRadius: '24px',
-    boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
+    border: 'none',
+    boxShadow: `
+      0 0 0 1px rgba(255,255,255,0.18),
+      0 0 0 1.5px rgba(255,255,255,0.06),
+      inset 0 1.5px 0 rgba(255,255,255,0.35),
+      inset 1.5px 0 0 rgba(255,255,255,0.2),
+      inset 0 -1.5px 0 rgba(0,0,0,0.15),
+      inset -1.5px 0 0 rgba(0,0,0,0.1),
+      0 8px 32px rgba(0,0,0,0.25),
+      0 2px 8px rgba(0,0,0,0.15)
+    `,
     transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
     cursor: 'pointer',
     position: 'relative',
     padding: '32px',
-    animationDelay: `${index * 60}ms`,
     overflow: 'hidden',
+    animationDelay: `${index * 60}ms`,
   };
 
   const hoverStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.03)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    boxShadow: '0 16px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)',
+    background: 'rgba(255, 255, 255, 0.06)',
+    backdropFilter: 'blur(8px) saturate(140%) brightness(1.12)',
+    WebkitBackdropFilter: 'blur(8px) saturate(140%) brightness(1.12)',
+    boxShadow: `
+      0 0 0 1px rgba(255,255,255,0.28),
+      0 0 0 1.5px rgba(255,255,255,0.1),
+      inset 0 1.5px 0 rgba(255,255,255,0.5),
+      inset 1.5px 0 0 rgba(255,255,255,0.3),
+      inset 0 -1.5px 0 rgba(0,0,0,0.2),
+      inset -1.5px 0 0 rgba(0,0,0,0.15),
+      0 20px 60px rgba(0,0,0,0.4),
+      0 4px 12px rgba(0,0,0,0.2)
+    `,
     transform: 'translateY(-4px) scale(1.03)',
   };
 
@@ -156,6 +190,8 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
         pointerEvents: 'none',
         borderRadius: '1px',
       }} />
+      {/* Rim light */}
+      <div className="card-rim-light" />
       {/* Border shimmer trace */}
       <div className={`card-shimmer ${hovered ? 'active' : ''}`} />
       {/* Inner border ring */}
