@@ -210,12 +210,6 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Page content */}
-      <div style={{
-        background: "linear-gradient(160deg, #0A0E18 0%, #0D1525 20%, #111D35 40%, #162235 55%, #141828 70%, #0F1220 85%, #0A0E18 100%)",
-        minHeight: "100vh",
-        backgroundAttachment: "fixed",
-      }}>
 
       {/* Greeting header */}
       <div className="mb-8">
@@ -320,7 +314,6 @@ export default function DashboardPage() {
 
 
       {/* Add Course Modal */}
-      </div>{/* end z-index wrapper */}
       <Modal
         open={showModal}
         onClose={() => setShowModal(false)}
