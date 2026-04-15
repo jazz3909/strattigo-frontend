@@ -53,8 +53,7 @@ export default function SettingsLayout({ children }: { children: React.ReactNode
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "transparent", position: "relative", overflowX: "hidden" }}>
-      <div style={{position:'fixed', right:'-150px', bottom:'-100px', width:'900px', height:'900px', background:'radial-gradient(ellipse at center, rgba(168,128,160,0.15) 0%, transparent 65%)', pointerEvents:'none', zIndex:0}} />
-      <div style={{position:'fixed', right:'-50px', bottom:'-150px', width:'700px', height:'700px', background:'radial-gradient(ellipse at center, rgba(176,88,87,0.20) 0%, transparent 65%)', pointerEvents:'none', zIndex:0}} />
+
       <header
         className={`sticky top-0 z-40 transition-all duration-200 ${scrolled ? "glass border-b shadow-sm" : "border-b"}`}
         style={{ borderColor: "var(--border)" }}
