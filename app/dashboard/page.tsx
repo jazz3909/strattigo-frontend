@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -77,12 +77,6 @@ const shimmerStyle = `
     mask-composite: exclude;
     pointer-events: none;
     opacity: 0;
-    animation: borderTrace 2.4s linear infinite;
-    animation-play-state: paused;
-  }
-  .card-shimmer.active {
-    opacity: 1;
-    animation-play-state: running;
   }
   .card-inner-border {
     position: absolute;
@@ -128,6 +122,7 @@ function CourseCardSkeleton() {
 
 function CourseCard({ course, index }: { course: Course; index: number }) {
   const [hovered, setHovered] = useState(false);
+  const shimmerRef = useRef<HTMLDivElement>(null);
   const gradient = courseGradient(course.name);
 
   const baseStyle: React.CSSProperties = {
@@ -176,8 +171,22 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
       href={`/dashboard/${course.id}`}
       className="block animate-fade-in-up"
       style={hovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
+      onMouseEnter={() => {
+        setHovered(true);
+        if (shimmerRef.current) {
+          shimmerRef.current.style.animation = 'none';
+          shimmerRef.current.offsetHeight; // force reflow
+          shimmerRef.current.style.animation = 'borderTrace 2.4s linear infinite';
+          shimmerRef.current.style.opacity = '1';
+        }
+      }}
+      onMouseLeave={() => {
+        setHovered(false);
+        if (shimmerRef.current) {
+          shimmerRef.current.style.opacity = '0';
+          shimmerRef.current.style.animation = 'none';
+        }
+      }}
     >
       {/* Top highlight line */}
       <div style={{
@@ -193,7 +202,10 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
       {/* Rim light */}
       <div className="card-rim-light" />
       {/* Border shimmer trace */}
-      <div className={`card-shimmer ${hovered ? 'active' : ''}`} />
+      <div
+        className="card-shimmer"
+        ref={shimmerRef}
+      />
       {/* Inner border ring */}
       <div className={`card-inner-border ${hovered ? 'active' : ''}`} />
 
