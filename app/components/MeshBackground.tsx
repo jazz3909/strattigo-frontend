@@ -19,28 +19,28 @@ function hexToRgba(hex: string, alpha: number): string {
 const COLOR_POINTS: ColorPoint[] = [
   // Top-left — deep navy anchors the corner
   { x: 0.0,  y: 0.0,  color: '#1A2D45', radius: 1.0,  opacity: 0.95 },
-  // Top-center — rich ocean blue
-  { x: 0.4,  y: 0.0,  color: '#2A5F8D', radius: 0.85, opacity: 0.85 },
+  // Top-center — rich ocean blue, strong and bleeding into middle
+  { x: 0.4,  y: 0.1,  color: '#2A5F8D', radius: 0.90, opacity: 0.90 },
   // Top-right — starts pulling into purple
-  { x: 1.0,  y: 0.0,  color: '#4A3A6B', radius: 0.80, opacity: 0.80 },
-  // Mid-left — dark teal keeps left side rich
-  { x: 0.0,  y: 0.45, color: '#1E3A5A', radius: 0.80, opacity: 0.80 },
-  // Dead center — mauve bridge between blue and warm
-  { x: 0.5,  y: 0.45, color: '#5C3B6B', radius: 0.75, opacity: 0.75 },
-  // Mid-right — purple-mauve
-  { x: 1.0,  y: 0.4,  color: '#7B4A6B', radius: 0.80, opacity: 0.80 },
-  // Bottom-left — deep navy so left stays dark and rich, not black
-  { x: 0.0,  y: 1.0,  color: '#1F3550', radius: 0.90, opacity: 0.90 },
-  // Bottom-center-left — mauve warming up
-  { x: 0.35, y: 0.85, color: '#7B4A6B', radius: 0.75, opacity: 0.75 },
-  // Bottom-center — transition into warm
-  { x: 0.6,  y: 0.75, color: '#9A5060', radius: 0.75, opacity: 0.80 },
-  // Bottom-right — full terracotta/salmon
-  { x: 1.0,  y: 0.85, color: '#B05857', radius: 0.90, opacity: 0.90 },
-  // Far bottom-right corner lock
-  { x: 1.0,  y: 1.0,  color: '#C06050', radius: 0.85, opacity: 0.85 },
-  // Extra center-bottom warmth to avoid cold gap
-  { x: 0.5,  y: 1.0,  color: '#8A4A60', radius: 0.70, opacity: 0.70 },
+  { x: 1.0,  y: 0.0,  color: '#4A3A6B', radius: 0.75, opacity: 0.75 },
+  // Mid-left — dark teal, large radius to hold left half
+  { x: 0.0,  y: 0.5,  color: '#1E3A5A', radius: 0.95, opacity: 0.90 },
+  // Center-right — mauve pushed right, smaller radius
+  { x: 0.70, y: 0.45, color: '#5C3B6B', radius: 0.55, opacity: 0.70 },
+  // Mid-right — purple-mauve, contained to right edge
+  { x: 1.0,  y: 0.4,  color: '#7B4A6B', radius: 0.65, opacity: 0.75 },
+  // Bottom-left — strong navy anchor, prevents warm bleed
+  { x: 0.0,  y: 1.0,  color: '#1F3550', radius: 1.0,  opacity: 0.95 },
+  // Bottom-right area — mauve transition, tight radius
+  { x: 0.75, y: 0.85, color: '#7B4A6B', radius: 0.45, opacity: 0.65 },
+  // Bottom-right — warm transition, confined far right
+  { x: 0.85, y: 0.80, color: '#9A5060', radius: 0.40, opacity: 0.75 },
+  // Bottom-right corner — terracotta strictly confined
+  { x: 1.0,  y: 0.88, color: '#B05857', radius: 0.45, opacity: 0.85 },
+  // Far bottom-right corner lock, small radius
+  { x: 1.0,  y: 1.0,  color: '#C06050', radius: 0.45, opacity: 0.80 },
+  // Bottom-right warm accent, tight to corner
+  { x: 0.85, y: 1.0,  color: '#8A4A60', radius: 0.40, opacity: 0.60 },
 ];
 
 function drawMesh(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
