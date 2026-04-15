@@ -72,7 +72,7 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '20px',
     boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-    transition: 'all 300ms ease',
+    transition: 'all 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
     cursor: 'pointer',
     position: 'relative',
     overflow: 'hidden',
@@ -81,9 +81,9 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   };
 
   const hoverStyle: React.CSSProperties = {
-    border: '1px solid rgba(225,148,133,0.3)',
-    boxShadow: '0 8px 32px rgba(225,148,133,0.15), 0 4px 24px rgba(0,0,0,0.25)',
-    transform: 'translateY(-4px)',
+    transform: 'translateY(-4px) scale(1.02)',
+    boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+    border: '1px solid rgba(255,255,255,0.08)',
   };
 
   return (
