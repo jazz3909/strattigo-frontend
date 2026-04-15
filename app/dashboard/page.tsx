@@ -76,7 +76,7 @@ const shimmerStyle = `
   }
   .card-shimmer.active {
     opacity: 1;
-    animation: borderTrace 1.2s linear infinite;
+    animation: borderTrace 2.4s linear infinite;
   }
 `;
 
@@ -103,9 +103,9 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const gradient = courseGradient(course.name);
 
   const baseStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.04)',
-    backdropFilter: 'blur(20px) saturate(150%)',
-    WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+    background: 'rgba(255, 255, 255, 0.02)',
+    backdropFilter: 'blur(12px) saturate(130%)',
+    WebkitBackdropFilter: 'blur(12px) saturate(130%)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     borderRadius: '24px',
     boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
@@ -118,7 +118,7 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   };
 
   const hoverStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.07)',
+    background: 'rgba(255, 255, 255, 0.05)',
     border: '1px solid rgba(255, 255, 255, 0.12)',
     boxShadow: '0 16px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)',
     transform: 'translateY(-4px) scale(1.03)',
