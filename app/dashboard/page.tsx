@@ -209,10 +209,13 @@ export default function DashboardPage() {
   const displayName = email.split("@")[0] || email;
 
   return (
-    <>
+    <div style={{ position: 'relative', overflow: 'hidden' }}>
+      {/* Atmospheric orbs */}
+      <div style={{position:'absolute', right:'-10%', top:'10%', width:'600px', height:'600px', background:'radial-gradient(ellipse at center, rgba(168,128,160,0.12) 0%, transparent 70%)', pointerEvents:'none', zIndex:0}} />
+      <div style={{position:'absolute', right:'-5%', bottom:'10%', width:'500px', height:'500px', background:'radial-gradient(ellipse at center, rgba(176,88,87,0.08) 0%, transparent 70%)', pointerEvents:'none', zIndex:0}} />
 
       {/* Greeting header */}
-      <div className="mb-8">
+      <div className="mb-8" style={{ position: 'relative', zIndex: 1 }}>
         <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
           <div className="flex items-center gap-3">
             <Avatar name={email || "User"} size="md" />
@@ -248,7 +251,7 @@ export default function DashboardPage() {
 
       {/* Loading state */}
       {loading && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ position: 'relative', zIndex: 1 }}>
           {[...Array(6)].map((_, i) => (
             <CourseCardSkeleton key={i} />
           ))}
@@ -257,7 +260,7 @@ export default function DashboardPage() {
 
       {/* Error state */}
       {!loading && error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4">
+        <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4" style={{ position: 'relative', zIndex: 1 }}>
           <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
           </svg>
@@ -270,7 +273,7 @@ export default function DashboardPage() {
 
       {/* Empty state */}
       {!loading && !error && courses.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="flex flex-col items-center justify-center py-24 text-center" style={{ position: 'relative', zIndex: 1 }}>
           <div
             className="relative w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
             style={{
@@ -305,7 +308,7 @@ export default function DashboardPage() {
 
       {/* Course grid */}
       {!loading && !error && courses.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ position: 'relative', zIndex: 1 }}>
           {courses.map((course, i) => (
             <CourseCard key={course.id} course={course} index={i} />
           ))}
@@ -373,6 +376,6 @@ export default function DashboardPage() {
           </div>
         </form>
       </Modal>
-    </>
+    </div>
   );
 }
