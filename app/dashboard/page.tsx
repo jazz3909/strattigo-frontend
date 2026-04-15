@@ -52,14 +52,14 @@ const shimmerStyle = `
     position: absolute;
     inset: 0;
     border-radius: 24px;
-    padding: 1px;
+    padding: 2px;
     background: linear-gradient(
       270deg,
       transparent 0%,
       transparent 35%,
       rgba(255,255,255,0.0) 40%,
-      rgba(255,255,255,0.6) 50%,
-      rgba(200,200,255,0.4) 55%,
+      rgba(255,255,255,0.9) 50%,
+      rgba(220,220,255,0.7) 55%,
       rgba(255,255,255,0.0) 60%,
       transparent 65%,
       transparent 100%
@@ -72,7 +72,7 @@ const shimmerStyle = `
     mask-composite: exclude;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 200ms ease;
+    transition: opacity 0ms ease;
   }
   .card-shimmer.active {
     opacity: 1;
@@ -103,9 +103,9 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const gradient = courseGradient(course.name);
 
   const baseStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.02)',
-    backdropFilter: 'blur(12px) saturate(130%)',
-    WebkitBackdropFilter: 'blur(12px) saturate(130%)',
+    background: 'rgba(255, 255, 255, 0.01)',
+    backdropFilter: 'blur(6px) saturate(120%)',
+    WebkitBackdropFilter: 'blur(6px) saturate(120%)',
     border: '1px solid rgba(255, 255, 255, 0.08)',
     borderRadius: '24px',
     boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
@@ -118,7 +118,7 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   };
 
   const hoverStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.05)',
+    background: 'rgba(255, 255, 255, 0.03)',
     border: '1px solid rgba(255, 255, 255, 0.12)',
     boxShadow: '0 16px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)',
     transform: 'translateY(-4px) scale(1.03)',
