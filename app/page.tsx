@@ -47,7 +47,7 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div>
+    <div className="page-wrap">
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
       <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300;1,9..144,700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
@@ -71,7 +71,7 @@ export default function HomePage() {
 
         body {
           font-family: 'Outfit', sans-serif;
-          background: var(--dark);
+          background: #0D1420;
           color: var(--text);
           overflow-x: hidden;
         }
@@ -96,7 +96,7 @@ export default function HomePage() {
           align-items: center;
           justify-content: space-between;
           padding: 0 48px;
-          z-index: 100;
+          z-index: 1000;
           background: rgba(13, 16, 24, 0.7);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
@@ -157,7 +157,7 @@ export default function HomePage() {
           width: 100%;
           height: 100vh;
           min-height: 700px;
-          background: linear-gradient(135deg, #0D1420 0%, #1A2D45 30%, #2A5F8D 60%, #7B4A6B 85%, #B05857 100%);
+          padding-top: 64px;
           overflow: hidden;
         }
 
@@ -439,6 +439,25 @@ export default function HomePage() {
           margin-top: 2px;
         }
 
+        /* ── PAGE GRADIENT WRAP ── */
+        .page-wrap {
+          background: linear-gradient(
+            180deg,
+            #0D1420 0%,
+            #112040 8%,
+            #1A2D50 15%,
+            #2A5F8D 28%,
+            #3D4570 40%,
+            #4A3060 52%,
+            #3D2040 62%,
+            #2A1830 72%,
+            #1E1428 80%,
+            #150F20 88%,
+            #0D1018 100%
+          );
+          min-height: 100vh;
+        }
+
         /* ── ATM PALETTE VARS ── */
         :root {
           --atm-dark: #0D1018;
@@ -449,7 +468,6 @@ export default function HomePage() {
 
         /* ── SECTION 2: HOW IT WORKS ── */
         #how-it-works {
-          background: linear-gradient(160deg, #0D1018 0%, #111825 50%, #1A2030 100%);
           padding: 100px 5%;
         }
 
@@ -660,7 +678,6 @@ export default function HomePage() {
 
         /* ── SECTION 3: FEATURES ── */
         #features-atm {
-          background: linear-gradient(160deg, #0F0D18 0%, #1A1225 100%);
           padding: 100px 5%;
         }
 
@@ -769,7 +786,6 @@ export default function HomePage() {
 
         /* ── SECTION 4: CANVAS SPOTLIGHT ── */
         #canvas-spotlight {
-          background: linear-gradient(135deg, #0D1420 0%, #1E1828 50%, #251525 100%);
           padding: 100px 5%;
         }
 
@@ -967,7 +983,6 @@ export default function HomePage() {
 
         /* ── SECTION 5: TESTIMONIALS ── */
         #testimonials-atm {
-          background: linear-gradient(160deg, #0D1018 0%, #111825 50%, #1A2030 100%);
           padding: 100px 5%;
           text-align: center;
         }
@@ -1065,7 +1080,6 @@ export default function HomePage() {
 
         /* ── SECTION 6: PRICING ── */
         #pricing-atm {
-          background: linear-gradient(160deg, #0F0D18 0%, #1A1225 100%);
           padding: 100px 5%;
         }
 
@@ -1270,7 +1284,6 @@ export default function HomePage() {
         #cta-final {
           position: relative;
           min-height: 100vh;
-          background: linear-gradient(135deg, #1A2D45 0%, #3D2545 40%, #5A2030 70%, #B05857 100%);
           display: flex;
           align-items: center;
           justify-content: center;
@@ -1348,7 +1361,6 @@ export default function HomePage() {
 
         /* ── FOOTER ── */
         footer {
-          background: #0D1018;
           border-top: 1px solid rgba(245,237,232,0.06);
           padding: 40px 5%;
           display: flex;
