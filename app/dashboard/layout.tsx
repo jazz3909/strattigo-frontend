@@ -144,11 +144,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <header
         className={`sticky top-0 z-40 transition-all duration-200`}
         style={{
-          background: scrolled ? "rgba(10,10,15,0.9)" : "var(--background)",
-          borderBottom: "1px solid var(--border)",
-          backdropFilter: scrolled ? "blur(16px) saturate(180%)" : "none",
-          WebkitBackdropFilter: scrolled ? "blur(16px) saturate(180%)" : "none",
-          boxShadow: scrolled ? "0 1px 0 var(--border)" : "none",
+          background: "rgba(10, 14, 24, 0.85)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          backdropFilter: "blur(20px)",
+          WebkitBackdropFilter: "blur(20px)",
         }}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14">
@@ -160,7 +159,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
                 </svg>
               </div>
-              <span className="text-base font-bold gradient-text" style={{ letterSpacing: "0.02em" }}>Strattigo</span>
+              <span style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, letterSpacing: "0.08em", color: "var(--text-primary)", fontSize: "1rem" }}>STRATTIGO</span>
             </Link>
 
             {/* Desktop nav links */}
@@ -211,7 +210,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 >
                   <Avatar name={email} size="sm" />
                 </div>
-                <span className="text-xs truncate max-w-[140px] font-medium" style={{ color: "var(--text-secondary)" }}>
+                <span className="truncate max-w-[140px]" style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
                   {email}
                 </span>
               </div>
