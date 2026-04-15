@@ -65,31 +65,24 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const [hovered, setHovered] = useState(false);
   const gradient = courseGradient(course.name);
 
-  const baseStyle: React.CSSProperties = {
-    background: 'rgba(17,24,37,0.45)',
-    backdropFilter: 'blur(28px)',
-    WebkitBackdropFilter: 'blur(28px)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    borderRadius: '20px',
-    boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-    transform: hovered ? 'translateY(-4px) scale(1.30)' : 'translateY(0) scale(1)',
-    transition: 'all 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-    cursor: 'pointer',
-    position: 'relative',
-    padding: '32px',
-    animationDelay: `${index * 60}ms`,
-  };
-
-  const hoverStyle: React.CSSProperties = {
-    boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
-    border: '1px solid rgba(255,255,255,0.08)',
-  };
-
   return (
     <Link
       href={`/dashboard/${course.id}`}
       className="block animate-fade-in-up"
-      style={hovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
+      style={{
+        background: 'rgba(17,24,37,0.45)',
+        backdropFilter: 'blur(28px)',
+        WebkitBackdropFilter: 'blur(28px)',
+        border: hovered ? '1px solid rgba(225,148,133,0.3)' : '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '20px',
+        boxShadow: hovered ? '0 12px 40px rgba(0,0,0,0.3)' : '0 4px 24px rgba(0,0,0,0.25)',
+        transform: hovered ? 'translateY(-4px) scale(1.08)' : 'translateY(0) scale(1)',
+        transition: 'all 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
+        cursor: 'pointer',
+        position: 'relative',
+        padding: '32px',
+        animationDelay: `${index * 60}ms`,
+      }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
