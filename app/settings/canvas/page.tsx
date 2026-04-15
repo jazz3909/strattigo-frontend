@@ -121,7 +121,12 @@ export default function CanvasSettingsPage() {
   }
 
   return (
-    <div className="max-w-2xl">
+    <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+      {/* Mauve orb */}
+      <div style={{ position: 'absolute', right: '-10%', top: '10%', width: '600px', height: '500px', background: 'radial-gradient(ellipse at center, rgba(168,128,160,0.2) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+      {/* Terracotta orb */}
+      <div style={{ position: 'absolute', right: '5%', bottom: '5%', width: '400px', height: '400px', background: 'radial-gradient(ellipse at center, rgba(176,88,87,0.15) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+    <div className="max-w-2xl" style={{ position: 'relative', zIndex: 1 }}>
       {/* Back button */}
       <Link
         href="/dashboard"
@@ -146,9 +151,13 @@ export default function CanvasSettingsPage() {
           <div className="flex items-center gap-3 mb-1">
             <h1 className="text-2xl font-extrabold" style={{ color: "var(--text-primary)" }}>Canvas LMS</h1>
             {!loading && (
-              <Badge variant={isConnected ? "green" : "gray"} dot>
-                {isConnected ? "Connected" : "Not connected"}
-              </Badge>
+              isConnected ? (
+                <span style={{ background: 'rgba(107,206,170,0.12)', color: 'var(--success)', border: '1px solid rgba(107,206,170,0.25)', borderRadius: 'var(--radius-sm)', padding: '3px 10px', fontSize: '13px' }}>
+                  Connected
+                </span>
+              ) : (
+                <Badge variant="gray" dot>Not connected</Badge>
+              )
             )}
           </div>
           <p className="text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -171,8 +180,8 @@ export default function CanvasSettingsPage() {
         <>
           {/* Connected status bar */}
           <div
-            className="mb-6 flex items-center gap-3 rounded-2xl px-5 py-4 border"
-            style={{ background: "var(--color-success-bg)", borderColor: "var(--color-success-border)" }}
+            className="mb-6 flex items-center gap-3"
+            style={{ border: 'none', borderLeft: '3px solid var(--accent)', background: 'var(--accent-dim)', borderRadius: 'var(--radius-md)', padding: '16px 20px' }}
           >
             <div
               className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -192,7 +201,7 @@ export default function CanvasSettingsPage() {
           </div>
 
           {/* Assignments */}
-          <Card className="mb-5">
+          <Card className="mb-5" style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 'var(--radius-lg)' }}>
             <h2 className="text-base font-bold mb-4" style={{ color: "var(--text-primary)" }}>Assignments</h2>
             {dataLoading ? (
               <div className="space-y-3">
@@ -426,6 +435,7 @@ export default function CanvasSettingsPage() {
           </div>
         </>
       )}
+    </div>
     </div>
   );
 }
