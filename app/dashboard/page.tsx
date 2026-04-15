@@ -45,7 +45,7 @@ function getGreeting(): string {
 
 const shimmerStyle = `
   @keyframes borderTrace {
-    0%   { background-position: 0% 0%; }
+    0%   { background-position: 200% 0%; }
     100% { background-position: -200% 0%; }
   }
   .card-shimmer {
@@ -56,12 +56,12 @@ const shimmerStyle = `
     background: linear-gradient(
       270deg,
       transparent 0%,
-      transparent 35%,
-      rgba(255,255,255,0.0) 40%,
+      transparent 30%,
+      rgba(255,255,255,0.0) 38%,
       rgba(255,255,255,0.9) 50%,
-      rgba(220,220,255,0.7) 55%,
-      rgba(255,255,255,0.0) 60%,
-      transparent 65%,
+      rgba(220,220,255,0.7) 56%,
+      rgba(255,255,255,0.0) 62%,
+      transparent 70%,
       transparent 100%
     );
     background-size: 200% 100%;
@@ -72,11 +72,24 @@ const shimmerStyle = `
     mask-composite: exclude;
     pointer-events: none;
     opacity: 0;
+    animation: borderTrace 2.4s linear infinite;
+    animation-play-state: paused;
     transition: opacity 0ms ease;
   }
   .card-shimmer.active {
     opacity: 1;
-    animation: borderTrace 2.4s linear infinite;
+    animation-play-state: running;
+  }
+  .card-inner-border {
+    position: absolute;
+    inset: 3px;
+    border-radius: 21px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    pointer-events: none;
+    transition: border-color 300ms ease;
+  }
+  .card-inner-border.active {
+    border-color: rgba(255, 255, 255, 0.1);
   }
 `;
 
@@ -145,6 +158,8 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
       }} />
       {/* Border shimmer trace */}
       <div className={`card-shimmer ${hovered ? 'active' : ''}`} />
+      {/* Inner border ring */}
+      <div className={`card-inner-border ${hovered ? 'active' : ''}`} />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1 }}>
