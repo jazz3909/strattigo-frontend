@@ -97,7 +97,7 @@ export default function HomePage() {
           justify-content: space-between;
           padding: 0 48px;
           z-index: 1000;
-          background: rgba(13, 16, 24, 0.7);
+          background: rgba(10, 16, 28, 0.85);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           transition: background 0.3s ease, backdrop-filter 0.3s ease;
