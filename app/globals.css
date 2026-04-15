@@ -76,13 +76,7 @@ html {
 }
 
 body {
-  background: #0D1420;
-  background-image:
-    radial-gradient(ellipse 80% 60% at 0% 0%, #1A2D45 0%, transparent 60%),
-    radial-gradient(ellipse 60% 60% at 50% 20%, #2A5F8D 0%, transparent 55%),
-    radial-gradient(ellipse 50% 50% at 100% 0%, #7B4A6B 0%, transparent 55%),
-    radial-gradient(ellipse 70% 60% at 100% 100%, #B05857 0%, transparent 55%),
-    radial-gradient(ellipse 60% 50% at 30% 100%, #1A2D45 0%, transparent 50%);
+  background: linear-gradient(135deg, #0D1420 0%, #111825 15%, #1A2D45 35%, #2A5F8D 55%, #7B4A6B 75%, #B05857 90%, #0D1018 100%);
   background-attachment: fixed;
   min-height: 100vh;
   color: var(--text-primary);
