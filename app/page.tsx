@@ -21,7 +21,7 @@ export default function HomePage() {
         if (!parent) return;
         const siblings = Array.from(parent.children).filter(c => c.classList.contains(el.classList[0]));
         const idx = siblings.indexOf(el);
-        const delay = Math.max(0, idx) * 100;
+        const delay = Math.max(0, idx) * 60;
 
         setTimeout(() => el.classList.add('visible'), delay);
         revealObserver.unobserve(el);
@@ -165,6 +165,7 @@ export default function HomePage() {
           display: flex;
           flex-direction: column;
           justify-content: center;
+          padding-bottom: 120px;
         }
 
         .hero-label {
@@ -443,7 +444,7 @@ export default function HomePage() {
         /* ── SECTION 2: HOW IT WORKS ── */
         #how-it-works {
           background: linear-gradient(160deg, #0D1018 0%, #111825 50%, #1A2030 100%);
-          padding: 160px 5%;
+          padding: 100px 5%;
         }
 
         .hiw-inner {
@@ -459,8 +460,8 @@ export default function HomePage() {
           text-transform: uppercase;
           margin-bottom: 24px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .hiw-label.visible { opacity: 1; transform: translateY(0); }
@@ -472,8 +473,8 @@ export default function HomePage() {
           flex-wrap: wrap;
           margin-bottom: 80px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s;
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
         }
 
         .hiw-title-row.visible { opacity: 1; transform: translateY(0); }
@@ -517,8 +518,8 @@ export default function HomePage() {
           position: relative;
           z-index: 1;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .hiw-step.visible { opacity: 1; transform: translateY(0); }
@@ -654,7 +655,7 @@ export default function HomePage() {
         /* ── SECTION 3: FEATURES ── */
         #features-atm {
           background: linear-gradient(160deg, #0F0D18 0%, #1A1225 100%);
-          padding: 160px 5%;
+          padding: 100px 5%;
         }
 
         .feat-inner {
@@ -670,8 +671,8 @@ export default function HomePage() {
           text-transform: uppercase;
           margin-bottom: 20px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .feat-label.visible { opacity: 1; transform: translateY(0); }
@@ -679,8 +680,8 @@ export default function HomePage() {
         .feat-title-wrap {
           margin-bottom: 72px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s;
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
         }
 
         .feat-title-wrap.visible { opacity: 1; transform: translateY(0); }
@@ -716,8 +717,8 @@ export default function HomePage() {
           border-radius: 4px;
           padding: 40px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1), border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
           cursor: default;
         }
 
@@ -763,7 +764,7 @@ export default function HomePage() {
         /* ── SECTION 4: CANVAS SPOTLIGHT ── */
         #canvas-spotlight {
           background: linear-gradient(135deg, #0D1420 0%, #1E1828 50%, #251525 100%);
-          padding: 160px 5%;
+          padding: 100px 5%;
         }
 
         .canvas-inner {
@@ -838,8 +839,8 @@ export default function HomePage() {
           display: flex;
           justify-content: center;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .canvas-right.visible { opacity: 1; transform: translateY(0); }
@@ -961,7 +962,7 @@ export default function HomePage() {
         /* ── SECTION 5: TESTIMONIALS ── */
         #testimonials-atm {
           background: linear-gradient(160deg, #0D1018 0%, #111825 50%, #1A2030 100%);
-          padding: 140px 5%;
+          padding: 100px 5%;
           text-align: center;
         }
 
@@ -999,8 +1000,8 @@ export default function HomePage() {
           margin: 0 auto 20px;
           line-height: 1.4;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .testi-main-q.visible { opacity: 1; transform: translateY(0); }
@@ -1025,8 +1026,8 @@ export default function HomePage() {
           padding: 28px;
           text-align: left;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .testi-card.visible { opacity: 1; transform: translateY(0); }
@@ -1059,7 +1060,7 @@ export default function HomePage() {
         /* ── SECTION 6: PRICING ── */
         #pricing-atm {
           background: linear-gradient(160deg, #0F0D18 0%, #1A1225 100%);
-          padding: 140px 5%;
+          padding: 100px 5%;
         }
 
         .pricing-atm-inner {
@@ -1075,8 +1076,8 @@ export default function HomePage() {
           text-transform: uppercase;
           margin-bottom: 20px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .pricing-atm-label.visible { opacity: 1; transform: translateY(0); }
@@ -1088,8 +1089,8 @@ export default function HomePage() {
           flex-wrap: wrap;
           margin-bottom: 72px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s, transform 0.6s cubic-bezier(0.16,1,0.3,1) 0.1s;
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
         }
 
         .pricing-atm-title-row.visible { opacity: 1; transform: translateY(0); }
@@ -1123,8 +1124,8 @@ export default function HomePage() {
           border-radius: 8px;
           padding: 40px;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .pricing-atm-card.visible { opacity: 1; transform: translateY(0); }
@@ -1284,8 +1285,8 @@ export default function HomePage() {
           position: relative;
           z-index: 1;
           opacity: 0;
-          transform: translateY(30px);
-          transition: opacity 0.6s cubic-bezier(0.16,1,0.3,1), transform 0.6s cubic-bezier(0.16,1,0.3,1);
+          transform: translateY(12px);
+          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .cta-final-content.visible { opacity: 1; transform: translateY(0); }
