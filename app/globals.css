@@ -76,7 +76,7 @@ html {
 }
 
 body {
-  background: linear-gradient(135deg, #0D1420 0%, #0F1828 8%, #111825 18%, #152230 28%, #1A2D45 38%, #22486E 48%, #2A5F8D 55%, #513060 65%, #7B4A6B 73%, #9A4C60 82%, #B05857 90%, #6B3030 96%, #0D1018 100%);
+  background: linear-gradient(135deg, #0D1420 0%, #162338 12.5%, #1A2D45 25%, #1E3A5F 37.5%, #2A5F8D 50%, #5C3B6B 62.5%, #7B4A6B 75%, #9A5060 87.5%, #B05857 100%);
   background-attachment: fixed;
   min-height: 100vh;
   color: var(--text-primary);
