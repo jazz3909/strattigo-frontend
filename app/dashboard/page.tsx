@@ -76,7 +76,6 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
     transition: 'all 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
     cursor: 'pointer',
     position: 'relative',
-    overflow: 'hidden',
     padding: '32px',
     animationDelay: `${index * 60}ms`,
   };
