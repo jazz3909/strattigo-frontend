@@ -38,7 +38,7 @@ export default function RootLayout({
       lang="en"
       className={`${fraunces.variable} ${outfit.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-full flex flex-col" style={{ background: "var(--background)", color: "var(--text-primary)" }}>
+      <body className="min-h-full flex flex-col" style={{ color: "var(--text-primary)" }}>
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
