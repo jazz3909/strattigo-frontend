@@ -65,77 +65,94 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const [hovered, setHovered] = useState(false);
   const gradient = courseGradient(course.name);
 
+  const baseStyle: React.CSSProperties = {
+    background: 'rgba(17,24,37,0.75)',
+    backdropFilter: 'blur(20px)',
+    WebkitBackdropFilter: 'blur(20px)',
+    border: '1px solid rgba(255,255,255,0.08)',
+    borderRadius: '20px',
+    boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
+    transition: 'all 300ms ease',
+    cursor: 'pointer',
+    position: 'relative',
+    overflow: 'hidden',
+    padding: '32px',
+    animationDelay: `${index * 60}ms`,
+  };
+
+  const hoverStyle: React.CSSProperties = {
+    border: '1px solid rgba(225,148,133,0.3)',
+    boxShadow: '0 8px 32px rgba(225,148,133,0.15), 0 4px 24px rgba(0,0,0,0.25)',
+    transform: 'translateY(-4px)',
+  };
+
   return (
     <Link
       href={`/dashboard/${course.id}`}
-      className="block transition-all duration-300 animate-fade-in-up cursor-pointer overflow-hidden relative"
-      style={{
-        background: "rgba(17, 24, 37, 0.8)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
-        border: hovered ? "1px solid rgba(225,148,133,0.25)" : "1px solid rgba(255,255,255,0.07)",
-        borderRadius: "16px",
-        padding: "32px",
-        transform: hovered ? "translateY(-4px)" : "translateY(0)",
-        boxShadow: hovered ? "0 20px 60px rgba(0,0,0,0.4)" : "none",
-        animationDelay: `${index * 60}ms`,
-      }}
+      className="block animate-fade-in-up"
+      style={hovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
     >
-      {/* Icon */}
-      <div className="relative flex items-start justify-between mb-4">
-        <div
-          className={`bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-lg transition-all duration-200`}
-          style={{
-            width: "56px",
-            height: "56px",
-            borderRadius: "14px",
-            flexShrink: 0,
-            boxShadow: hovered
-              ? "0 4px 20px rgba(225,148,133,0.35)"
-              : "0 2px 8px rgba(0,0,0,0.2)",
-          }}
-        >
-          {course.name[0]?.toUpperCase() ?? "C"}
+      {/* Top highlight line */}
+      <div style={{position:'absolute', top:0, left:0, right:0, height:'1px', background:'linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)', pointerEvents:'none'}} />
+
+      {/* Content */}
+      <div style={{ position: 'relative', zIndex: 1 }}>
+        {/* Icon */}
+        <div className="flex items-start justify-between mb-4">
+          <div
+            className={`bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-lg transition-all duration-200`}
+            style={{
+              width: "56px",
+              height: "56px",
+              borderRadius: "14px",
+              flexShrink: 0,
+              boxShadow: hovered
+                ? "0 4px 20px rgba(225,148,133,0.35)"
+                : "0 2px 8px rgba(0,0,0,0.2)",
+            }}
+          >
+            {course.name[0]?.toUpperCase() ?? "C"}
+          </div>
+          <Badge variant="purple" size="sm" className={`transition-opacity duration-200 ${hovered ? "opacity-100" : "opacity-0"}`}>
+            Open →
+          </Badge>
         </div>
-        <Badge variant="purple" size="sm" className={`transition-opacity duration-200 ${hovered ? "opacity-100" : "opacity-0"}`}>
-          Open →
-        </Badge>
-      </div>
 
-      {/* Info */}
-      <div className="relative">
-        <h2
-          className="line-clamp-1 mb-1.5"
-          style={{
-            color: "var(--text-primary)",
-            fontFamily: "var(--font-fraunces)",
-            fontWeight: 700,
-            fontSize: "20px",
-          }}
-        >
-          {course.name}
-        </h2>
-        {course.description ? (
-          <p className="text-sm line-clamp-2 leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
-            {course.description}
-          </p>
-        ) : null}
+        {/* Info */}
+        <div>
+          <h2
+            className="line-clamp-1 mb-1.5"
+            style={{
+              color: "var(--text-primary)",
+              fontFamily: "var(--font-fraunces)",
+              fontWeight: 700,
+              fontSize: "20px",
+            }}
+          >
+            {course.name}
+          </h2>
+          {course.description ? (
+            <p className="text-sm line-clamp-2 leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
+              {course.description}
+            </p>
+          ) : null}
 
-        {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--border)" }}>
-          <span className="flex items-center gap-1.5" style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            {course.created_at
-              ? new Date(course.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-              : "Recently added"}
-          </span>
-          <span className="flex items-center gap-1" style={{ color: "var(--accent)", fontWeight: 600, fontSize: "13px" }}>
-            Study now →
-          </span>
+          {/* Footer */}
+          <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--border)" }}>
+            <span className="flex items-center gap-1.5" style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {course.created_at
+                ? new Date(course.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                : "Recently added"}
+            </span>
+            <span className="flex items-center gap-1" style={{ color: "var(--accent)", fontWeight: 600, fontSize: "13px" }}>
+              Study now →
+            </span>
+          </div>
         </div>
       </div>
     </Link>
