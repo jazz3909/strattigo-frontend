@@ -96,8 +96,8 @@ export default function HomePage() {
           align-items: center;
           justify-content: space-between;
           padding: 0 48px;
-          z-index: 1000;
-          background: rgba(10, 16, 28, 0.85);
+          z-index: 9999;
+          background: rgba(10, 16, 28, 0.9);
           backdrop-filter: blur(20px);
           -webkit-backdrop-filter: blur(20px);
           transition: background 0.3s ease, backdrop-filter 0.3s ease;
@@ -157,8 +157,9 @@ export default function HomePage() {
           width: 100%;
           height: 100vh;
           min-height: 700px;
-          padding-top: 64px;
+          padding-top: 80px;
           overflow: hidden;
+          background: linear-gradient(135deg, #0D1420 0%, #111825 15%, #1A2D45 35%, #2A5F8D 55%, #7B4A6B 75%, #B05857 90%, #0D1018 100%);
         }
 
         .hero-left {
