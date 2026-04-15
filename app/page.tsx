@@ -165,7 +165,7 @@ export default function HomePage() {
         .hero-left {
           position: absolute;
           left: 5%;
-          top: 144px;   /* below navbar */
+          top: 184px;   /* below navbar */
           bottom: 80px; /* above stats bar */
           width: 52%;
           z-index: 2;
