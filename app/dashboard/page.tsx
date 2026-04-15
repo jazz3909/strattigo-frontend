@@ -72,7 +72,7 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '20px',
     boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
-    transform: hovered ? 'translateY(-4px) scale(1.15)' : 'translateY(0) scale(1)',
+    transform: hovered ? 'translateY(-4px) scale(1.30)' : 'translateY(0) scale(1)',
     transition: 'all 250ms cubic-bezier(0.34, 1.56, 0.64, 1)',
     cursor: 'pointer',
     position: 'relative',
