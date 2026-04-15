@@ -397,15 +397,14 @@ export default function HomePage() {
 
         /* ── STATS BAR ── */
         .stats-bar {
-          position: absolute;
-          bottom: 0; left: 0; right: 0;
-          background: rgba(13,20,32,0.5);
+          background: rgba(13,16,24,0.8);
           backdrop-filter: blur(10px);
-          border-top: 1px solid rgba(245,237,232,0.08);
-          padding: 20px 0;
+          border-top: 1px solid rgba(255,255,255,0.06);
+          border-bottom: 1px solid rgba(255,255,255,0.06);
+          padding: 24px 0;
           display: flex;
           justify-content: center;
-          gap: 0;
+          gap: 80px;
           opacity: 0;
           animation: fadeIn 0.4s ease 900ms forwards;
         }
@@ -1523,27 +1522,27 @@ export default function HomePage() {
           </div>
         </div>
 
-        {/* Stats bar */}
-        <div className="stats-bar" aria-label="Platform statistics">
-          <div className="stat-item">
-            <span className="stat-number">10K+</span>
-            <span className="stat-label">Study guides</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">50K+</span>
-            <span className="stat-label">Quiz questions</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">500+</span>
-            <span className="stat-label">Students</span>
-          </div>
-          <div className="stat-item">
-            <span className="stat-number">4.9★</span>
-            <span className="stat-label">Rating</span>
-          </div>
-        </div>
-
       </section>
+
+      {/* STATS BAR */}
+      <div className="stats-bar" aria-label="Platform statistics">
+        <div className="stat-item">
+          <span className="stat-number">10K+</span>
+          <span className="stat-label">Study guides</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">50K+</span>
+          <span className="stat-label">Quiz questions</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">500+</span>
+          <span className="stat-label">Students</span>
+        </div>
+        <div className="stat-item">
+          <span className="stat-number">4.9★</span>
+          <span className="stat-label">Rating</span>
+        </div>
+      </div>
 
       {/* SECTION 2: HOW IT WORKS */}
       <section id="how-it-works" aria-label="How it works">
