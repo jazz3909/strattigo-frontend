@@ -219,7 +219,7 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div style={{ position: 'relative' }}>
+      <div style={{ position: 'relative', overflow: 'visible' }}>
 
       {/* Greeting header */}
       <div className="mb-8" style={{ position: 'relative', zIndex: 1 }}>
@@ -315,7 +315,7 @@ export default function DashboardPage() {
 
       {/* Course grid */}
       {!loading && !error && courses.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ position: 'relative', zIndex: 1, overflow: 'visible' }}>
           {courses.map((course, i) => (
             <CourseCard key={course.id} course={course} index={i} />
           ))}
