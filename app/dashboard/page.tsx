@@ -66,9 +66,9 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const gradient = courseGradient(course.name);
 
   const baseStyle: React.CSSProperties = {
-    background: 'rgba(17,24,37,0.75)',
-    backdropFilter: 'blur(20px)',
-    WebkitBackdropFilter: 'blur(20px)',
+    background: 'rgba(17,24,37,0.45)',
+    backdropFilter: 'blur(28px)',
+    WebkitBackdropFilter: 'blur(28px)',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: '20px',
     boxShadow: '0 4px 24px rgba(0,0,0,0.25)',
