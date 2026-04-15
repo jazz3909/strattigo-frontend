@@ -172,7 +172,7 @@ export default function HomePage() {
           display: flex;
           flex-direction: column;
           justify-content: center;
-          padding-bottom: 120px;
+          padding-bottom: 0;
         }
 
         .hero-label {
