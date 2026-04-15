@@ -210,10 +210,6 @@ export default function DashboardPage() {
 
   return (
     <>
-      {/* Atmospheric orbs */}
-      <div style={{position:'fixed', right:'-150px', bottom:'-100px', width:'700px', height:'700px', background:'radial-gradient(ellipse at center, rgba(168,128,160,0.18) 0%, transparent 65%)', pointerEvents:'none', zIndex:0}} />
-      <div style={{position:'fixed', right:'-50px', bottom:'-150px', width:'550px', height:'550px', background:'radial-gradient(ellipse at center, rgba(176,88,87,0.14) 0%, transparent 65%)', pointerEvents:'none', zIndex:0}} />
-
       <div style={{ position: 'relative' }}>
 
       {/* Greeting header */}
