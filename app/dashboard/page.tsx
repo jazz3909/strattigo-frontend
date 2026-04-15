@@ -81,7 +81,7 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   };
 
   const hoverStyle: React.CSSProperties = {
-    transform: 'translateY(-4px) scale(1.02)',
+    transform: 'translateY(-4px) scale(1.05)',
     boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
     border: '1px solid rgba(255,255,255,0.08)',
   };
