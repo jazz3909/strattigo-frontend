@@ -134,14 +134,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: "transparent" }}>
-      {/* Full-viewport atmospheric gradient */}
-      <div style={{
-        position: "fixed",
-        inset: 0,
-        background: "linear-gradient(160deg, #0A0E18 0%, #0D1525 20%, #111D35 40%, #162235 55%, #141828 70%, #0F1220 85%, #0A0E18 100%)",
-        zIndex: -1,
-      }} />
-
       {/* Onboarding modal */}
       <OnboardingModal
         isOpen={showOnboarding}
