@@ -43,6 +43,43 @@ function getGreeting(): string {
   return "Good evening";
 }
 
+const shimmerStyle = `
+  @keyframes borderTrace {
+    0%   { background-position: 0% 0%; }
+    100% { background-position: -200% 0%; }
+  }
+  .card-shimmer {
+    position: absolute;
+    inset: 0;
+    border-radius: 24px;
+    padding: 1px;
+    background: linear-gradient(
+      270deg,
+      transparent 0%,
+      transparent 35%,
+      rgba(255,255,255,0.0) 40%,
+      rgba(255,255,255,0.6) 50%,
+      rgba(200,200,255,0.4) 55%,
+      rgba(255,255,255,0.0) 60%,
+      transparent 65%,
+      transparent 100%
+    );
+    background-size: 200% 100%;
+    -webkit-mask:
+      linear-gradient(#fff 0 0) content-box,
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 200ms ease;
+  }
+  .card-shimmer.active {
+    opacity: 1;
+    animation: borderTrace 1.2s linear infinite;
+  }
+`;
+
 function CourseCardSkeleton() {
   return (
     <div className="rounded-2xl border p-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
@@ -66,28 +103,25 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
   const gradient = courseGradient(course.name);
 
   const baseStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.06)',
-    backdropFilter: 'blur(40px) saturate(180%)',
-    WebkitBackdropFilter: 'blur(40px) saturate(180%)',
-    border: '1px solid rgba(255, 255, 255, 0.12)',
-    borderTop: '1px solid rgba(255, 255, 255, 0.2)',
-    borderLeft: '1px solid rgba(255, 255, 255, 0.15)',
+    background: 'rgba(255, 255, 255, 0.04)',
+    backdropFilter: 'blur(20px) saturate(150%)',
+    WebkitBackdropFilter: 'blur(20px) saturate(150%)',
+    border: '1px solid rgba(255, 255, 255, 0.08)',
     borderRadius: '24px',
-    boxShadow: '0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1), inset 0 -1px 0 rgba(0, 0, 0, 0.1)',
+    boxShadow: '0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.08)',
     transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
     cursor: 'pointer',
     position: 'relative',
     padding: '32px',
     animationDelay: `${index * 60}ms`,
+    overflow: 'hidden',
   };
 
   const hoverStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.1)',
-    border: '1px solid rgba(255, 255, 255, 0.2)',
-    borderTop: '1px solid rgba(255, 255, 255, 0.3)',
-    borderLeft: '1px solid rgba(255, 255, 255, 0.22)',
-    boxShadow: '0 16px 48px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15), inset 0 -1px 0 rgba(0, 0,0, 0.15)',
-    transform: 'translateY(-6px) scale(1.08)',
+    background: 'rgba(255, 255, 255, 0.07)',
+    border: '1px solid rgba(255, 255, 255, 0.12)',
+    boxShadow: '0 16px 40px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.12)',
+    transform: 'translateY(-4px) scale(1.03)',
   };
 
   return (
@@ -109,6 +143,8 @@ function CourseCard({ course, index }: { course: Course; index: number }) {
         pointerEvents: 'none',
         borderRadius: '1px',
       }} />
+      {/* Border shimmer trace */}
+      <div className={`card-shimmer ${hovered ? 'active' : ''}`} />
 
       {/* Content */}
       <div style={{ position: 'relative', zIndex: 1 }}>
@@ -240,6 +276,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <style>{shimmerStyle}</style>
       <div style={{ position: 'relative', overflow: 'visible' }}>
 
       {/* Greeting header */}
