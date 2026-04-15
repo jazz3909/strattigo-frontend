@@ -11,6 +11,7 @@ export function MeshBackground() {
     if (!ctx) return;
 
     function resize() {
+      if (!canvas) return;
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
       draw();
