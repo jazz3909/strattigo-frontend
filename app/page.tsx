@@ -21,7 +21,7 @@ export default function HomePage() {
         if (!parent) return;
         const siblings = Array.from(parent.children).filter(c => c.classList.contains(el.classList[0]));
         const idx = siblings.indexOf(el);
-        const delay = Math.max(0, idx) * 60;
+        const delay = Math.max(0, idx) * 80;
 
         setTimeout(() => el.classList.add('visible'), delay);
         revealObserver.unobserve(el);
@@ -35,7 +35,10 @@ export default function HomePage() {
       '.testi-main-q, .testi-card, ' +
       '.pricing-atm-label, .pricing-atm-title-row, .pricing-atm-card, ' +
       '.cta-final-content'
-    ).forEach(el => revealObserver.observe(el));
+    ).forEach(el => {
+      (el as HTMLElement).classList.add('reveal');
+      revealObserver.observe(el);
+    });
 
     return () => {
       window.removeEventListener('scroll', handleScroll);
@@ -94,6 +97,9 @@ export default function HomePage() {
           justify-content: space-between;
           padding: 0 48px;
           z-index: 100;
+          background: rgba(13, 16, 24, 0.7);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
           transition: background 0.3s ease, backdrop-filter 0.3s ease;
         }
 
@@ -460,8 +466,8 @@ export default function HomePage() {
           text-transform: uppercase;
           margin-bottom: 24px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .hiw-label.visible { opacity: 1; transform: translateY(0); }
@@ -473,8 +479,8 @@ export default function HomePage() {
           flex-wrap: wrap;
           margin-bottom: 80px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
         }
 
         .hiw-title-row.visible { opacity: 1; transform: translateY(0); }
@@ -518,8 +524,8 @@ export default function HomePage() {
           position: relative;
           z-index: 1;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .hiw-step.visible { opacity: 1; transform: translateY(0); }
@@ -671,8 +677,8 @@ export default function HomePage() {
           text-transform: uppercase;
           margin-bottom: 20px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .feat-label.visible { opacity: 1; transform: translateY(0); }
@@ -680,8 +686,8 @@ export default function HomePage() {
         .feat-title-wrap {
           margin-bottom: 72px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
         }
 
         .feat-title-wrap.visible { opacity: 1; transform: translateY(0); }
@@ -717,8 +723,8 @@ export default function HomePage() {
           border-radius: 4px;
           padding: 40px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1), border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
           cursor: default;
         }
 
@@ -839,8 +845,8 @@ export default function HomePage() {
           display: flex;
           justify-content: center;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .canvas-right.visible { opacity: 1; transform: translateY(0); }
@@ -1000,8 +1006,8 @@ export default function HomePage() {
           margin: 0 auto 20px;
           line-height: 1.4;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .testi-main-q.visible { opacity: 1; transform: translateY(0); }
@@ -1026,8 +1032,8 @@ export default function HomePage() {
           padding: 28px;
           text-align: left;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .testi-card.visible { opacity: 1; transform: translateY(0); }
@@ -1076,8 +1082,8 @@ export default function HomePage() {
           text-transform: uppercase;
           margin-bottom: 20px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .pricing-atm-label.visible { opacity: 1; transform: translateY(0); }
@@ -1089,8 +1095,8 @@ export default function HomePage() {
           flex-wrap: wrap;
           margin-bottom: 72px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
         }
 
         .pricing-atm-title-row.visible { opacity: 1; transform: translateY(0); }
@@ -1124,8 +1130,8 @@ export default function HomePage() {
           border-radius: 8px;
           padding: 40px;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .pricing-atm-card.visible { opacity: 1; transform: translateY(0); }
@@ -1285,8 +1291,8 @@ export default function HomePage() {
           position: relative;
           z-index: 1;
           opacity: 0;
-          transform: translateY(12px);
-          transition: opacity 0.7s cubic-bezier(0.25, 0.1, 0.25, 1), transform 0.7s cubic-bezier(0.25, 0.1, 0.25, 1);
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
         }
 
         .cta-final-content.visible { opacity: 1; transform: translateY(0); }
@@ -1393,6 +1399,18 @@ export default function HomePage() {
         @keyframes blink {
           0%, 100% { opacity: 1; }
           50%       { opacity: 0; }
+        }
+
+        /* ── SCROLL REVEAL ── */
+        .reveal {
+          opacity: 0;
+          transform: translateY(16px);
+          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1),
+                      transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
+        }
+        .reveal.visible {
+          opacity: 1;
+          transform: translateY(0);
         }
 
         @media (prefers-reduced-motion: reduce) {
