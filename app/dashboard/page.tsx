@@ -209,10 +209,12 @@ export default function DashboardPage() {
   const displayName = email.split("@")[0] || email;
 
   return (
-    <div style={{ position: 'relative', overflow: 'hidden' }}>
+    <>
       {/* Atmospheric orbs */}
-      <div style={{position:'absolute', right:'-10%', top:'10%', width:'600px', height:'600px', background:'radial-gradient(ellipse at center, rgba(168,128,160,0.25) 0%, transparent 70%)', pointerEvents:'none', zIndex:0}} />
-      <div style={{position:'absolute', right:'-5%', bottom:'10%', width:'500px', height:'500px', background:'radial-gradient(ellipse at center, rgba(176,88,87,0.18) 0%, transparent 70%)', pointerEvents:'none', zIndex:0}} />
+      <div style={{position:'fixed', right:'-10%', top:'10%', width:'600px', height:'600px', background:'radial-gradient(ellipse at center, rgba(168,128,160,0.25) 0%, transparent 70%)', pointerEvents:'none', zIndex:0}} />
+      <div style={{position:'fixed', right:'-5%', bottom:'10%', width:'500px', height:'500px', background:'radial-gradient(ellipse at center, rgba(176,88,87,0.18) 0%, transparent 70%)', pointerEvents:'none', zIndex:0}} />
+
+      <div style={{ position: 'relative' }}>
 
       {/* Greeting header */}
       <div className="mb-8" style={{ position: 'relative', zIndex: 1 }}>
@@ -376,6 +378,7 @@ export default function DashboardPage() {
           </div>
         </form>
       </Modal>
-    </div>
+      </div>
+    </>
   );
 }
