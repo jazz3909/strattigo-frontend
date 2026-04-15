@@ -52,8 +52,8 @@ export default function LoginPage() {
       </div>
 
       {/* Left: Brand Panel */}
-      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12">
-        <div className="absolute inset-0 gradient-brand-animated" />
+      <div className="hidden lg:flex lg:w-1/2 relative overflow-hidden items-center justify-center p-12" style={{ background: "linear-gradient(135deg, #0D1420 0%, #111825 30%, #1A2D45 60%, #2A1F35 85%, #3D1E28 100%)" }}>
+        <div className="absolute inset-0" style={{ backgroundImage: "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='200' height='200' filter='url(%23n)'/%3E%3C/svg%3E\")", opacity: 0.03 }} />
         <div className="absolute inset-0 dot-grid opacity-20" />
         <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl orb-1" />
         <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-white/10 rounded-full blur-3xl orb-2" />
@@ -65,10 +65,10 @@ export default function LoginPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
               </svg>
             </div>
-            <span className="text-xl font-bold">Strattigo</span>
+            <span style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, letterSpacing: "0.1em" }}>STRATTIGO</span>
           </Link>
 
-          <h2 className="text-3xl font-extrabold mb-4 leading-tight">
+          <h2 className="text-3xl mb-4 leading-tight" style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700 }}>
             Your AI-powered<br />study partner
           </h2>
           <p className="text-white/70 leading-relaxed mb-10">
@@ -82,11 +82,11 @@ export default function LoginPage() {
               { text: "Personalized study schedules" },
               { text: "Chat with your course materials" },
             ].map((item) => (
-              <div key={item.text} className="flex items-center gap-3 bg-white/10 backdrop-blur-sm rounded-xl px-4 py-3 border border-white/20">
-                <svg className="w-4 h-4 text-white/80 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <div key={item.text} className="flex items-center gap-3 rounded-xl px-4 py-3" style={{ background: "rgba(225,148,133,0.1)", border: "1px solid rgba(225,148,133,0.2)", color: "var(--accent)" }}>
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                 </svg>
-                <span className="text-sm font-medium text-white/90">{item.text}</span>
+                <span className="text-sm font-medium">{item.text}</span>
               </div>
             ))}
           </div>
@@ -107,7 +107,7 @@ export default function LoginPage() {
 
         <div className={`w-full max-w-[400px] ${shake ? "animate-shake" : ""}`}>
           <div className="mb-8">
-            <h1 className="text-2xl font-extrabold mb-1.5" style={{ color: "var(--text-primary)" }}>Welcome back</h1>
+            <h1 className="text-2xl mb-1.5" style={{ color: "var(--text-primary)", fontFamily: "var(--font-fraunces)", fontWeight: 700 }}>Welcome back</h1>
             <p className="text-sm" style={{ color: "var(--text-secondary)" }}>Sign in to continue studying</p>
           </div>
 
@@ -152,7 +152,7 @@ export default function LoginPage() {
                   onFocus={(e) => {
                     if (!fieldErrors.password) {
                       e.currentTarget.style.borderColor = "var(--accent)";
-                      e.currentTarget.style.boxShadow = "0 0 0 2px var(--accent-dim)";
+                      e.currentTarget.style.boxShadow = "0 0 0 3px rgba(225,148,133,0.12)";
                     }
                   }}
                   onBlur={(e) => {
@@ -189,7 +189,7 @@ export default function LoginPage() {
               )}
             </div>
 
-            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading}>
+            <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} style={{ color: "white", fontFamily: "var(--font-outfit)", fontWeight: 600, boxShadow: "var(--shadow-brand)" }}>
               Sign in
             </Button>
           </form>
