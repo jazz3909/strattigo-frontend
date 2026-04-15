@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { Fraunces, Outfit, JetBrains_Mono } from "next/font/google";
+import { Fraunces, Outfit, JetBrains_Mono, Geist } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "./providers/ToastProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
 import { MeshBackground } from "./components/MeshBackground";
+import { cn } from "@/lib/utils";
+
+const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -37,7 +40,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${fraunces.variable} ${outfit.variable} ${jetbrainsMono.variable}`}
+      className={cn(fraunces.variable, outfit.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
     >
       <body className="min-h-full flex flex-col" style={{ color: "var(--text-primary)" }}>
         <MeshBackground />
