@@ -121,11 +121,11 @@ export default function CanvasSettingsPage() {
   }
 
   return (
-    <div style={{ position: 'relative', minHeight: '100vh', overflow: 'hidden' }}>
+    <div style={{ position: 'relative' }}>
       {/* Mauve orb */}
-      <div style={{ position: 'absolute', right: '-10%', top: '10%', width: '600px', height: '500px', background: 'radial-gradient(ellipse at center, rgba(168,128,160,0.2) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', right: '-150px', bottom: '-100px', width: '700px', height: '700px', background: 'radial-gradient(ellipse at center, rgba(168,128,160,0.18) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
       {/* Terracotta orb */}
-      <div style={{ position: 'absolute', right: '5%', bottom: '5%', width: '400px', height: '400px', background: 'radial-gradient(ellipse at center, rgba(176,88,87,0.15) 0%, transparent 70%)', pointerEvents: 'none', zIndex: 0 }} />
+      <div style={{ position: 'fixed', right: '-50px', bottom: '-150px', width: '550px', height: '550px', background: 'radial-gradient(ellipse at center, rgba(176,88,87,0.14) 0%, transparent 65%)', pointerEvents: 'none', zIndex: 0 }} />
     <div className="max-w-2xl" style={{ position: 'relative', zIndex: 1 }}>
       {/* Back button */}
       <Link
