@@ -410,207 +410,413 @@ export default function CoursePage({
   const hasNoMaterials = materials.length === 0;
 
   return (
-    <div className="page-enter">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-5">
-        <Link href="/dashboard" className="hover:text-[var(--accent)] transition-colors flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          Courses
-        </Link>
-        <svg className="w-3.5 h-3.5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-        <span className="text-[var(--text-secondary)] font-medium truncate max-w-[200px]">{course?.name}</span>
-      </div>
+    <div style={{ display: 'flex', flexDirection: 'column', margin: '-32px -24px 0', minHeight: 'calc(100vh - 56px)' }}>
 
-      {/* Course header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-7">
-        <div className="flex items-start gap-4">
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${courseGradient(course?.name ?? "")} flex items-center justify-center text-white font-bold text-2xl shadow-md flex-shrink-0`}>
-            {course?.name?.[0]?.toUpperCase() ?? "C"}
-          </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-tight">{course?.name}</h1>
-            {course?.description && (
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">{course.description}</p>
-            )}
-            <div className="flex items-center gap-3 mt-2">
-              <Badge variant="purple" size="sm" dot>
-                {materials.length} material{materials.length !== 1 ? "s" : ""}
-              </Badge>
-              {hasNoMaterials && (
-                <Badge variant="amber" size="sm">
-                  Upload materials to unlock AI
-                </Badge>
-              )}
+      {/* ── ZONE 1: HERO HEADER ───────────────────────────────── */}
+      <div style={{
+        position: 'relative',
+        width: '100%',
+        padding: '32px 40px 0',
+        background: 'linear-gradient(180deg, rgba(10,14,24,0.95) 0%, transparent 100%)',
+        zIndex: 10,
+        overflow: 'hidden',
+      }}>
+        {/* Atmospheric glow */}
+        <div style={{
+          position: 'absolute',
+          top: '-60px',
+          left: '-60px',
+          width: '400px',
+          height: '300px',
+          background: 'radial-gradient(ellipse at center, rgba(225,148,133,0.08) 0%, transparent 70%)',
+          pointerEvents: 'none',
+        }} />
+
+        {/* Back link */}
+        <div style={{ marginBottom: '16px' }}>
+          <a href="/dashboard" style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '6px',
+            color: 'var(--text-tertiary)',
+            fontSize: '13px',
+            fontFamily: 'var(--font-outfit)',
+            textDecoration: 'none',
+            transition: 'color 200ms ease',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+          >
+            ← Courses
+          </a>
+        </div>
+
+        {/* Course identity row */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: '24px',
+          marginBottom: '32px',
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+            {/* Large course icon */}
+            <div style={{
+              width: '72px',
+              height: '72px',
+              borderRadius: '20px',
+              background: courseGradientStyle(course?.name ?? ''),
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '28px',
+              fontWeight: 700,
+              color: 'white',
+              flexShrink: 0,
+              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
+            }}>
+              {course?.name?.[0]?.toUpperCase() ?? 'C'}
+            </div>
+
+            <div>
+              <h1 style={{
+                fontFamily: 'var(--font-fraunces)',
+                fontWeight: 700,
+                fontSize: '36px',
+                color: 'var(--text-primary)',
+                lineHeight: 1.1,
+                marginBottom: '8px',
+                letterSpacing: '-0.02em',
+              }}>{course?.name}</h1>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  fontSize: '13px',
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-outfit)',
+                }}>
+                  <span style={{
+                    width: '6px',
+                    height: '6px',
+                    borderRadius: '50%',
+                    background: 'var(--accent)',
+                    display: 'inline-block',
+                  }} />
+                  {materials.length} materials
+                </span>
+                <span style={{
+                  fontSize: '13px',
+                  color: 'var(--text-tertiary)',
+                  fontFamily: 'var(--font-mono)',
+                }}>
+                  Last updated {course?.created_at ? new Date(course.created_at).toLocaleDateString() : 'recently'}
+                </span>
+              </div>
             </div>
           </div>
+
+          {/* Action buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+            <button
+              onClick={() => setActiveTab('materials')}
+              style={{
+                padding: '10px 18px',
+                background: 'rgba(255,255,255,0.05)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+                border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: '12px',
+                color: 'var(--text-secondary)',
+                fontSize: '13px',
+                fontFamily: 'var(--font-outfit)',
+                fontWeight: 500,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                e.currentTarget.style.color = 'var(--text-primary)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                e.currentTarget.style.color = 'var(--text-secondary)';
+              }}
+            >
+              Import from Canvas
+            </button>
+
+            <button
+              onClick={() => setActiveTab('materials')}
+              style={{
+                padding: '10px 18px',
+                background: 'var(--accent)',
+                border: 'none',
+                borderRadius: '12px',
+                color: 'white',
+                fontSize: '13px',
+                fontFamily: 'var(--font-outfit)',
+                fontWeight: 600,
+                cursor: 'pointer',
+                transition: 'all 200ms ease',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                boxShadow: '0 4px 16px rgba(225,148,133,0.3)',
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'var(--accent-hover)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(225,148,133,0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'var(--accent)';
+                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(225,148,133,0.3)';
+              }}
+            >
+              ↑ Upload
+            </button>
+          </div>
         </div>
 
-        {/* Quick action buttons */}
-        <div className="flex flex-wrap gap-2">
-          {[
-            {
-              label: "Study Guide",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" /></svg>,
-              action: handleStudyGuideTab,
-              tab: "study-guide" as ActiveTab,
-            },
-            {
-              label: "Quiz",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
-              action: handleQuizTab,
-              tab: "quiz" as ActiveTab,
-            },
-            {
-              label: "Study Plan",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-              action: handleStudyPlanTab,
-              tab: "study-plan" as ActiveTab,
-              alwaysEnabled: true,
-            },
-            {
-              label: "Chat",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>,
-              action: () => setActiveTab("chat"),
-              tab: "chat" as ActiveTab,
-              alwaysEnabled: true,
-            },
-          ].map((btn) => (
-            <button
-              key={btn.label}
-              onClick={btn.action}
-              disabled={aiLoading || (!btn.alwaysEnabled && hasNoMaterials)}
-              className={`
-                flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold
-                transition-all duration-150 btn-press cursor-pointer
-                ${activeTab === btn.tab ? "shadow-md" : "border"}
-                disabled:opacity-40 disabled:cursor-not-allowed
-              `}
-              style={activeTab === btn.tab
-                ? { background: "var(--accent)", color: "#0a0a0f" }
-                : { borderColor: "var(--accent-dim)", color: "var(--accent)", background: "var(--accent-dim)" }
-              }
-            >
-              {btn.icon}
-              {btn.label}
-            </button>
-          ))}
+        {/* Floating glassmorphic tab bar */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '2px',
+          background: 'rgba(255,255,255,0.04)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderBottom: 'none',
+          borderRadius: '16px 16px 0 0',
+          padding: '6px 6px 0',
+          width: 'fit-content',
+        }}>
+          {([
+            { id: 'materials', label: 'Materials', icon: (
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+            ) },
+            { id: 'study-guide', label: 'Study Guide', icon: (
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
+              </svg>
+            ) },
+            { id: 'quiz', label: 'Quiz', icon: (
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+            ) },
+            { id: 'flashcards', label: 'Flashcards', icon: (
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+              </svg>
+            ) },
+            { id: 'study-plan', label: 'Study Plan', icon: (
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" />
+              </svg>
+            ) },
+            { id: 'chat', label: 'Chat', icon: (
+              <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
+              </svg>
+            ) },
+          ] as { id: ActiveTab; label: string; icon: React.ReactNode }[]).map(({ id, label, icon }) => {
+            const isActive = activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => id === 'quiz' ? handleQuizTab() : setActiveTab(id)}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '10px 18px',
+                  borderRadius: '12px 12px 0 0',
+                  border: 'none',
+                  background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
+                  fontFamily: 'var(--font-outfit)',
+                  fontWeight: isActive ? 600 : 400,
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  transition: 'all 200ms ease',
+                  position: 'relative',
+                  whiteSpace: 'nowrap',
+                }}
+                onMouseEnter={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
+                  }
+                }}
+                onMouseLeave={e => {
+                  if (!isActive) {
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                    e.currentTarget.style.background = 'transparent';
+                  }
+                }}
+              >
+                {isActive && (
+                  <div style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: '20%',
+                    right: '20%',
+                    height: '2px',
+                    background: 'var(--accent)',
+                    borderRadius: '0 0 2px 2px',
+                  }} />
+                )}
+                {icon}
+                {label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
-      {/* No materials warning */}
-      {hasNoMaterials && activeTab !== "materials" && (
-        <div className="mb-5 flex items-start gap-3 px-4 py-3.5 border rounded-2xl" style={{ background: "rgba(251,191,36,0.08)", borderColor: "rgba(251,191,36,0.2)" }}>
-          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#fbbf24" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-          </svg>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: "#fbbf24" }}>No materials uploaded</p>
-            <p className="text-xs mt-0.5" style={{ color: "#fbbf24" }}>
-              Upload course materials first to use AI features.{" "}
-              <button className="underline font-semibold" onClick={() => setActiveTab("materials")}>
-                Go to Materials →
-              </button>
-            </p>
+      {/* ── ZONE 2: CONTENT AREA ──────────────────────────────── */}
+      <div style={{
+        flex: 1,
+        background: 'rgba(255,255,255,0.02)',
+        backdropFilter: 'blur(12px)',
+        WebkitBackdropFilter: 'blur(12px)',
+        border: '1px solid rgba(255,255,255,0.08)',
+        borderTop: 'none',
+        borderRadius: '0 16px 16px 16px',
+        margin: '0 40px 40px',
+        overflow: 'hidden',
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        {/* No materials warning */}
+        {hasNoMaterials && activeTab !== 'materials' && (
+          <div style={{ padding: '12px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
+            <div className="flex items-start gap-3 px-4 py-3 rounded-xl" style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)' }}>
+              <svg className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: '#fbbf24' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <div>
+                <p className="text-sm font-semibold" style={{ color: '#fbbf24' }}>No materials uploaded</p>
+                <p className="text-xs mt-0.5" style={{ color: '#fbbf24' }}>
+                  Upload course materials first to use AI features.{' '}
+                  <button className="underline font-semibold" onClick={() => setActiveTab('materials')}>
+                    Go to Materials →
+                  </button>
+                </p>
+              </div>
+            </div>
           </div>
+        )}
+
+        {/* Scrollable content */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
+
+          {/* ── MATERIALS TAB ─────────────────────────────── */}
+          {activeTab === 'materials' && (
+            <MaterialsTab
+              courseId={courseId}
+              materials={materials}
+              uploading={uploading}
+              uploadProgress={uploadProgress}
+              dragOver={dragOver}
+              setDragOver={setDragOver}
+              fileInputRef={fileInputRef}
+              handleFileUpload={handleFileUpload}
+              confirmDeleteId={confirmDeleteId}
+              setConfirmDeleteId={setConfirmDeleteId}
+              deletingId={deletingId}
+              handleDeleteMaterial={handleDeleteMaterial}
+              onRenameSuccess={handleRenameSuccess}
+              collections={collections}
+              onCollectionsChange={setCollections}
+              onImportComplete={loadPage}
+            />
+          )}
+
+          {/* ── STUDY GUIDE TAB ───────────────────────────── */}
+          {activeTab === 'study-guide' && (
+            <StudyGuideTab
+              courseId={courseId}
+              canGenerate={!hasNoMaterials}
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onCollectionChange={setSelectedCollectionId}
+            />
+          )}
+
+          {/* ── QUIZ TAB ──────────────────────────────────── */}
+          {activeTab === 'quiz' && (
+            <QuizErrorBoundary>
+              <QuizTab
+                courseId={courseId}
+                rawQuizContent={rawQuizContent}
+                quiz={quiz}
+                loading={streamingQuiz}
+                error={aiError}
+                generatedAt={quizGeneratedAt}
+                onGenerate={() => doGenerateQuiz(false)}
+                onRegenerate={() => doGenerateQuiz(true)}
+                canGenerate={!hasNoMaterials}
+                streamingQuiz={streamingQuiz}
+                streamedQuestions={streamedQuestions}
+                quizGenerationId={quizGenerationId}
+                collections={collections}
+                selectedCollectionId={selectedCollectionId}
+                onCollectionChange={setSelectedCollectionId}
+              />
+            </QuizErrorBoundary>
+          )}
+
+          {/* ── FLASHCARDS TAB ────────────────────────────── */}
+          {activeTab === 'flashcards' && (
+            <FlashcardsTab
+              courseId={courseId}
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onCollectionChange={setSelectedCollectionId}
+              canGenerate={!hasNoMaterials}
+            />
+          )}
+
+          {/* ── STUDY PLAN TAB ────────────────────────────── */}
+          {activeTab === 'study-plan' && (
+            <StudyPlanTab
+              courseId={courseId}
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onCollectionChange={setSelectedCollectionId}
+            />
+          )}
+
+          {/* ── CHAT TAB ──────────────────────────────────── */}
+          {activeTab === 'chat' && (
+            <ChatTab
+              messages={messages}
+              chatInput={chatInput}
+              setChatInput={setChatInput}
+              chatLoading={chatLoading}
+              chatStreaming={chatStreaming}
+              onSend={handleChat}
+              canChat={!hasNoMaterials}
+              chatBottomRef={chatBottomRef}
+              chatInputRef={chatInputRef}
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onCollectionChange={setSelectedCollectionId}
+            />
+          )}
+
         </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs
-        tabs={TABS.map((t) => ({ id: t.id, label: t.label, icon: t.icon }))}
-        activeId={activeTab}
-        onChange={(id) => setActiveTab(id as ActiveTab)}
-        className="mb-6"
-      />
-
-      {/* ── MATERIALS TAB ─────────────────────────────── */}
-      {activeTab === "materials" && (
-        <MaterialsTab
-          courseId={courseId}
-          materials={materials}
-          uploading={uploading}
-          uploadProgress={uploadProgress}
-          dragOver={dragOver}
-          setDragOver={setDragOver}
-          fileInputRef={fileInputRef}
-          handleFileUpload={handleFileUpload}
-          confirmDeleteId={confirmDeleteId}
-          setConfirmDeleteId={setConfirmDeleteId}
-          deletingId={deletingId}
-          handleDeleteMaterial={handleDeleteMaterial}
-          onRenameSuccess={handleRenameSuccess}
-          collections={collections}
-          onCollectionsChange={setCollections}
-          onImportComplete={loadPage}
-        />
-      )}
-
-      {/* ── STUDY GUIDE TAB ───────────────────────────── */}
-      {activeTab === "study-guide" && (
-        <StudyGuideTab
-          courseId={courseId}
-          canGenerate={!hasNoMaterials}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onCollectionChange={setSelectedCollectionId}
-        />
-      )}
-
-
-      {/* ── QUIZ TAB ──────────────────────────────────── */}
-      {activeTab === "quiz" && (
-        <QuizErrorBoundary>
-          <QuizTab
-            courseId={courseId}
-            rawQuizContent={rawQuizContent}
-            quiz={quiz}
-            loading={streamingQuiz}
-            error={aiError}
-            generatedAt={quizGeneratedAt}
-            onGenerate={() => doGenerateQuiz(false)}
-            onRegenerate={() => doGenerateQuiz(true)}
-            canGenerate={!hasNoMaterials}
-            streamingQuiz={streamingQuiz}
-            streamedQuestions={streamedQuestions}
-            quizGenerationId={quizGenerationId}
-            collections={collections}
-            selectedCollectionId={selectedCollectionId}
-            onCollectionChange={setSelectedCollectionId}
-          />
-        </QuizErrorBoundary>
-      )}
-
-      {/* ── STUDY PLAN TAB ────────────────────────────── */}
-      {activeTab === "study-plan" && (
-        <StudyPlanTab
-          courseId={courseId}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onCollectionChange={setSelectedCollectionId}
-        />
-      )}
-
-      {/* ── CHAT TAB ──────────────────────────────────── */}
-      {activeTab === "chat" && (
-        <ChatTab
-          messages={messages}
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          chatLoading={chatLoading}
-          chatStreaming={chatStreaming}
-          onSend={handleChat}
-          canChat={!hasNoMaterials}
-          chatBottomRef={chatBottomRef}
-          chatInputRef={chatInputRef}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onCollectionChange={setSelectedCollectionId}
-        />
-      )}
+      </div>
     </div>
   );
 }
@@ -634,6 +840,23 @@ function courseGradient(name: string): string {
   let h = 0;
   for (let i = 0; i < name.length; i++) h = (h << 5) - h + name.charCodeAt(i);
   return COURSE_GRADIENTS[Math.abs(h) % COURSE_GRADIENTS.length];
+}
+
+const COURSE_GRADIENT_STYLES = [
+  'linear-gradient(135deg, #8b5cf6, #9333ea)',
+  'linear-gradient(135deg, #3b82f6, #4f46e5)',
+  'linear-gradient(135deg, #10b981, #0d9488)',
+  'linear-gradient(135deg, #ec4899, #e11d48)',
+  'linear-gradient(135deg, #f59e0b, #ea580c)',
+  'linear-gradient(135deg, #06b6d4, #2563eb)',
+  'linear-gradient(135deg, #d946ef, #7c3aed)',
+  'linear-gradient(135deg, #ef4444, #db2777)',
+];
+
+function courseGradientStyle(name: string): string {
+  let h = 0;
+  for (let i = 0; i < name.length; i++) h = (h << 5) - h + name.charCodeAt(i);
+  return COURSE_GRADIENT_STYLES[Math.abs(h) % COURSE_GRADIENT_STYLES.length];
 }
 
 function fileIcon(filename: string): { icon: React.ReactNode; color: string } {
