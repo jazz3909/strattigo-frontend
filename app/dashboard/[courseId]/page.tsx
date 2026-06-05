@@ -410,200 +410,177 @@ export default function CoursePage({
   const hasNoMaterials = materials.length === 0;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', margin: '-32px -24px 0', minHeight: 'calc(100vh - 56px)' }}>
+    <>
+      {/* ===== THE ONE FROSTED PANEL — full bleed over the global gradient ===== */}
+      <div
+        className="course-frost-panel"
+        style={{
+          position: 'relative',
+          width: '100vw',
+          left: '50%',
+          right: '50%',
+          marginLeft: '-50vw',
+          marginRight: '-50vw',
+          marginTop: '-32px',
+          minHeight: 'calc(100vh - 56px)',
+          background: 'rgba(13,16,24,0.42)',
+          backdropFilter: 'blur(40px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(120%)',
+          borderTop: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        }}
+      >
+        {/* internal max-width wrapper — the master alignment column every sub-box shares */}
+        <div className="course-inner" style={{ maxWidth: '1400px', margin: '0 auto', padding: '32px 40px 64px', width: '100%' }}>
 
-      {/* ── ZONE 1: HERO HEADER ───────────────────────────────── */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        padding: '32px 40px 0',
-        background: 'linear-gradient(180deg, rgba(10,14,24,0.95) 0%, transparent 100%)',
-        zIndex: 10,
-        overflow: 'hidden',
-      }}>
-        {/* Atmospheric glow */}
-        <div style={{
-          position: 'absolute',
-          top: '-60px',
-          left: '-60px',
-          width: '400px',
-          height: '300px',
-          background: 'radial-gradient(ellipse at center, rgba(225,148,133,0.08) 0%, transparent 70%)',
-          pointerEvents: 'none',
-        }} />
+          {/* ===== SUB-BOX 1: HEADER ===== */}
+          <header className="course-header" style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '28px' }}>
+            {/* Back link */}
+            <a
+              href="/dashboard"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px',
+                color: 'var(--text-tertiary)',
+                fontSize: '13px',
+                fontFamily: 'var(--font-outfit)',
+                textDecoration: 'none',
+                width: 'fit-content',
+                transition: 'color 200ms ease',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+            >
+              ← Courses
+            </a>
 
-        {/* Back link */}
-        <div style={{ marginBottom: '16px' }}>
-          <a href="/dashboard" style={{
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: '6px',
-            color: 'var(--text-tertiary)',
-            fontSize: '13px',
-            fontFamily: 'var(--font-outfit)',
-            textDecoration: 'none',
-            transition: 'color 200ms ease',
-          }}
-          onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-          onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-          >
-            ← Courses
-          </a>
-        </div>
-
-        {/* Course identity row */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          gap: '24px',
-          marginBottom: '32px',
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-            {/* Large course icon */}
-            <div style={{
-              width: '72px',
-              height: '72px',
-              borderRadius: '20px',
-              background: courseGradientStyle(course?.name ?? ''),
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '28px',
-              fontWeight: 700,
-              color: 'white',
-              flexShrink: 0,
-              boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-            }}>
-              {course?.name?.[0]?.toUpperCase() ?? 'C'}
-            </div>
-
-            <div>
-              <h1 style={{
-                fontFamily: 'var(--font-fraunces)',
-                fontWeight: 700,
-                fontSize: '36px',
-                color: 'var(--text-primary)',
-                lineHeight: 1.1,
-                marginBottom: '8px',
-                letterSpacing: '-0.02em',
-              }}>{course?.name}</h1>
-
-              <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                <span style={{
-                  display: 'inline-flex',
+            {/* Identity + actions row */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '24px', flexWrap: 'wrap' }}>
+              {/* Left cluster: course icon + identity */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+                <div style={{
+                  width: '64px',
+                  height: '64px',
+                  borderRadius: '18px',
+                  background: courseGradientStyle(course?.name ?? ''),
+                  display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '13px',
-                  color: 'var(--text-secondary)',
-                  fontFamily: 'var(--font-outfit)',
+                  justifyContent: 'center',
+                  fontSize: '26px',
+                  fontWeight: 700,
+                  color: 'white',
+                  flexShrink: 0,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 }}>
-                  <span style={{
-                    width: '6px',
-                    height: '6px',
-                    borderRadius: '50%',
-                    background: 'var(--accent)',
-                    display: 'inline-block',
-                  }} />
-                  {materials.length} materials
-                </span>
-                <span style={{
-                  fontSize: '13px',
-                  color: 'var(--text-tertiary)',
-                  fontFamily: 'var(--font-mono)',
-                }}>
-                  Last updated {course?.created_at ? new Date(course.created_at).toLocaleDateString() : 'recently'}
-                </span>
+                  {course?.name?.[0]?.toUpperCase() ?? 'C'}
+                </div>
+
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <h1 style={{
+                    fontFamily: 'var(--font-fraunces)',
+                    fontWeight: 700,
+                    fontSize: '32px',
+                    color: 'var(--text-primary)',
+                    lineHeight: 1.05,
+                    letterSpacing: '-0.02em',
+                    margin: 0,
+                  }}>{course?.name}</h1>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <span style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      fontSize: '13px',
+                      color: 'var(--text-secondary)',
+                      fontFamily: 'var(--font-outfit)',
+                    }}>
+                      <span style={{
+                        width: '6px',
+                        height: '6px',
+                        borderRadius: '50%',
+                        background: 'var(--accent)',
+                        display: 'inline-block',
+                      }} />
+                      {materials.length} materials
+                    </span>
+                    <span style={{
+                      fontSize: '13px',
+                      color: 'var(--text-tertiary)',
+                      fontFamily: 'var(--font-mono)',
+                    }}>
+                      Last updated {course?.created_at ? new Date(course.created_at).toLocaleDateString() : 'recently'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Right cluster: action buttons */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+                <button
+                  onClick={() => setActiveTab('materials')}
+                  style={{
+                    padding: '11px 20px',
+                    background: 'rgba(255,255,255,0.05)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: '12px',
+                    color: 'var(--text-secondary)',
+                    fontSize: '13px',
+                    fontFamily: 'var(--font-outfit)',
+                    fontWeight: 500,
+                    cursor: 'pointer',
+                    transition: 'all 200ms ease',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
+                    e.currentTarget.style.color = 'var(--text-primary)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                    e.currentTarget.style.color = 'var(--text-secondary)';
+                  }}
+                >
+                  Import from Canvas
+                </button>
+
+                <button
+                  onClick={() => setActiveTab('materials')}
+                  style={{
+                    padding: '11px 20px',
+                    background: '#E19485',
+                    border: 'none',
+                    borderRadius: '12px',
+                    color: 'white',
+                    fontSize: '13px',
+                    fontFamily: 'var(--font-outfit)',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    transition: 'all 200ms ease',
+                    boxShadow: '0 4px 16px rgba(225,148,133,0.3)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    whiteSpace: 'nowrap',
+                  }}
+                  onMouseEnter={e => {
+                    e.currentTarget.style.background = 'var(--accent-hover)';
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(225,148,133,0.4)';
+                  }}
+                  onMouseLeave={e => {
+                    e.currentTarget.style.background = '#E19485';
+                    (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(225,148,133,0.3)';
+                  }}
+                >
+                  ↑ Upload
+                </button>
               </div>
             </div>
-          </div>
+          </header>
 
-          {/* Action buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
-            <button
-              onClick={() => setActiveTab('materials')}
-              style={{
-                padding: '10px 18px',
-                background: 'rgba(255,255,255,0.05)',
-                backdropFilter: 'blur(12px)',
-                WebkitBackdropFilter: 'blur(12px)',
-                border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: '12px',
-                color: 'var(--text-secondary)',
-                fontSize: '13px',
-                fontFamily: 'var(--font-outfit)',
-                fontWeight: 500,
-                cursor: 'pointer',
-                transition: 'all 200ms ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.08)';
-                e.currentTarget.style.color = 'var(--text-primary)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
-                e.currentTarget.style.color = 'var(--text-secondary)';
-              }}
-            >
-              Import from Canvas
-            </button>
-
-            <button
-              onClick={() => setActiveTab('materials')}
-              style={{
-                padding: '10px 18px',
-                background: '#E19485',
-                border: 'none',
-                borderRadius: '12px',
-                color: 'white',
-                fontSize: '13px',
-                fontFamily: 'var(--font-outfit)',
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 200ms ease',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '6px',
-                boxShadow: '0 4px 16px rgba(225,148,133,0.3)',
-              }}
-              onMouseEnter={e => {
-                e.currentTarget.style.background = '#C1726F';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(225,148,133,0.4)';
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.background = '#E19485';
-                (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(225,148,133,0.3)';
-              }}
-            >
-              ↑ Upload
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── TAB BAR: top lip of the frosted workspace panel ──────── */}
-      <div style={{
-        position: 'relative',
-        zIndex: 11,
-        width: '100vw',
-        left: '50%',
-        right: '50%',
-        marginLeft: '-50vw',
-        marginRight: '-50vw',
-        marginBottom: '-1px',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '2px',
-        padding: '6px 32px 0',
-        background: 'rgba(13,16,24,0.42)',
-        backdropFilter: 'blur(40px) saturate(120%)',
-        WebkitBackdropFilter: 'blur(40px) saturate(120%)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-        borderRadius: '16px 16px 0 0',
-      }}>
+          {/* ===== SUB-BOX 2: TAB BAR ===== */}
+          <nav className="course-tabs" style={{ display: 'flex', alignItems: 'center', gap: '4px', borderBottom: '1px solid rgba(255,255,255,0.08)', marginBottom: '28px', overflowX: 'auto' }}>
           {([
             { id: 'materials', label: 'Materials', icon: (
               <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -644,70 +621,33 @@ export default function CoursePage({
                 style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '6px',
-                  padding: '10px 18px',
-                  borderRadius: '12px 12px 0 0',
+                  gap: '7px',
+                  padding: '12px 18px',
                   border: 'none',
-                  background: isActive ? 'rgba(255,255,255,0.08)' : 'transparent',
+                  background: 'transparent',
                   color: isActive ? 'var(--accent)' : 'var(--text-secondary)',
                   fontFamily: 'var(--font-outfit)',
-                  fontWeight: isActive ? 600 : 400,
-                  fontSize: '13px',
+                  fontWeight: isActive ? 600 : 500,
+                  fontSize: '14px',
                   cursor: 'pointer',
                   transition: 'all 200ms ease',
                   position: 'relative',
                   whiteSpace: 'nowrap',
+                  borderBottom: isActive ? '2px solid var(--accent)' : '2px solid transparent',
+                  marginBottom: '-1px',
                 }}
-                onMouseEnter={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = 'var(--text-primary)';
-                    e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                  }
-                }}
-                onMouseLeave={e => {
-                  if (!isActive) {
-                    e.currentTarget.style.color = 'var(--text-secondary)';
-                    e.currentTarget.style.background = 'transparent';
-                  }
-                }}
+                onMouseEnter={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={e => { if (!isActive) e.currentTarget.style.color = 'var(--text-secondary)'; }}
               >
-                {isActive && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 0,
-                    left: '20%',
-                    right: '20%',
-                    height: '2px',
-                    background: 'var(--accent)',
-                    borderRadius: '0 0 2px 2px',
-                  }} />
-                )}
                 {icon}
                 {label}
               </button>
             );
           })}
-        </div>
+          </nav>
 
-      {/* ── ZONE 2: CONTENT AREA (frosted workspace panel) ───────── */}
-      <div style={{
-        flex: 1,
-        background: 'rgba(13,16,24,0.42)',
-        backdropFilter: 'blur(40px) saturate(120%)',
-        WebkitBackdropFilter: 'blur(40px) saturate(120%)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
-        borderTop: '1px solid rgba(255,255,255,0.08)',
-        borderRadius: '0',
-        width: '100vw',
-        position: 'relative',
-        left: '50%',
-        right: '50%',
-        marginLeft: '-50vw',
-        marginRight: '-50vw',
-        overflow: 'hidden',
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
+          {/* ===== SUB-BOX 3: ACTIVE TAB CONTENT ===== */}
+          <section className="course-content" style={{ width: '100%' }}>
         {/* No materials warning */}
         {hasNoMaterials && activeTab !== 'materials' && (
           <div style={{ padding: '12px 24px', borderBottom: '1px solid rgba(255,255,255,0.06)', flexShrink: 0 }}>
@@ -727,9 +667,6 @@ export default function CoursePage({
             </div>
           </div>
         )}
-
-        {/* Scrollable content */}
-        <div style={{ flex: 1, overflowY: 'auto', padding: '32px' }}>
 
           {/* ── MATERIALS TAB ─────────────────────────────── */}
           {activeTab === 'materials' && (
@@ -826,9 +763,10 @@ export default function CoursePage({
             />
           )}
 
+          </section>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
