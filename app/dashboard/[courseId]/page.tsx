@@ -1307,7 +1307,7 @@ function MaterialsTab({
                           <div className="relative">
                             <button
                               onClick={() => { setAddToCollectionPopoverId(isPopoverOpen ? null : m.id); setConfirmDeleteId(null); }}
-                              className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                              className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                               aria-label="Add to collection"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1347,7 +1347,7 @@ function MaterialsTab({
                         {/* Rename button */}
                         <button
                           onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); setAddToCollectionPopoverId(null); }}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                           aria-label="Rename"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1359,7 +1359,7 @@ function MaterialsTab({
                         <button
                           onClick={() => handleDownload(m.id)}
                           disabled={downloadingId === m.id}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                          className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all disabled:opacity-50"
                           aria-label="Download"
                         >
                           {downloadingId === m.id ? (
@@ -1376,7 +1376,7 @@ function MaterialsTab({
                           <button
                             onClick={() => { setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id); setAddToCollectionPopoverId(null); }}
                             disabled={deletingId === m.id}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 transition-all"
+                            className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                             aria-label="Delete"
                           >
                             {deletingId === m.id ? (
