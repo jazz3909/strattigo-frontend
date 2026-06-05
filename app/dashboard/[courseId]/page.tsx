@@ -555,7 +555,7 @@ export default function CoursePage({
               onClick={() => setActiveTab('materials')}
               style={{
                 padding: '10px 18px',
-                background: 'var(--accent)',
+                background: '#E19485',
                 border: 'none',
                 borderRadius: '12px',
                 color: 'white',
@@ -570,11 +570,11 @@ export default function CoursePage({
                 boxShadow: '0 4px 16px rgba(225,148,133,0.3)',
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.background = 'var(--accent-hover)';
+                e.currentTarget.style.background = '#C1726F';
                 (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(225,148,133,0.4)';
               }}
               onMouseLeave={e => {
-                e.currentTarget.style.background = 'var(--accent)';
+                e.currentTarget.style.background = '#E19485';
                 (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(225,148,133,0.3)';
               }}
             >
@@ -686,13 +686,12 @@ export default function CoursePage({
       {/* ── ZONE 2: CONTENT AREA ──────────────────────────────── */}
       <div style={{
         flex: 1,
-        background: 'rgba(17,24,37,0.4)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        border: '1px solid rgba(255,255,255,0.08)',
-        borderTop: 'none',
-        borderRadius: '0 16px 16px 16px',
-        margin: '0 40px 40px',
+        background: 'rgba(13,16,24,0.55)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid rgba(255,255,255,0.08)',
+        borderRadius: '0',
+        margin: '0',
         overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column',
