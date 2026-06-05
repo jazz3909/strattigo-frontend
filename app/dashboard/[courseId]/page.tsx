@@ -686,9 +686,10 @@ export default function CoursePage({
       {/* ── ZONE 2: CONTENT AREA ──────────────────────────────── */}
       <div style={{
         flex: 1,
-        background: 'rgba(13,16,24,0.28)',
+        background: 'rgba(13,16,24,0.42)',
         backdropFilter: 'blur(40px) saturate(120%)',
         WebkitBackdropFilter: 'blur(40px) saturate(120%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
         borderTop: '1px solid rgba(255,255,255,0.08)',
         borderRadius: '0',
         width: '100vw',
@@ -1300,8 +1301,6 @@ function MaterialsTab({
                     className="relative z-[1] hover:z-10 group animate-fade-in-up"
                     style={{
                       background: 'rgba(255,255,255,0.03)',
-                      backdropFilter: 'blur(12px)',
-                      WebkitBackdropFilter: 'blur(12px)',
                       border: `1px solid ${isRenaming ? 'var(--accent-dim)' : 'rgba(255,255,255,0.07)'}`,
                       borderRadius: '14px',
                       padding: '16px 20px',
