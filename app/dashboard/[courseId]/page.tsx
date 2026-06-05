@@ -582,21 +582,28 @@ export default function CoursePage({
             </button>
           </div>
         </div>
+      </div>
 
-        {/* Floating glassmorphic tab bar */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '2px',
-          background: 'rgba(255,255,255,0.04)',
-          backdropFilter: 'blur(20px)',
-          WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255,255,255,0.08)',
-          borderBottom: 'none',
-          borderRadius: '16px 16px 0 0',
-          padding: '6px 6px 0',
-          width: 'fit-content',
-        }}>
+      {/* ── TAB BAR: top lip of the frosted workspace panel ──────── */}
+      <div style={{
+        position: 'relative',
+        zIndex: 11,
+        width: '100vw',
+        left: '50%',
+        right: '50%',
+        marginLeft: '-50vw',
+        marginRight: '-50vw',
+        marginBottom: '-1px',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2px',
+        padding: '6px 32px 0',
+        background: 'rgba(13,16,24,0.42)',
+        backdropFilter: 'blur(40px) saturate(120%)',
+        WebkitBackdropFilter: 'blur(40px) saturate(120%)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        borderRadius: '16px 16px 0 0',
+      }}>
           {([
             { id: 'materials', label: 'Materials', icon: (
               <svg style={{ width: '14px', height: '14px' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -681,9 +688,8 @@ export default function CoursePage({
             );
           })}
         </div>
-      </div>
 
-      {/* ── ZONE 2: CONTENT AREA ──────────────────────────────── */}
+      {/* ── ZONE 2: CONTENT AREA (frosted workspace panel) ───────── */}
       <div style={{
         flex: 1,
         background: 'rgba(13,16,24,0.42)',
