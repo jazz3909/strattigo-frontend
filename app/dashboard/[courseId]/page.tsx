@@ -686,9 +686,9 @@ export default function CoursePage({
       {/* ── ZONE 2: CONTENT AREA ──────────────────────────────── */}
       <div style={{
         flex: 1,
-        background: 'rgba(255,255,255,0.02)',
-        backdropFilter: 'blur(12px)',
-        WebkitBackdropFilter: 'blur(12px)',
+        background: 'rgba(17,24,37,0.4)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
         border: '1px solid rgba(255,255,255,0.08)',
         borderTop: 'none',
         borderRadius: '0 16px 16px 16px',
@@ -1174,16 +1174,42 @@ function MaterialsTab({
   return (
     <div>
       {/* Sub-tabs */}
-      <div className="flex gap-1 p-1 bg-[var(--surface-2)] rounded-xl mb-5 w-fit">
+      <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: '12px', padding: '4px', display: 'inline-flex', gap: '4px', marginBottom: '20px' }}>
         <button
           onClick={() => setSubTab("all")}
-          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "all" ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontFamily: 'var(--font-outfit)',
+            fontWeight: subTab === "all" ? 600 : 500,
+            cursor: 'pointer',
+            border: 'none',
+            transition: 'all 200ms ease',
+            background: subTab === "all" ? 'var(--accent-dim)' : 'transparent',
+            color: subTab === "all" ? 'var(--accent)' : 'var(--text-secondary)',
+          }}
+          onMouseEnter={e => { if (subTab !== "all") e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { if (subTab !== "all") e.currentTarget.style.color = 'var(--text-secondary)'; }}
         >
           All Files
         </button>
         <button
           onClick={() => setSubTab("collections")}
-          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "collections" ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+          style={{
+            padding: '8px 16px',
+            borderRadius: '10px',
+            fontSize: '13px',
+            fontFamily: 'var(--font-outfit)',
+            fontWeight: subTab === "collections" ? 600 : 500,
+            cursor: 'pointer',
+            border: 'none',
+            transition: 'all 200ms ease',
+            background: subTab === "collections" ? 'var(--accent-dim)' : 'transparent',
+            color: subTab === "collections" ? 'var(--accent)' : 'var(--text-secondary)',
+          }}
+          onMouseEnter={e => { if (subTab !== "collections") e.currentTarget.style.color = 'var(--text-primary)'; }}
+          onMouseLeave={e => { if (subTab !== "collections") e.currentTarget.style.color = 'var(--text-secondary)'; }}
         >
           Collections{collections.length > 0 ? ` (${collections.length})` : ""}
         </button>
@@ -1192,37 +1218,10 @@ function MaterialsTab({
       {/* ── ALL FILES SUB-TAB ─────────────────────────── */}
       {subTab === "all" && (
         <>
-          <div className="flex items-center justify-between mb-5">
-            <div>
-              <h2 className="text-lg font-bold text-[var(--text-primary)]">Course Materials</h2>
-              <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
-            </div>
-            <div className="flex items-center gap-2">
-              {canvasConnected && (
-                <button
-                  onClick={() => setCanvasImportOpen(true)}
-                  className="btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 6.878V6a2.25 2.25 0 012.25-2.25h7.5A2.25 2.25 0 0118 6v.878m-12 0c.235-.083.487-.128.75-.128h10.5c.263 0 .515.045.75.128m-12 0A2.25 2.25 0 004.5 9v.878m13.5-3A2.25 2.25 0 0119.5 9v.878m0 0a2.246 2.246 0 00-.75-.128H5.25c-.263 0-.515.045-.75.128m15 0A2.25 2.25 0 0121 12v6a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 18v-6c0-.98.626-1.813 1.5-2.122" />
-                  </svg>
-                  Import from Canvas
-                </button>
-              )}
-              <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-[var(--surface-2)] text-[var(--text-tertiary)]" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
-                {uploading ? (
-                  <><Spinner size="sm" className="border-[var(--border-hover)] border-t-slate-600" /> Uploading…</>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    Upload file
-                  </>
-                )}
-                <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
-              </label>
-            </div>
+          <div className="mb-5">
+            <h2 className="text-lg font-bold text-[var(--text-primary)]">Course Materials</h2>
+            <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
+            <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
           </div>
 
           {uploading && uploadProgress > 0 && (
@@ -1240,16 +1239,39 @@ function MaterialsTab({
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileUpload(e.dataTransfer.files); }}
-            className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${dragOver ? "border-[var(--accent)] bg-[var(--accent-dim)] scale-[1.01]" : "border-[var(--border)] bg-[var(--background)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)]/30"}`}
+            style={{
+              background: dragOver ? 'rgba(225,148,133,0.05)' : 'rgba(255,255,255,0.02)',
+              border: `2px dashed ${dragOver ? 'var(--accent)' : 'rgba(225,148,133,0.3)'}`,
+              borderRadius: '16px',
+              padding: '48px 24px',
+              textAlign: 'center' as const,
+              transition: 'all 200ms ease',
+              cursor: 'pointer',
+              display: 'flex',
+              flexDirection: 'column' as const,
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: '12px',
+              marginBottom: '20px',
+            }}
           >
-            <label className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-[var(--accent-dim)]" : "bg-[var(--surface)] border border-[var(--border)]"}`}>
-                <svg className={`w-6 h-6 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <label style={{ display: 'flex', flexDirection: 'column' as const, alignItems: 'center', cursor: 'pointer', gap: '12px' }}>
+              <div style={{
+                background: 'rgba(225,148,133,0.12)',
+                border: '1px solid rgba(225,148,133,0.25)',
+                width: '56px',
+                height: '56px',
+                borderRadius: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}>
+                <svg style={{ width: '24px', height: '24px', color: 'var(--accent)' }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
               </div>
-              <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">PDF, PPTX, DOCX, TXT — up to 25MB</p>
+              <p style={{ color: 'var(--text-primary)', fontWeight: 500, fontSize: '14px', margin: 0 }}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
+              <p style={{ color: 'var(--text-tertiary)', fontSize: '12px', margin: 0 }}>PDF, PPTX, DOCX, TXT — up to 25MB</p>
               <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </label>
           </div>
@@ -1262,7 +1284,7 @@ function MaterialsTab({
               className="py-10"
             />
           ) : (
-            <div className="space-y-2 overflow-visible">
+            <div className="overflow-visible">
               {materials.map((m, i) => {
                 const icon = fileIcon(m.file_name);
                 const isRenaming = renamingId === m.id;
@@ -1271,8 +1293,33 @@ function MaterialsTab({
                 return (
                   <div
                     key={m.id}
-                    className={`relative z-[1] hover:z-10 flex items-center gap-4 bg-[var(--surface)] px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md hover:border-[var(--border)]"}`}
-                    style={{ animationDelay: `${i * 40}ms` }}
+                    className="relative z-[1] hover:z-10 group animate-fade-in-up"
+                    style={{
+                      background: 'rgba(255,255,255,0.03)',
+                      backdropFilter: 'blur(12px)',
+                      WebkitBackdropFilter: 'blur(12px)',
+                      border: `1px solid ${isRenaming ? 'var(--accent-dim)' : 'rgba(255,255,255,0.07)'}`,
+                      borderRadius: '14px',
+                      padding: '16px 20px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '16px',
+                      transition: 'all 200ms ease',
+                      marginBottom: '12px',
+                      animationDelay: `${i * 40}ms`,
+                    }}
+                    onMouseEnter={e => {
+                      if (!isRenaming) {
+                        e.currentTarget.style.borderColor = 'rgba(225,148,133,0.2)';
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.05)';
+                      }
+                    }}
+                    onMouseLeave={e => {
+                      if (!isRenaming) {
+                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                      }
+                    }}
                   >
                     <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
 
