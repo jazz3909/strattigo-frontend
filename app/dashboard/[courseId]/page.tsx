@@ -917,10 +917,10 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
   }, [messages.length]);
 
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-8 sm:p-10">
+    <div className="p-8 sm:p-10" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px' }}>
       <div className="flex flex-col items-center text-center gap-5 max-w-sm mx-auto">
         <div className="relative w-14 h-14">
-          <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-lg">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'var(--accent)' }}>
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
@@ -935,8 +935,10 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
           <p className="text-xs text-[var(--text-tertiary)]">This usually takes 10–30 seconds</p>
         </div>
         <div className="w-full">
-          <ProgressBar value={Math.round(progress)} size="sm" variant="gradient" animated />
-          <p className="text-xs text-[var(--text-tertiary)] mt-2 text-right">{Math.round(progress)}%</p>
+          <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.round(progress)}%`, background: 'var(--accent)' }} />
+          </div>
+          <p className="text-xs text-[var(--text-secondary)] mt-2 text-right">{Math.round(progress)}%</p>
         </div>
       </div>
     </div>
@@ -2446,7 +2448,7 @@ function QuizTab({
       <div className="mt-8">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-base font-bold text-[var(--text-primary)]">Saved Quizzes</h3>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}>
+          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
             {savedQuizzes.length}/5
           </span>
         </div>
@@ -2734,7 +2736,7 @@ function SavedQuizAccordionItem({
   }, [isExpanded]);
 
   return (
-    <div className={`bg-[var(--surface)] rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md"}`}>
+    <div className={`group rounded-[14px] border transition-all ${isExpanded ? "bg-[rgba(255,255,255,0.03)] border-[rgba(225,148,133,0.3)]" : "bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.08)] hover:border-[rgba(225,148,133,0.2)]"}`}>
       <div className="flex items-center">
         <button
           onClick={onToggle}
@@ -2753,7 +2755,7 @@ function SavedQuizAccordionItem({
             </p>
           </div>
           <svg
-            className={`w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] flex-shrink-0 transition-all duration-200 ${isExpanded ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -2781,7 +2783,7 @@ function SavedQuizAccordionItem({
             <button
               onClick={(e) => { e.stopPropagation(); onConfirmDelete(); }}
               disabled={isDeleting}
-              className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               aria-label="Delete quiz"
             >
               {isDeleting ? (
