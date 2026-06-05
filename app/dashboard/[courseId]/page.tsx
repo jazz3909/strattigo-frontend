@@ -549,7 +549,7 @@ export default function CoursePage({
                   onClick={() => setActiveTab('materials')}
                   style={{
                     padding: '11px 20px',
-                    background: '#E19485',
+                    background: 'var(--accent)',
                     border: 'none',
                     borderRadius: '12px',
                     color: 'white',
@@ -569,7 +569,7 @@ export default function CoursePage({
                     (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 20px rgba(225,148,133,0.4)';
                   }}
                   onMouseLeave={e => {
-                    e.currentTarget.style.background = '#E19485';
+                    e.currentTarget.style.background = 'var(--accent)';
                     (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 16px rgba(225,148,133,0.3)';
                   }}
                 >

@@ -10,7 +10,7 @@
   --surface: #111825;
   --surface-2: #151D2B;
   --surface-3: #1C2638;
-  --accent: oklch(0.97 0 0);
+  --accent: #E19485;
   --accent-hover: #C1726F;
   --accent-dim: rgba(225, 148, 133, 0.12);
   --accent-dim-hover: rgba(225, 148, 133, 0.2);
@@ -74,7 +74,7 @@
   --surface: #111825;
   --surface-2: #151D2B;
   --surface-3: #1C2638;
-  --accent: oklch(0.269 0 0);
+  --accent: #E19485;
   --accent-hover: #C1726F;
   --accent-dim: rgba(225, 148, 133, 0.12);
   --accent-dim-hover: rgba(225, 148, 133, 0.2);
