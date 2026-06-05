@@ -2309,6 +2309,9 @@ function QuizTab({
               size="sm"
               onClick={() => { setSaveTitleInput(""); setSaveModalOpen(true); }}
               disabled={savedQuizzes.length >= 5}
+              style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
               title={savedQuizzes.length >= 5 ? "Delete a saved quiz to save a new one" : undefined}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -2354,7 +2357,9 @@ function QuizTab({
               <span>Question {currentQ + 1} of {totalQ}</span>
               <span>{answeredCount} answered</span>
             </div>
-            <ProgressBar value={((currentQ) / totalQ) * 100} size="sm" />
+            <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${((currentQ) / totalQ) * 100}%`, background: 'var(--accent)' }} />
+            </div>
           </div>
 
           <QuizQuestion
@@ -2382,6 +2387,9 @@ function QuizTab({
               size="sm"
               onClick={() => setCurrentQ((q) => Math.max(0, q - 1))}
               disabled={currentQ === 0}
+              style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -2525,7 +2533,7 @@ function QuizQuestion({
   onSelect: (letter: string) => void;
 }) {
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-5 sm:p-6 animate-fade-in-up">
+    <div className="p-5 sm:p-6 animate-fade-in-up" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px' }}>
       <div className="font-semibold text-[var(--text-primary)] mb-5 leading-snug flex items-start gap-1.5">
         <span className="text-[var(--accent)] font-bold flex-shrink-0">{index + 1}.</span>
         <MarkdownWithMath content={question.question} className="flex-1 min-w-0" />
@@ -2540,7 +2548,7 @@ function QuizQuestion({
               key={opt.letter}
               onClick={() => onSelect(opt.letter)}
               disabled={revealed}
-              className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press
+              className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press text-[var(--text-primary)]
                 ${revealed
                   ? isSelected && isCorrect
                     ? "answer-correct-pulse"
@@ -2548,40 +2556,36 @@ function QuizQuestion({
                     ? "answer-shake"
                     : ""
                   : isSelected
-                  ? "bg-[var(--accent-dim)] border-[var(--accent)] text-violet-900 shadow-sm"
-                  : "border-[var(--border)] hover:border-[var(--accent-dim)] hover:bg-[var(--accent-dim)]/50 text-[var(--text-primary)]"
+                  ? "bg-[var(--accent-dim)] border-[var(--accent)] shadow-sm"
+                  : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.06)] hover:border-[rgba(225,148,133,0.3)]"
                 }
               `}
               style={revealed ? {
                 background: isCorrect
-                  ? "rgba(107, 255, 184, 0.08)"
+                  ? "rgba(107,206,170,0.15)"
                   : isSelected
-                  ? "rgba(255, 107, 107, 0.08)"
-                  : "var(--surface)",
+                  ? "rgba(229,115,115,0.15)"
+                  : "rgba(255,255,255,0.03)",
                 borderColor: isCorrect
-                  ? "rgba(107, 255, 184, 0.3)"
+                  ? "var(--success)"
                   : isSelected
-                  ? "rgba(255, 107, 107, 0.3)"
-                  : "var(--border)",
-                color: isCorrect
-                  ? "#6bffb8"
-                  : isSelected
-                  ? "#ff6b6b"
-                  : "var(--text-secondary)",
+                  ? "var(--danger)"
+                  : "rgba(255,255,255,0.08)",
+                color: "var(--text-primary)",
               } : undefined}
             >
               <div className="flex items-start gap-3">
                 {revealed && isCorrect && (
-                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#6bffb8" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--success)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 )}
                 {revealed && isSelected && !isCorrect && (
-                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#ff6b6b" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--danger)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
-                <span className="font-bold flex-shrink-0">{opt.letter}.</span>
+                <span className="font-bold flex-shrink-0" style={{ color: isSelected ? 'var(--accent)' : 'var(--text-secondary)' }}>{opt.letter}.</span>
                 <MarkdownWithMath content={opt.text} className="flex-1 min-w-0" />
               </div>
             </button>
@@ -2799,7 +2803,9 @@ function SavedQuizAccordionItem({
               <span>Question {currentQ + 1} of {questions.length}</span>
               <span>{Object.keys(revealed).length} answered</span>
             </div>
-            <ProgressBar value={(currentQ / questions.length) * 100} size="sm" />
+            <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${(currentQ / questions.length) * 100}%`, background: 'var(--accent)' }} />
+            </div>
           </div>
           <QuizQuestion
             question={questions[currentQ]}
@@ -2819,6 +2825,9 @@ function SavedQuizAccordionItem({
               size="sm"
               onClick={() => setCurrentQ((q) => Math.max(0, q - 1))}
               disabled={currentQ === 0}
+              style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
