@@ -1600,10 +1600,12 @@ function CollectionSelector({
   collections,
   selectedCollectionId,
   onChange,
+  glass = false,
 }: {
   collections: Collection[];
   selectedCollectionId: string | null;
   onChange: (id: string | null) => void;
+  glass?: boolean;
 }) {
   if (collections.length === 0) return null;
   return (
@@ -1612,8 +1614,17 @@ function CollectionSelector({
       <select
         value={selectedCollectionId ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="text-xs border rounded-lg px-2.5 py-1.5 cursor-pointer max-w-[160px] truncate outline-none"
-        style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)" }}
+        className="text-xs border px-2.5 py-1.5 cursor-pointer max-w-[160px] truncate outline-none"
+        style={
+          glass
+            ? {
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.03)",
+                color: "var(--text-primary)",
+                borderRadius: "10px",
+              }
+            : { border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)", borderRadius: "0.5rem" }
+        }
       >
         <option value="">All materials</option>
         {collections.map((col) => (
@@ -1903,6 +1914,7 @@ function StudyGuideTab({
         title="Generate Study Guide"
         description="Customize your study guide before generating."
         size="sm"
+        glass
       >
         <div className="space-y-5">
           {/* Style selector */}
@@ -1938,21 +1950,32 @@ function StudyGuideTab({
                     onClick={() => setStudyGuideStyle(opt.id)}
                     className="flex-1 flex items-center gap-3 cursor-pointer transition-all duration-150"
                     style={{
-                      padding: "14px 16px",
-                      borderRadius: "var(--radius-md, 12px)",
-                      border: selected ? "2px solid var(--accent)" : "1px solid var(--border)",
-                      background: selected ? "var(--accent-dim)" : "var(--surface-2)",
-                      color: selected ? "var(--accent)" : "var(--text-secondary)",
+                      padding: "16px 18px",
+                      borderRadius: "14px",
+                      border: selected ? "1px solid var(--accent)" : "1px solid rgba(255,255,255,0.08)",
+                      background: selected ? "var(--accent-dim)" : "rgba(255,255,255,0.03)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selected) {
+                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(225,148,133,0.3)";
+                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selected) {
+                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)";
+                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)";
+                      }
                     }}
                   >
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: selected ? "var(--accent-dim)" : "var(--surface-3)", color: selected ? "var(--accent)" : "var(--text-secondary)" }}
+                      style={{ background: selected ? "var(--accent-dim)" : "rgba(255,255,255,0.06)", color: selected ? "var(--accent)" : "var(--text-secondary)" }}
                     >
                       {opt.icon}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">{opt.title}</p>
+                      <p className="text-sm font-semibold leading-tight" style={{ color: selected ? "var(--accent)" : "var(--text-primary)" }}>{opt.title}</p>
                       <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-secondary)" }}>{opt.subtitle}</p>
                     </div>
                   </div>
@@ -1970,8 +1993,26 @@ function StudyGuideTab({
               onChange={(e) => setTitleInput(e.target.value.slice(0, 60))}
               onKeyDown={(e) => { if (e.key === "Enter" && titleInput.trim()) handleGenerate(); }}
               placeholder="e.g. Chapter 5 — Organic Chemistry"
-              className="w-full border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+              className="w-full text-sm focus:outline-none placeholder:text-[var(--text-tertiary)]"
               maxLength={60}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "12px",
+                color: "var(--text-primary)",
+                padding: "10px 14px",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 150ms ease, box-shadow 150ms ease",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "var(--accent)";
+                e.target.style.boxShadow = "0 0 0 3px var(--accent-dim)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(255,255,255,0.08)";
+                e.target.style.boxShadow = "none";
+              }}
             />
             <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{titleInput.length}/60 characters</p>
           </div>
@@ -1985,27 +2026,28 @@ function StudyGuideTab({
               placeholder="e.g. Integration by parts, L'Hôpital's rule, Chapter 5 only..."
               rows={3}
               maxLength={500}
+              className="placeholder:text-[var(--text-tertiary)]"
               style={{
                 width: "100%",
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 color: "var(--text-primary)",
-                borderRadius: "var(--radius-md, 12px)",
+                borderRadius: "12px",
                 padding: "12px 16px",
                 font: "inherit",
                 resize: "vertical",
                 minHeight: "80px",
                 fontSize: "14px",
-                transition: "border-color 150ms ease",
+                transition: "border-color 150ms ease, box-shadow 150ms ease",
                 outline: "none",
                 boxSizing: "border-box",
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = "var(--accent)";
-                e.target.style.boxShadow = "0 0 0 3px rgba(255,176,117,0.15)";
+                e.target.style.boxShadow = "0 0 0 3px var(--accent-dim)";
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = "var(--border)";
+                e.target.style.borderColor = "rgba(255,255,255,0.08)";
                 e.target.style.boxShadow = "none";
               }}
             />
@@ -2019,6 +2061,7 @@ function StudyGuideTab({
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Source materials</label>
               <CollectionSelector
+                glass
                 collections={collections}
                 selectedCollectionId={selectedCollectionId}
                 onChange={onCollectionChange}
@@ -2028,7 +2071,26 @@ function StudyGuideTab({
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setTitleModalOpen(false)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setTitleModalOpen(false)}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.1)",
+                color: "var(--text-secondary)",
+                borderRadius: "12px",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -2037,6 +2099,21 @@ function StudyGuideTab({
               onClick={handleGenerate}
               disabled={!titleInput.trim()}
               className="flex-1"
+              style={{
+                background: "var(--accent)",
+                color: "white",
+                fontWeight: 600,
+                borderRadius: "12px",
+                boxShadow: "0 4px 16px rgba(225,148,133,0.3)",
+              }}
+              onMouseEnter={(e) => {
+                if (!(e.currentTarget as HTMLButtonElement).disabled) {
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--accent-hover)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--accent)";
+              }}
             >
               Generate
             </Button>
