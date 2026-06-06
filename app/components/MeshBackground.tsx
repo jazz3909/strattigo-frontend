@@ -46,9 +46,10 @@ const COLOR_POINTS: ColorPoint[] = [
   { x: 0.85, y: 1.0,  color: '#8A4A60', radius: 0.70, opacity: 0.72 },
 ];
 
-function drawMesh(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
-  const w = canvas.width;
-  const h = canvas.height;
+// w/h are LOGICAL (CSS-pixel) dimensions. The context is pre-scaled by devicePixelRatio in
+// resize(), so all coordinate math here stays in CSS-pixel space — never read canvas.width/height
+// (those are the larger physical backing-store dims and would shrink the gradient on HiDPI).
+function drawMesh(ctx: CanvasRenderingContext2D, w: number, h: number): void {
   const maxDim = Math.max(w, h);
 
   // Base fill
@@ -95,12 +96,19 @@ export function MeshBackground() {
     let rafId: number;
 
     function render(): void {
-      drawMesh(canvas!, ctx!);
+      // Draw in logical CSS-pixel space; the context is DPR-scaled in resize().
+      drawMesh(ctx!, window.innerWidth, window.innerHeight);
     }
 
     function resize(): void {
-      canvas!.width = window.innerWidth;
-      canvas!.height = window.innerHeight;
+      const dpr = window.devicePixelRatio || 1;
+      // backing store at physical resolution
+      canvas!.width = Math.floor(window.innerWidth * dpr);
+      canvas!.height = Math.floor(window.innerHeight * dpr);
+      // CSS size stays at logical viewport size (the existing 100vw/100vh CSS handles display)
+      // scale the drawing context so all draw coords remain in CSS-pixel space
+      ctx!.setTransform(1, 0, 0, 1, 0, 0); // reset any prior transform
+      ctx!.scale(dpr, dpr);
       cancelAnimationFrame(rafId);
       rafId = requestAnimationFrame(render);
     }
