@@ -3527,30 +3527,35 @@ function ChatTab({
 
       {/* Input — pinned flush at the bottom, full-width */}
       <div style={{ flexShrink: 0, padding: "16px 28px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="flex items-center" style={{ gap: 12 }}>
-          <div className="relative" style={{ flex: 1, minWidth: 0 }}>
-            <textarea
-              ref={chatInputRef}
-              value={chatInput}
-              onChange={(e) => setChatInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              onFocus={(e) => { e.currentTarget.style.borderColor = "#E19485"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(225,148,133,0.12)"; }}
-              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
-              placeholder={canChat ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Upload materials to start chatting"}
-              disabled={chatLoading || chatStreaming || !canChat}
-              rows={1}
-              className="w-full px-4 py-3 text-sm resize-none max-h-32 focus:outline-none transition-all placeholder:text-[var(--text-secondary)]"
-              style={{ lineHeight: 1.5, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "var(--text-primary)" }}
-            />
-          </div>
+        {/* Unified input row — the textarea and the send button are DIRECT SIBLINGS in one
+            alignItems:center flex container, so they sit on the same line, vertically centered,
+            as a single cohesive input bar (no intermediate wrapper offsetting the button). */}
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <textarea
+            ref={chatInputRef}
+            value={chatInput}
+            onChange={(e) => setChatInput(e.target.value)}
+            onKeyDown={handleKeyDown}
+            onFocus={(e) => { e.currentTarget.style.borderColor = "#E19485"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(225,148,133,0.12)"; }}
+            onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
+            placeholder={canChat ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Upload materials to start chatting"}
+            disabled={chatLoading || chatStreaming || !canChat}
+            rows={1}
+            className="text-sm resize-none max-h-32 focus:outline-none transition-all placeholder:text-[var(--text-secondary)]"
+            style={{ flex: 1, minWidth: 0, lineHeight: 1.5, padding: "12px 16px", background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "var(--text-primary)" }}
+          />
           <button
             onClick={() => onSend(chatInput)}
             disabled={chatLoading || chatStreaming || !chatInput.trim() || !canChat}
-            className="btn-press rounded-xl flex items-center justify-center transition-colors disabled:cursor-not-allowed"
+            className="btn-press transition-colors disabled:cursor-not-allowed"
             style={{
               flexShrink: 0,
               width: 44,
               height: 44,
+              borderRadius: 12,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
               background: chatInput.trim() && canChat ? "#E19485" : "rgba(255,255,255,0.06)",
               color: chatInput.trim() && canChat ? "#fff" : "var(--text-secondary)",
             }}
