@@ -447,22 +447,36 @@ export default function CoursePage({
           before. The top-bar Upload button below uses its own label-wrapped input that reuses the same
           handleFileUpload handler, so uploads work from any view without touching the existing ref. */}
 
-      {/* ===== TOP BAR ===== */}
+      {/* ===== ONE FULL-BLEED FROSTED SURFACE ===== */}
+      {/* A single translucent glass layer fills the whole workspace below the global navbar. The
+          global fixed MeshBackground gradient shows softly through the 0.38 opacity + heavy blur.
+          Everything below sits ON this surface as transparent / barely-tinted sub-regions — there
+          are no floating bordered cards at the shell level. */}
+      <div
+        className="course-shell"
+        style={{
+          position: "relative",
+          width: "100%",
+          height: "calc(100vh - 56px)", // viewport minus the 56px (h-14) global navbar
+          display: "flex",
+          flexDirection: "column",
+          background: "rgba(13,16,24,0.38)",
+          backdropFilter: "blur(40px) saturate(120%)",
+          WebkitBackdropFilter: "blur(40px) saturate(120%)",
+          overflow: "hidden",
+        }}
+      >
+      {/* ===== TOP BAR ===== (flush on the shell — no background, no card) */}
       <header
         className="course-topbar"
         style={{
-          position: "sticky",
-          top: 0,
-          zIndex: 30,
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: "24px",
-          padding: "16px 32px",
-          background: "rgba(10,14,24,0.7)",
-          backdropFilter: "blur(24px)",
-          WebkitBackdropFilter: "blur(24px)",
-          borderBottom: "1px solid rgba(255,255,255,0.06)",
+          padding: "16px 28px",
+          borderBottom: "1px solid rgba(255,255,255,0.07)",
+          flexShrink: 0,
         }}
       >
         {/* Left cluster — course identity */}
@@ -520,10 +534,10 @@ export default function CoursePage({
         </div>
       </header>
 
-      {/* ===== BODY: sidebar + content ===== */}
+      {/* ===== BODY: sidebar + content ===== (fills remaining shell height) */}
       <div
         className="course-body"
-        style={{ display: "flex", position: "relative", minHeight: "calc(100vh - 200px)", width: "100%" }}
+        style={{ display: "flex", flex: 1, position: "relative", minHeight: 0, overflow: "hidden" }}
       >
         {/* 64px spacer holds the layout space so the main content's left edge is constant and does
             NOT reflow when the sidebar expands. (Desktop only.) */}
@@ -544,11 +558,13 @@ export default function CoursePage({
             bottom: 0,
             width: sidebarExpanded ? "220px" : "64px",
             zIndex: 25,
-            background: "rgba(13,16,24,0.55)",
-            backdropFilter: "blur(40px) saturate(120%)",
-            WebkitBackdropFilter: "blur(40px) saturate(120%)",
-            borderRight: "1px solid rgba(255,255,255,0.08)",
-            transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1)",
+            // Not a separate solid panel — just a gentle deepening of the same frost so the rail reads
+            // as part of one continuous glass. Deepens slightly on expand for label legibility.
+            background: sidebarExpanded ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.15)",
+            backdropFilter: "blur(8px)",
+            WebkitBackdropFilter: "blur(8px)",
+            borderRight: "1px solid rgba(255,255,255,0.06)",
+            transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1), background 240ms ease",
             overflow: "hidden",
             flexDirection: "column",
             paddingTop: "16px",
@@ -630,9 +646,11 @@ export default function CoursePage({
           style={{ flex: 1, minWidth: 0, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}
         >
           {activeTab === "chat" ? (
-            // Chat owns full height: ChatTab manages its own internal scroll + pinned input bar, so we
-            // give it a flex-column container (no scroll/padding wrapper) and only side padding.
-            <div className="pb-24 sm:pb-3" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, paddingTop: 16, paddingLeft: 24, paddingRight: 24 }}>
+            // Chat owns the full main area: a bare full-height flex column, no padding/scroll wrapper,
+            // so ChatTab can fill edge-to-edge. NOTE: ChatTab still renders its own bordered card with a
+            // fixed height internally (see follow-up flagged in the report) — those internals are
+            // protected this round, so this container fills as much as ChatTab's own chrome allows.
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0 }}>
               {/* FUTURE: chat history / saved conversations slot in here — conversationId state and a history list would mount in this region */}
               <ChatTab
                 messages={messages}
@@ -650,8 +668,10 @@ export default function CoursePage({
               />
             </div>
           ) : (
-            // Every other view scrolls inside a padded container.
-            <div className="pb-28 sm:pb-8" style={{ flex: 1, overflowY: "auto", paddingTop: 24, paddingLeft: 32, paddingRight: 32 }}>
+            // Every other view scrolls inside a padded container — sitting directly on the frosted
+            // shell, no outer card of its own. (Longhand padding so the mobile pb-28 bottom-clearance
+            // class still applies; desktop sm:pb-8 = the spec'd 32px bottom.)
+            <div className="pb-28 sm:pb-8" style={{ flex: 1, overflowY: "auto", paddingTop: 24, paddingLeft: 28, paddingRight: 28 }}>
               {/* ── MATERIALS ── */}
               {activeTab === "materials" && (
                 <MaterialsTab
@@ -732,10 +752,13 @@ export default function CoursePage({
           )}
         </main>
       </div>
+      </div>{/* ===== /course-shell ===== */}
 
       {/* ===== MOBILE BOTTOM NAV ===== */}
-      {/* Hover doesn't exist on touch, so on narrow screens the rail is replaced by a bottom icon bar.
-          Sits just above the global dashboard bottom nav (which is h-16 / 64px). */}
+      {/* Kept OUTSIDE course-shell: the shell's backdrop-filter creates a containing block, so a
+          position:fixed child would be trapped/clipped by its overflow:hidden. Out here it pins to
+          the viewport as intended. Hover doesn't exist on touch, so on narrow screens the rail is
+          replaced by a bottom icon bar, just above the global dashboard bottom nav (h-16 / 64px). */}
       <nav
         className="course-mobile-nav flex sm:hidden"
         style={{

@@ -44,6 +44,10 @@ const NAV_LINKS = [
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
+  // Course detail pages (/dashboard/<courseId>) render full-bleed; every other dashboard page keeps
+  // the centered max-w-7xl treatment. Matches a single non-empty segment after /dashboard/ only —
+  // so /dashboard itself and any deeper/reserved routes are unaffected.
+  const isCourseDetail = /^\/dashboard\/[^/]+$/.test(pathname);
   const [email, setEmail] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [subChecked, setSubChecked] = useState(false);
@@ -269,7 +273,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      <main className="flex-1 px-4 sm:px-6 py-8 pb-24 sm:pb-8 max-w-7xl w-full mx-auto page-enter">
+      <main
+        className={
+          isCourseDetail
+            ? "flex-1 w-full"
+            : "flex-1 px-4 sm:px-6 py-8 pb-24 sm:pb-8 max-w-7xl w-full mx-auto page-enter"
+        }
+      >
         {children}
       </main>
     </div>
