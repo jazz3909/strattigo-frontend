@@ -459,118 +459,92 @@ export default function CoursePage({
           width: "100%",
           height: "calc(100vh - 56px)", // viewport minus the 56px (h-14) global navbar
           display: "flex",
-          flexDirection: "column",
+          flexDirection: "row", // sidebar rail on the far left, full height; top bar + content to its right
           background: "rgba(13,16,24,0.38)",
           backdropFilter: "blur(40px) saturate(120%)",
           WebkitBackdropFilter: "blur(40px) saturate(120%)",
           overflow: "hidden",
         }}
       >
-      {/* ===== TOP BAR ===== (flush on the shell — no background, no card) */}
-      <header
-        className="course-topbar"
+      {/* 64px spacer holds the layout space (full height) so the top bar + content to the right keep a
+          constant left edge and do NOT reflow when the sidebar expands. (Desktop only.) */}
+      <div className="hidden sm:block" style={{ width: "64px", flexShrink: 0 }} aria-hidden="true" />
+
+      {/* ===== FULL-HEIGHT COLLAPSED HOVER SIDEBAR ===== */}
+      {/* Runs the entire shell height on the far left. Absolutely positioned (relative to course-shell)
+          so the expansion OVERLAYS the top bar + content instead of pushing them. display is controlled
+          by the className (hidden on mobile, flex on >=sm) so it never conflicts with the width animation. */}
+      <nav
+        className="course-sidebar hidden sm:flex"
+        onMouseEnter={() => setSidebarExpanded(true)}
+        onMouseLeave={() => setSidebarExpanded(false)}
         style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: "24px",
-          padding: "16px 28px",
-          borderBottom: "1px solid rgba(255,255,255,0.07)",
-          flexShrink: 0,
+          position: "absolute",
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: sidebarExpanded ? "220px" : "64px",
+          zIndex: 25,
+          // Not a separate solid panel — just a gentle deepening of the same frost so the rail reads
+          // as part of one continuous glass. Deepens slightly on expand for label legibility.
+          background: sidebarExpanded ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.15)",
+          backdropFilter: "blur(8px)",
+          WebkitBackdropFilter: "blur(8px)",
+          borderRight: "1px solid rgba(255,255,255,0.06)",
+          transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1), background 240ms ease",
+          overflow: "hidden",
+          flexDirection: "column",
+          paddingTop: "16px",
+          gap: "4px",
         }}
       >
-        {/* Left cluster — course identity */}
-        <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+          {/* Back to Courses — top rail item, above Chat. Preserves the old back link's /dashboard href. */}
           <Link
             href="/dashboard"
-            className="hover:opacity-80 transition-opacity"
-            style={{ color: "var(--text-tertiary)", fontSize: "12px", fontFamily: "var(--font-outfit)", whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0 }}
+            aria-label="Back to Courses"
+            title="Courses"
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "14px",
+              height: "48px",
+              margin: "0 8px",
+              paddingLeft: "14px",
+              paddingRight: "12px",
+              borderRadius: "12px",
+              textDecoration: "none",
+              background: "transparent",
+              color: "var(--text-secondary)",
+              transition: "background 180ms ease, color 180ms ease",
+              width: "calc(100% - 16px)",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              flexShrink: 0,
+            }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
           >
-            ← Courses
+            <span style={{ width: 22, height: 22, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
+              </svg>
+            </span>
+            <span
+              style={{
+                fontFamily: "var(--font-outfit)",
+                fontSize: "14px",
+                fontWeight: 500,
+                opacity: sidebarExpanded ? 1 : 0,
+                transition: "opacity 180ms ease",
+                transitionDelay: sidebarExpanded ? "60ms" : "0ms",
+              }}
+            >
+              Courses
+            </span>
           </Link>
-          <div
-            className={`bg-gradient-to-br ${courseGradient(course?.name ?? "")}`}
-            style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 20, flexShrink: 0 }}
-          >
-            {course?.name?.[0]?.toUpperCase() ?? "C"}
-          </div>
-          <div style={{ minWidth: 0 }}>
-            <h1 style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, fontSize: "20px", color: "var(--text-primary)", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              {course?.name ?? "Course"}
-            </h1>
-            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: SALMON, flexShrink: 0 }} />
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-secondary)" }}>
-                {materials.length} material{materials.length !== 1 ? "s" : ""}
-              </span>
-            </div>
-          </div>
-        </div>
+          {/* hairline divider separating the back item from the view nav */}
+          <div style={{ height: 1, background: "rgba(255,255,255,0.07)", margin: "8px 12px" }} aria-hidden="true" />
 
-        {/* Right cluster — actions */}
-        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
-          {/* Import from Canvas — routes to Materials, where the Canvas import action lives
-              (gated by its canvasConnected check + CanvasImportModal). Kept there to avoid
-              duplicating / risking the existing Canvas import logic. */}
-          <button
-            onClick={() => setActiveTab("materials")}
-            className="hidden sm:inline-flex"
-            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "11px", padding: "9px 16px", color: "var(--text-secondary)", fontSize: "13px", fontFamily: "var(--font-outfit)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", transition: "background 160ms ease, color 160ms ease" }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "var(--text-primary)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
-          >
-            Import from Canvas
-          </button>
-          {/* Upload — salmon. Label-wrapped input reuses the existing handleFileUpload. */}
-          <label
-            style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: SALMON, color: "#fff", fontWeight: 600, fontSize: "13px", fontFamily: "var(--font-outfit)", borderRadius: "11px", padding: "9px 16px", boxShadow: "0 4px 16px rgba(225,148,133,0.3)", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1, whiteSpace: "nowrap", transition: "background 160ms ease" }}
-            onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.background = "var(--accent-hover)"; }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = SALMON; }}
-          >
-            <span style={{ fontSize: "15px", lineHeight: 1 }}>↑</span>
-            {uploading ? "Uploading…" : "Upload"}
-            <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
-          </label>
-        </div>
-      </header>
-
-      {/* ===== BODY: sidebar + content ===== (fills remaining shell height) */}
-      <div
-        className="course-body"
-        style={{ display: "flex", flex: 1, position: "relative", minHeight: 0, overflow: "hidden" }}
-      >
-        {/* 64px spacer holds the layout space so the main content's left edge is constant and does
-            NOT reflow when the sidebar expands. (Desktop only.) */}
-        <div className="hidden sm:block" style={{ width: "64px", flexShrink: 0 }} aria-hidden="true" />
-
-        {/* ===== COLLAPSED HOVER SIDEBAR ===== */}
-        {/* Absolutely positioned so the expansion OVERLAYS the content instead of pushing it.
-            display is controlled by the className (hidden on mobile, flex on >=sm) so it never
-            conflicts with the inline width animation. */}
-        <nav
-          className="course-sidebar hidden sm:flex"
-          onMouseEnter={() => setSidebarExpanded(true)}
-          onMouseLeave={() => setSidebarExpanded(false)}
-          style={{
-            position: "absolute",
-            left: 0,
-            top: 0,
-            bottom: 0,
-            width: sidebarExpanded ? "220px" : "64px",
-            zIndex: 25,
-            // Not a separate solid panel — just a gentle deepening of the same frost so the rail reads
-            // as part of one continuous glass. Deepens slightly on expand for label legibility.
-            background: sidebarExpanded ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.15)",
-            backdropFilter: "blur(8px)",
-            WebkitBackdropFilter: "blur(8px)",
-            borderRight: "1px solid rgba(255,255,255,0.06)",
-            transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1), background 240ms ease",
-            overflow: "hidden",
-            flexDirection: "column",
-            paddingTop: "16px",
-            gap: "4px",
-          }}
-        >
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             return (
@@ -639,6 +613,60 @@ export default function CoursePage({
           {/* FUTURE: chat history / saved conversations slot in here — conversationId state and a
               history list (grouped by recency) would mount in this lower region of the sidebar. */}
         </nav>
+
+      {/* ===== RIGHT COLUMN: top bar + main content ===== (sits to the right of the 64px rail) */}
+      <div
+        className="course-right"
+        style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", overflow: "hidden" }}
+      >
+        {/* ===== TOP BAR ===== (flush on the shell — no background, no card) */}
+        <header
+          className="course-topbar"
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "24px",
+            padding: "16px 28px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            flexShrink: 0,
+          }}
+        >
+          {/* Left cluster — course identity (back link now lives in the sidebar rail) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+            <div
+              className={`bg-gradient-to-br ${courseGradient(course?.name ?? "")}`}
+              style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 20, flexShrink: 0 }}
+            >
+              {course?.name?.[0]?.toUpperCase() ?? "C"}
+            </div>
+            <div style={{ minWidth: 0 }}>
+              <h1 style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, fontSize: "20px", color: "var(--text-primary)", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                {course?.name ?? "Course"}
+              </h1>
+              <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: SALMON, flexShrink: 0 }} />
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-secondary)" }}>
+                  {materials.length} material{materials.length !== 1 ? "s" : ""}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Right cluster — actions (Canvas import lives in the Materials view; only Upload here) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+            {/* Upload — salmon. Label-wrapped input reuses the existing handleFileUpload. */}
+            <label
+              style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: SALMON, color: "#fff", fontWeight: 600, fontSize: "13px", fontFamily: "var(--font-outfit)", borderRadius: "11px", padding: "9px 16px", boxShadow: "0 4px 16px rgba(225,148,133,0.3)", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1, whiteSpace: "nowrap", transition: "background 160ms ease" }}
+              onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.background = "var(--accent-hover)"; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = SALMON; }}
+            >
+              <span style={{ fontSize: "15px", lineHeight: 1 }}>↑</span>
+              {uploading ? "Uploading…" : "Upload"}
+              <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+            </label>
+          </div>
+        </header>
 
         {/* ===== MAIN CONTENT ===== */}
         <main
@@ -751,7 +779,7 @@ export default function CoursePage({
             </div>
           )}
         </main>
-      </div>
+      </div>{/* ===== /course-right ===== */}
       </div>{/* ===== /course-shell ===== */}
 
       {/* ===== MOBILE BOTTOM NAV ===== */}
@@ -3379,10 +3407,6 @@ function ChatTab({
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-[var(--text-primary)]">AI Tutor</p>
-          <p className="text-xs font-medium flex items-center gap-1" style={{ color: "var(--success)" }}>
-            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--success)" }} />
-            Online
-          </p>
         </div>
         <CollectionSelector
           collections={collections}
