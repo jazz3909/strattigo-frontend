@@ -449,7 +449,10 @@ export default function CoursePage({
 
       {/* ===== ONE FULL-BLEED FROSTED SURFACE ===== */}
       {/* A single translucent glass layer fills the whole workspace below the global navbar. The
-          global fixed MeshBackground gradient shows softly through the 0.38 opacity + heavy blur.
+          global fixed MeshBackground gradient (position:fixed, 100vw×100vh, zIndex:-1 in
+          app/layout.tsx) shows softly through the 0.32 opacity + heavy blur and can never cut off:
+          it's pinned to the viewport, and only the MAIN region below scrolls (the shell is
+          overflow:hidden), so the gradient stays full-screen at every scroll position and size.
           Everything below sits ON this surface as transparent / barely-tinted sub-regions — there
           are no floating bordered cards at the shell level. */}
       <div
@@ -460,7 +463,7 @@ export default function CoursePage({
           height: "calc(100vh - 56px)", // viewport minus the 56px (h-14) global navbar
           display: "flex",
           flexDirection: "row", // sidebar rail on the far left, full height; top bar + content to its right
-          background: "rgba(13,16,24,0.38)",
+          background: "rgba(13,16,24,0.32)",
           backdropFilter: "blur(40px) saturate(120%)",
           WebkitBackdropFilter: "blur(40px) saturate(120%)",
           overflow: "hidden",
@@ -653,8 +656,41 @@ export default function CoursePage({
             </div>
           </div>
 
-          {/* Right cluster — actions (Canvas import lives in the Materials view; only Upload here) */}
-          <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          {/* Right cluster — universal source selector + Upload (Canvas import lives in Materials view) */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", flexShrink: 0 }}>
+            {/* "Generate from:" source selector — RELOCATED here from the old chat header. It is the
+                universal source selector: bound to the exact same selectedCollectionId state and
+                setSelectedCollectionId handler every view reads, so the choice now persists across
+                views from one place. Glass-styled to read on the frosted top bar. Hidden until at
+                least one collection exists (mirrors the old CollectionSelector's null-return). */}
+            {collections.length > 0 && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <span style={{ fontFamily: "var(--font-outfit)", fontSize: "13px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
+                  Generate from:
+                </span>
+                <select
+                  value={selectedCollectionId ?? ""}
+                  onChange={(e) => setSelectedCollectionId(e.target.value || null)}
+                  aria-label="Generate from source"
+                  className="cursor-pointer truncate outline-none"
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.1)",
+                    borderRadius: "10px",
+                    color: "var(--text-primary)",
+                    fontFamily: "var(--font-outfit)",
+                    fontSize: "13px",
+                    padding: "8px 12px",
+                    maxWidth: "180px",
+                  }}
+                >
+                  <option value="">All materials</option>
+                  {collections.map((col) => (
+                    <option key={col.id} value={col.id}>{col.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
             {/* Upload — salmon. Label-wrapped input reuses the existing handleFileUpload. */}
             <label
               style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: SALMON, color: "#fff", fontWeight: 600, fontSize: "13px", fontFamily: "var(--font-outfit)", borderRadius: "11px", padding: "9px 16px", boxShadow: "0 4px 16px rgba(225,148,133,0.3)", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1, whiteSpace: "nowrap", transition: "background 160ms ease" }}
@@ -690,9 +726,6 @@ export default function CoursePage({
                 canChat={!hasNoMaterials}
                 chatBottomRef={chatBottomRef}
                 chatInputRef={chatInputRef}
-                collections={collections}
-                selectedCollectionId={selectedCollectionId}
-                onCollectionChange={setSelectedCollectionId}
               />
             </div>
           ) : (
@@ -3372,7 +3405,6 @@ const SUGGESTED_QUESTIONS = [
 
 function ChatTab({
   messages, chatInput, setChatInput, chatLoading, chatStreaming, onSend, canChat, chatBottomRef, chatInputRef,
-  collections, selectedCollectionId, onCollectionChange,
 }: {
   messages: ChatMessage[];
   chatInput: string;
@@ -3383,9 +3415,6 @@ function ChatTab({
   canChat: boolean;
   chatBottomRef: React.RefObject<HTMLDivElement | null>;
   chatInputRef: React.RefObject<HTMLTextAreaElement | null>;
-  collections: Collection[];
-  selectedCollectionId: string | null;
-  onCollectionChange: (id: string | null) => void;
 }) {
   function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -3398,24 +3427,11 @@ function ChatTab({
     // Outer container dissolved: transparent, full-height flex column that fills the frosted shell.
     // No bg/border/shadow/rounded, no fixed height — chrome/styling only; all logic below is unchanged.
     <div style={{ display: "flex", flexDirection: "column", flex: 1, height: "100%", minHeight: 0, background: "transparent", border: "none" }}>
-      {/* Header — flush row on the frosted shell, no card background */}
-      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
-        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#E19485" }}>
-          <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-          </svg>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-sm font-semibold text-[var(--text-primary)]">AI Tutor</p>
-        </div>
-        <CollectionSelector
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onChange={onCollectionChange}
-        />
-      </div>
+      {/* The old in-view header strip (AI Tutor avatar/label + "Generate from:" selector) was removed.
+          The source selector now lives once in the persistent shell top bar (universal across views);
+          the chat view starts directly with its message area. */}
 
-      {/* Messages — scrollable region between header and input */}
+      {/* Messages — scrollable region, pinned input below */}
       <div className="space-y-4" style={{ flex: 1, overflowY: "auto", padding: "24px 28px", minHeight: 0 }}>
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center" style={{ maxWidth: 560, marginLeft: "auto", marginRight: "auto" }}>
