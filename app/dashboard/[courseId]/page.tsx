@@ -57,8 +57,6 @@ import {
 } from "../../lib/api";
 import { CanvasImportModal } from "../../components/CanvasImportModal";
 import { Button } from "../../components/ui/Button";
-import { Tabs } from "../../components/ui/Tabs";
-import { Badge } from "../../components/ui/Badge";
 import { Spinner } from "../../components/ui/Spinner";
 import { EmptyState } from "../../components/ui/EmptyState";
 import { ProgressBar } from "../../components/ui/ProgressBar";
@@ -148,7 +146,10 @@ export default function CoursePage({
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState<ActiveTab>("materials");
+  // Default view is the AI Chat (chat-first layout). This is the only state default changed in the rebuild.
+  const [activeTab, setActiveTab] = useState<ActiveTab>("chat");
+  // Presentational-only: controls the hover-expand collapsed sidebar. Not wired to any data logic.
+  const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
   // Materials
   const [uploading, setUploading] = useState(false);
@@ -409,209 +410,382 @@ export default function CoursePage({
 
   const hasNoMaterials = materials.length === 0;
 
-  return (
-    <div className="page-enter">
-      {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-[var(--text-tertiary)] mb-5">
-        <Link href="/dashboard" className="hover:text-[var(--accent)] transition-colors flex items-center gap-1.5">
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
-          </svg>
-          Courses
-        </Link>
-        <svg className="w-3.5 h-3.5 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-        </svg>
-        <span className="text-[var(--text-secondary)] font-medium truncate max-w-[200px]">{course?.name}</span>
-      </div>
+  // Explicit salmon literal. globals.css overrides --accent to a grayscale oklch (Ein UI theme),
+  // so anything that must read as the brand salmon uses this value directly. --accent-dim and
+  // --accent-hover are still genuine salmon tokens and are used as-is.
+  const SALMON = "#E19485";
 
-      {/* Course header */}
-      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-7">
-        <div className="flex items-start gap-4">
-          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${courseGradient(course?.name ?? "")} flex items-center justify-center text-white font-bold text-2xl shadow-md flex-shrink-0`}>
+  // Reuse the existing inline TABS icons for the sidebar/nav so no new icon library is introduced.
+  const iconFor = (id: ActiveTab) => TABS.find((t) => t.id === id)?.icon;
+
+  // Nav model for the sidebar + mobile bar. Order matches the design: Chat, Study Guide, Quiz,
+  // Materials, then Study Plan and Flashcards. Each item reuses the EXISTING view ids and the
+  // EXISTING switch handlers, preserving their side-effects (e.g. opening Quiz still kicks off
+  // generation via handleQuizTab when materials exist; with no materials it just shows the locked
+  // state, matching the old disabled-button behavior).
+  const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; onClick: () => void }[] = [
+    { id: "chat", label: "AI Chat", icon: iconFor("chat"), onClick: () => setActiveTab("chat") },
+    { id: "study-guide", label: "Study Guide", icon: iconFor("study-guide"), onClick: handleStudyGuideTab },
+    { id: "quiz", label: "Quiz", icon: iconFor("quiz"), onClick: () => { if (hasNoMaterials) { setActiveTab("quiz"); } else { handleQuizTab(); } } },
+    { id: "materials", label: "Materials", icon: iconFor("materials"), onClick: () => setActiveTab("materials") },
+    { id: "study-plan", label: "Study Plan", icon: iconFor("study-plan"), onClick: handleStudyPlanTab },
+    {
+      id: "flashcards",
+      label: "Flashcards",
+      icon: (
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
+        </svg>
+      ),
+      onClick: () => setActiveTab("flashcards"),
+    },
+  ];
+
+  return (
+    <>
+      {/* The canonical hidden file input (fileInputRef) is preserved inside MaterialsTab, exactly as
+          before. The top-bar Upload button below uses its own label-wrapped input that reuses the same
+          handleFileUpload handler, so uploads work from any view without touching the existing ref. */}
+
+      {/* ===== TOP BAR ===== */}
+      <header
+        className="course-topbar"
+        style={{
+          position: "sticky",
+          top: 0,
+          zIndex: 30,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "24px",
+          padding: "16px 32px",
+          background: "rgba(10,14,24,0.7)",
+          backdropFilter: "blur(24px)",
+          WebkitBackdropFilter: "blur(24px)",
+          borderBottom: "1px solid rgba(255,255,255,0.06)",
+        }}
+      >
+        {/* Left cluster — course identity */}
+        <div style={{ display: "flex", alignItems: "center", gap: "14px", minWidth: 0 }}>
+          <Link
+            href="/dashboard"
+            className="hover:opacity-80 transition-opacity"
+            style={{ color: "var(--text-tertiary)", fontSize: "12px", fontFamily: "var(--font-outfit)", whiteSpace: "nowrap", textDecoration: "none", flexShrink: 0 }}
+          >
+            ← Courses
+          </Link>
+          <div
+            className={`bg-gradient-to-br ${courseGradient(course?.name ?? "")}`}
+            style={{ width: 44, height: 44, borderRadius: 12, display: "flex", alignItems: "center", justifyContent: "center", color: "#fff", fontWeight: 700, fontSize: 20, flexShrink: 0 }}
+          >
             {course?.name?.[0]?.toUpperCase() ?? "C"}
           </div>
-          <div>
-            <h1 className="text-xl sm:text-2xl font-extrabold text-[var(--text-primary)] leading-tight">{course?.name}</h1>
-            {course?.description && (
-              <p className="text-sm text-[var(--text-tertiary)] mt-1">{course.description}</p>
-            )}
-            <div className="flex items-center gap-3 mt-2">
-              <Badge variant="purple" size="sm" dot>
+          <div style={{ minWidth: 0 }}>
+            <h1 style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, fontSize: "20px", color: "var(--text-primary)", lineHeight: 1.1, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+              {course?.name ?? "Course"}
+            </h1>
+            <div style={{ display: "flex", alignItems: "center", gap: "6px", marginTop: "3px" }}>
+              <span style={{ width: 6, height: 6, borderRadius: "50%", background: SALMON, flexShrink: 0 }} />
+              <span style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--text-secondary)" }}>
                 {materials.length} material{materials.length !== 1 ? "s" : ""}
-              </Badge>
-              {hasNoMaterials && (
-                <Badge variant="amber" size="sm">
-                  Upload materials to unlock AI
-                </Badge>
-              )}
+              </span>
             </div>
           </div>
         </div>
 
-        {/* Quick action buttons */}
-        <div className="flex flex-wrap gap-2">
-          {[
-            {
-              label: "Study Guide",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" /></svg>,
-              action: handleStudyGuideTab,
-              tab: "study-guide" as ActiveTab,
-            },
-            {
-              label: "Quiz",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>,
-              action: handleQuizTab,
-              tab: "quiz" as ActiveTab,
-            },
-            {
-              label: "Study Plan",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5" /></svg>,
-              action: handleStudyPlanTab,
-              tab: "study-plan" as ActiveTab,
-              alwaysEnabled: true,
-            },
-            {
-              label: "Chat",
-              icon: <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" /></svg>,
-              action: () => setActiveTab("chat"),
-              tab: "chat" as ActiveTab,
-              alwaysEnabled: true,
-            },
-          ].map((btn) => (
-            <button
-              key={btn.label}
-              onClick={btn.action}
-              disabled={aiLoading || (!btn.alwaysEnabled && hasNoMaterials)}
-              className={`
-                flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-sm font-semibold
-                transition-all duration-150 btn-press cursor-pointer
-                ${activeTab === btn.tab ? "shadow-md" : "border"}
-                disabled:opacity-40 disabled:cursor-not-allowed
-              `}
-              style={activeTab === btn.tab
-                ? { background: "var(--accent)", color: "#0a0a0f" }
-                : { borderColor: "var(--accent-dim)", color: "var(--accent)", background: "var(--accent-dim)" }
-              }
-            >
-              {btn.icon}
-              {btn.label}
-            </button>
-          ))}
+        {/* Right cluster — actions */}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px", flexShrink: 0 }}>
+          {/* Import from Canvas — routes to Materials, where the Canvas import action lives
+              (gated by its canvasConnected check + CanvasImportModal). Kept there to avoid
+              duplicating / risking the existing Canvas import logic. */}
+          <button
+            onClick={() => setActiveTab("materials")}
+            className="hidden sm:inline-flex"
+            style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: "11px", padding: "9px 16px", color: "var(--text-secondary)", fontSize: "13px", fontFamily: "var(--font-outfit)", fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap", transition: "background 160ms ease, color 160ms ease" }}
+            onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.08)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = "rgba(255,255,255,0.05)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
+          >
+            Import from Canvas
+          </button>
+          {/* Upload — salmon. Label-wrapped input reuses the existing handleFileUpload. */}
+          <label
+            style={{ display: "inline-flex", alignItems: "center", gap: "6px", background: SALMON, color: "#fff", fontWeight: 600, fontSize: "13px", fontFamily: "var(--font-outfit)", borderRadius: "11px", padding: "9px 16px", boxShadow: "0 4px 16px rgba(225,148,133,0.3)", cursor: uploading ? "not-allowed" : "pointer", opacity: uploading ? 0.6 : 1, whiteSpace: "nowrap", transition: "background 160ms ease" }}
+            onMouseEnter={(e) => { if (!uploading) e.currentTarget.style.background = "var(--accent-hover)"; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = SALMON; }}
+          >
+            <span style={{ fontSize: "15px", lineHeight: 1 }}>↑</span>
+            {uploading ? "Uploading…" : "Upload"}
+            <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+          </label>
         </div>
+      </header>
+
+      {/* ===== BODY: sidebar + content ===== */}
+      <div
+        className="course-body"
+        style={{ display: "flex", position: "relative", minHeight: "calc(100vh - 200px)", width: "100%" }}
+      >
+        {/* 64px spacer holds the layout space so the main content's left edge is constant and does
+            NOT reflow when the sidebar expands. (Desktop only.) */}
+        <div className="hidden sm:block" style={{ width: "64px", flexShrink: 0 }} aria-hidden="true" />
+
+        {/* ===== COLLAPSED HOVER SIDEBAR ===== */}
+        {/* Absolutely positioned so the expansion OVERLAYS the content instead of pushing it.
+            display is controlled by the className (hidden on mobile, flex on >=sm) so it never
+            conflicts with the inline width animation. */}
+        <nav
+          className="course-sidebar hidden sm:flex"
+          onMouseEnter={() => setSidebarExpanded(true)}
+          onMouseLeave={() => setSidebarExpanded(false)}
+          style={{
+            position: "absolute",
+            left: 0,
+            top: 0,
+            bottom: 0,
+            width: sidebarExpanded ? "220px" : "64px",
+            zIndex: 25,
+            background: "rgba(13,16,24,0.55)",
+            backdropFilter: "blur(40px) saturate(120%)",
+            WebkitBackdropFilter: "blur(40px) saturate(120%)",
+            borderRight: "1px solid rgba(255,255,255,0.08)",
+            transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1)",
+            overflow: "hidden",
+            flexDirection: "column",
+            paddingTop: "16px",
+            gap: "4px",
+          }}
+        >
+          {navItems.map((item) => {
+            const isActive = activeTab === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={item.onClick}
+                aria-label={item.label}
+                title={item.label}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "14px",
+                  height: "48px",
+                  margin: "0 8px",
+                  paddingLeft: "14px",
+                  paddingRight: "12px",
+                  borderRadius: "12px",
+                  border: "none",
+                  cursor: "pointer",
+                  background: isActive ? "var(--accent-dim)" : "transparent",
+                  color: isActive ? SALMON : "var(--text-secondary)",
+                  transition: "background 180ms ease, color 180ms ease",
+                  width: "calc(100% - 16px)",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  position: "relative",
+                  flexShrink: 0,
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "rgba(255,255,255,0.06)";
+                    e.currentTarget.style.color = "var(--text-primary)";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "var(--text-secondary)";
+                  }
+                }}
+              >
+                {/* "you are here" left-edge bar */}
+                {isActive && (
+                  <span style={{ position: "absolute", left: 0, top: 10, bottom: 10, width: 3, borderRadius: 3, background: SALMON }} />
+                )}
+                {/* Icon slot — fixed width so the glyph sits at the same x in collapsed and expanded states */}
+                <span style={{ width: 22, height: 22, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }}>
+                  {item.icon}
+                </span>
+                {/* Label — clipped while collapsed (overflow:hidden + 64px width), fades in on expand */}
+                <span
+                  style={{
+                    fontFamily: "var(--font-outfit)",
+                    fontSize: "14px",
+                    fontWeight: isActive ? 600 : 500,
+                    opacity: sidebarExpanded ? 1 : 0,
+                    transition: "opacity 180ms ease",
+                    transitionDelay: sidebarExpanded ? "60ms" : "0ms",
+                  }}
+                >
+                  {item.label}
+                </span>
+              </button>
+            );
+          })}
+          {/* FUTURE: chat history / saved conversations slot in here — conversationId state and a
+              history list (grouped by recency) would mount in this lower region of the sidebar. */}
+        </nav>
+
+        {/* ===== MAIN CONTENT ===== */}
+        <main
+          className="course-main"
+          style={{ flex: 1, minWidth: 0, position: "relative", display: "flex", flexDirection: "column", overflow: "hidden" }}
+        >
+          {activeTab === "chat" ? (
+            // Chat owns full height: ChatTab manages its own internal scroll + pinned input bar, so we
+            // give it a flex-column container (no scroll/padding wrapper) and only side padding.
+            <div className="pb-24 sm:pb-3" style={{ flex: 1, display: "flex", flexDirection: "column", minHeight: 0, paddingTop: 16, paddingLeft: 24, paddingRight: 24 }}>
+              {/* FUTURE: chat history / saved conversations slot in here — conversationId state and a history list would mount in this region */}
+              <ChatTab
+                messages={messages}
+                chatInput={chatInput}
+                setChatInput={setChatInput}
+                chatLoading={chatLoading}
+                chatStreaming={chatStreaming}
+                onSend={handleChat}
+                canChat={!hasNoMaterials}
+                chatBottomRef={chatBottomRef}
+                chatInputRef={chatInputRef}
+                collections={collections}
+                selectedCollectionId={selectedCollectionId}
+                onCollectionChange={setSelectedCollectionId}
+              />
+            </div>
+          ) : (
+            // Every other view scrolls inside a padded container.
+            <div className="pb-28 sm:pb-8" style={{ flex: 1, overflowY: "auto", paddingTop: 24, paddingLeft: 32, paddingRight: 32 }}>
+              {/* ── MATERIALS ── */}
+              {activeTab === "materials" && (
+                <MaterialsTab
+                  courseId={courseId}
+                  materials={materials}
+                  uploading={uploading}
+                  uploadProgress={uploadProgress}
+                  dragOver={dragOver}
+                  setDragOver={setDragOver}
+                  fileInputRef={fileInputRef}
+                  handleFileUpload={handleFileUpload}
+                  confirmDeleteId={confirmDeleteId}
+                  setConfirmDeleteId={setConfirmDeleteId}
+                  deletingId={deletingId}
+                  handleDeleteMaterial={handleDeleteMaterial}
+                  onRenameSuccess={handleRenameSuccess}
+                  collections={collections}
+                  onCollectionsChange={setCollections}
+                  onImportComplete={loadPage}
+                />
+              )}
+
+              {/* ── STUDY GUIDE ── */}
+              {activeTab === "study-guide" && (
+                <StudyGuideTab
+                  courseId={courseId}
+                  canGenerate={!hasNoMaterials}
+                  collections={collections}
+                  selectedCollectionId={selectedCollectionId}
+                  onCollectionChange={setSelectedCollectionId}
+                />
+              )}
+
+              {/* ── QUIZ ── */}
+              {activeTab === "quiz" && (
+                <QuizErrorBoundary>
+                  <QuizTab
+                    courseId={courseId}
+                    rawQuizContent={rawQuizContent}
+                    quiz={quiz}
+                    loading={streamingQuiz}
+                    error={aiError}
+                    generatedAt={quizGeneratedAt}
+                    onGenerate={() => doGenerateQuiz(false)}
+                    onRegenerate={() => doGenerateQuiz(true)}
+                    canGenerate={!hasNoMaterials}
+                    streamingQuiz={streamingQuiz}
+                    streamedQuestions={streamedQuestions}
+                    quizGenerationId={quizGenerationId}
+                    collections={collections}
+                    selectedCollectionId={selectedCollectionId}
+                    onCollectionChange={setSelectedCollectionId}
+                  />
+                </QuizErrorBoundary>
+              )}
+
+              {/* ── STUDY PLAN ── */}
+              {activeTab === "study-plan" && (
+                <StudyPlanTab
+                  courseId={courseId}
+                  collections={collections}
+                  selectedCollectionId={selectedCollectionId}
+                  onCollectionChange={setSelectedCollectionId}
+                />
+              )}
+
+              {/* ── FLASHCARDS ── */}
+              {activeTab === "flashcards" && (
+                <FlashcardsTab
+                  courseId={courseId}
+                  collections={collections}
+                  selectedCollectionId={selectedCollectionId}
+                  onCollectionChange={setSelectedCollectionId}
+                  canGenerate={!hasNoMaterials}
+                />
+              )}
+            </div>
+          )}
+        </main>
       </div>
 
-      {/* No materials warning */}
-      {hasNoMaterials && activeTab !== "materials" && (
-        <div className="mb-5 flex items-start gap-3 px-4 py-3.5 border rounded-2xl" style={{ background: "rgba(251,191,36,0.08)", borderColor: "rgba(251,191,36,0.2)" }}>
-          <svg className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: "#fbbf24" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
-          </svg>
-          <div>
-            <p className="text-sm font-semibold" style={{ color: "#fbbf24" }}>No materials uploaded</p>
-            <p className="text-xs mt-0.5" style={{ color: "#fbbf24" }}>
-              Upload course materials first to use AI features.{" "}
-              <button className="underline font-semibold" onClick={() => setActiveTab("materials")}>
-                Go to Materials →
-              </button>
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* Tabs */}
-      <Tabs
-        tabs={TABS.map((t) => ({ id: t.id, label: t.label, icon: t.icon }))}
-        activeId={activeTab}
-        onChange={(id) => setActiveTab(id as ActiveTab)}
-        className="mb-6"
-      />
-
-      {/* ── MATERIALS TAB ─────────────────────────────── */}
-      {activeTab === "materials" && (
-        <MaterialsTab
-          courseId={courseId}
-          materials={materials}
-          uploading={uploading}
-          uploadProgress={uploadProgress}
-          dragOver={dragOver}
-          setDragOver={setDragOver}
-          fileInputRef={fileInputRef}
-          handleFileUpload={handleFileUpload}
-          confirmDeleteId={confirmDeleteId}
-          setConfirmDeleteId={setConfirmDeleteId}
-          deletingId={deletingId}
-          handleDeleteMaterial={handleDeleteMaterial}
-          onRenameSuccess={handleRenameSuccess}
-          collections={collections}
-          onCollectionsChange={setCollections}
-          onImportComplete={loadPage}
-        />
-      )}
-
-      {/* ── STUDY GUIDE TAB ───────────────────────────── */}
-      {activeTab === "study-guide" && (
-        <StudyGuideTab
-          courseId={courseId}
-          canGenerate={!hasNoMaterials}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onCollectionChange={setSelectedCollectionId}
-        />
-      )}
-
-
-      {/* ── QUIZ TAB ──────────────────────────────────── */}
-      {activeTab === "quiz" && (
-        <QuizErrorBoundary>
-          <QuizTab
-            courseId={courseId}
-            rawQuizContent={rawQuizContent}
-            quiz={quiz}
-            loading={streamingQuiz}
-            error={aiError}
-            generatedAt={quizGeneratedAt}
-            onGenerate={() => doGenerateQuiz(false)}
-            onRegenerate={() => doGenerateQuiz(true)}
-            canGenerate={!hasNoMaterials}
-            streamingQuiz={streamingQuiz}
-            streamedQuestions={streamedQuestions}
-            quizGenerationId={quizGenerationId}
-            collections={collections}
-            selectedCollectionId={selectedCollectionId}
-            onCollectionChange={setSelectedCollectionId}
-          />
-        </QuizErrorBoundary>
-      )}
-
-      {/* ── STUDY PLAN TAB ────────────────────────────── */}
-      {activeTab === "study-plan" && (
-        <StudyPlanTab
-          courseId={courseId}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onCollectionChange={setSelectedCollectionId}
-        />
-      )}
-
-      {/* ── CHAT TAB ──────────────────────────────────── */}
-      {activeTab === "chat" && (
-        <ChatTab
-          messages={messages}
-          chatInput={chatInput}
-          setChatInput={setChatInput}
-          chatLoading={chatLoading}
-          chatStreaming={chatStreaming}
-          onSend={handleChat}
-          canChat={!hasNoMaterials}
-          chatBottomRef={chatBottomRef}
-          chatInputRef={chatInputRef}
-          collections={collections}
-          selectedCollectionId={selectedCollectionId}
-          onCollectionChange={setSelectedCollectionId}
-        />
-      )}
-    </div>
+      {/* ===== MOBILE BOTTOM NAV ===== */}
+      {/* Hover doesn't exist on touch, so on narrow screens the rail is replaced by a bottom icon bar.
+          Sits just above the global dashboard bottom nav (which is h-16 / 64px). */}
+      <nav
+        className="course-mobile-nav flex sm:hidden"
+        style={{
+          position: "fixed",
+          left: 0,
+          right: 0,
+          bottom: "64px",
+          zIndex: 35,
+          alignItems: "center",
+          justifyContent: "space-around",
+          gap: "2px",
+          padding: "8px 6px",
+          background: "rgba(13,16,24,0.85)",
+          backdropFilter: "blur(24px) saturate(120%)",
+          WebkitBackdropFilter: "blur(24px) saturate(120%)",
+          borderTop: "1px solid rgba(255,255,255,0.08)",
+        }}
+      >
+        {navItems.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={item.onClick}
+              aria-label={item.label}
+              style={{
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "3px",
+                flex: 1,
+                minWidth: 0,
+                minHeight: "44px",
+                border: "none",
+                background: "transparent",
+                cursor: "pointer",
+                color: isActive ? SALMON : "var(--text-tertiary)",
+                fontFamily: "var(--font-outfit)",
+                fontSize: "10px",
+                fontWeight: isActive ? 600 : 500,
+              }}
+            >
+              <span style={{ width: 20, height: 20, display: "flex", alignItems: "center", justifyContent: "center" }}>{item.icon}</span>
+              <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", maxWidth: "100%" }}>{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+    </>
   );
 }
 
