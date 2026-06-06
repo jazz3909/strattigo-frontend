@@ -340,7 +340,28 @@ export default function DashboardPage() {
   return (
     <>
       <style>{shimmerStyle}</style>
-      <div style={{ position: 'relative', overflow: 'visible' }}>
+      {/* ===== FULL-BLEED FROSTED SHELL ===== */}
+      {/* Same frost as the course workspace shell — rgba(13,16,24,0.22) + blur(40px) saturate(120%)
+          — over the global fixed MeshBackground gradient (which still sits behind everything at
+          zIndex:-1 and shows softly through). The dashboard layout wraps this page in a centered
+          max-w-7xl column with px/py padding, so this element breaks OUT to the full viewport width
+          (marginLeft/Right: calc(50% - 50vw)) and pulls over the layout's vertical padding
+          (-mt-8 / -mb-24 sm:-mb-8) so the frost is truly full-bleed like the course page. The inner
+          wrapper then RESTORES the exact padding + max-w-7xl grid centering, so the greeting,
+          Add Course button and course cards render unchanged ON TOP of this one frosted surface. */}
+      <div
+        className="-mt-8 -mb-24 sm:-mb-8"
+        style={{
+          position: 'relative',
+          marginLeft: 'calc(50% - 50vw)',
+          marginRight: 'calc(50% - 50vw)',
+          minHeight: 'calc(100vh - 56px)',
+          background: 'rgba(13,16,24,0.22)',
+          backdropFilter: 'blur(40px) saturate(120%)',
+          WebkitBackdropFilter: 'blur(40px) saturate(120%)',
+        }}
+      >
+      <div className="px-4 sm:px-6 pt-8 pb-24 sm:pb-8 max-w-7xl mx-auto" style={{ position: 'relative', overflow: 'visible' }}>
 
       {/* Greeting header */}
       <div className="mb-8" style={{ position: 'relative', zIndex: 1 }}>
@@ -504,6 +525,7 @@ export default function DashboardPage() {
           </div>
         </form>
       </Modal>
+      </div>
       </div>
     </>
   );
