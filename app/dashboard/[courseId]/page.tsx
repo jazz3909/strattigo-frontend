@@ -463,7 +463,7 @@ export default function CoursePage({
           height: "calc(100vh - 56px)", // viewport minus the 56px (h-14) global navbar
           display: "flex",
           flexDirection: "row", // sidebar rail on the far left, full height; top bar + content to its right
-          background: "rgba(13,16,24,0.32)",
+          background: "rgba(13,16,24,0.22)",
           backdropFilter: "blur(40px) saturate(120%)",
           WebkitBackdropFilter: "blur(40px) saturate(120%)",
           overflow: "hidden",
@@ -3441,7 +3441,7 @@ function ChatTab({
               </svg>
             </div>
             <h3 className="font-semibold text-[var(--text-primary)] mb-1">Ask your AI tutor anything</h3>
-            <p className="text-sm text-[var(--text-tertiary)] mb-6 max-w-xs">
+            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-xs">
               {canChat
                 ? "Ask questions about your course materials and get instant answers."
                 : "Upload materials first to start chatting."}
@@ -3527,8 +3527,8 @@ function ChatTab({
 
       {/* Input — pinned flush at the bottom, full-width */}
       <div style={{ flexShrink: 0, padding: "16px 28px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
-        <div className="flex gap-3 items-end">
-          <div className="flex-1 relative">
+        <div className="flex items-center" style={{ gap: 12 }}>
+          <div className="relative" style={{ flex: 1, minWidth: 0 }}>
             <textarea
               ref={chatInputRef}
               value={chatInput}
@@ -3539,17 +3539,20 @@ function ChatTab({
               placeholder={canChat ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Upload materials to start chatting"}
               disabled={chatLoading || chatStreaming || !canChat}
               rows={1}
-              className="w-full px-4 py-3 text-sm resize-none max-h-32 focus:outline-none transition-all placeholder:text-[var(--text-tertiary)]"
+              className="w-full px-4 py-3 text-sm resize-none max-h-32 focus:outline-none transition-all placeholder:text-[var(--text-secondary)]"
               style={{ lineHeight: 1.5, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "var(--text-primary)" }}
             />
           </div>
           <button
             onClick={() => onSend(chatInput)}
             disabled={chatLoading || chatStreaming || !chatInput.trim() || !canChat}
-            className="btn-press flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-colors disabled:cursor-not-allowed"
+            className="btn-press rounded-xl flex items-center justify-center transition-colors disabled:cursor-not-allowed"
             style={{
+              flexShrink: 0,
+              width: 44,
+              height: 44,
               background: chatInput.trim() && canChat ? "#E19485" : "rgba(255,255,255,0.06)",
-              color: chatInput.trim() && canChat ? "#fff" : "var(--text-tertiary)",
+              color: chatInput.trim() && canChat ? "#fff" : "var(--text-secondary)",
             }}
           >
             {chatLoading ? (
@@ -3561,7 +3564,7 @@ function ChatTab({
             )}
           </button>
         </div>
-        <p className="text-xs text-[var(--text-tertiary)] mt-2 text-center">
+        <p className="text-xs text-[var(--text-secondary)] mt-2 text-center">
           Enter to send · Shift+Enter for new line
         </p>
       </div>
