@@ -3367,18 +3367,20 @@ function ChatTab({
   }
 
   return (
-    <div className="flex flex-col bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm overflow-hidden" style={{ height: "calc(100vh - 280px)", minHeight: 500 }}>
-      {/* Header */}
-      <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--border)] flex-shrink-0">
-        <div className="w-8 h-8 rounded-xl gradient-brand flex items-center justify-center flex-shrink-0">
+    // Outer container dissolved: transparent, full-height flex column that fills the frosted shell.
+    // No bg/border/shadow/rounded, no fixed height — chrome/styling only; all logic below is unchanged.
+    <div style={{ display: "flex", flexDirection: "column", flex: 1, height: "100%", minHeight: 0, background: "transparent", border: "none" }}>
+      {/* Header — flush row on the frosted shell, no card background */}
+      <div style={{ display: "flex", alignItems: "center", gap: "12px", padding: "14px 28px", borderBottom: "1px solid rgba(255,255,255,0.06)", flexShrink: 0 }}>
+        <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "#E19485" }}>
           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
           </svg>
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-semibold text-[var(--text-primary)]">AI Tutor</p>
-          <p className="text-xs text-emerald-500 font-medium flex items-center gap-1">
-            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+          <p className="text-xs font-medium flex items-center gap-1" style={{ color: "var(--success)" }}>
+            <span className="w-1.5 h-1.5 rounded-full" style={{ background: "var(--success)" }} />
             Online
           </p>
         </div>
@@ -3389,10 +3391,10 @@ function ChatTab({
         />
       </div>
 
-      {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-5 space-y-4">
+      {/* Messages — scrollable region between header and input */}
+      <div className="space-y-4" style={{ flex: 1, overflowY: "auto", padding: "24px 28px", minHeight: 0 }}>
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center py-8">
+          <div className="flex flex-col items-center justify-center h-full text-center" style={{ maxWidth: 560, marginLeft: "auto", marginRight: "auto" }}>
             <div className="w-16 h-16 rounded-2xl gradient-brand flex items-center justify-center mb-4 shadow-md">
               <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z" />
@@ -3410,7 +3412,10 @@ function ChatTab({
                   <button
                     key={q}
                     onClick={() => onSend(q)}
-                    className="px-3.5 py-2 text-xs font-medium text-[var(--accent)] bg-[var(--accent-dim)] border border-[var(--accent-dim)] rounded-full hover:bg-[var(--accent-dim)] transition-colors"
+                    className="text-xs font-medium"
+                    style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: 12, padding: "10px 16px", color: "var(--text-secondary)", cursor: "pointer", transition: "background 160ms ease, border-color 160ms ease, color 160ms ease" }}
+                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = "rgba(225,148,133,0.3)"; e.currentTarget.style.background = "rgba(255,255,255,0.06)"; e.currentTarget.style.color = "var(--text-primary)"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.08)"; e.currentTarget.style.background = "rgba(255,255,255,0.04)"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                   >
                     {q}
                   </button>
@@ -3435,11 +3440,12 @@ function ChatTab({
                 </div>
               )}
               <div
-                className={`max-w-[78%] px-4 py-3 rounded-2xl text-sm leading-relaxed shadow-sm ${
-                  msg.role === "user"
-                    ? "bg-gradient-to-br from-violet-600 to-blue-600 text-white rounded-br-sm"
-                    : "bg-[var(--surface)] border border-[var(--border)] text-[var(--text-primary)] rounded-bl-sm chat-markdown"
-                }`}
+                className={`max-w-[78%] px-4 py-3 text-sm leading-relaxed ${msg.role === "assistant" ? "chat-markdown" : ""}`}
+                style={{
+                  borderRadius: 14,
+                  background: msg.role === "user" ? "rgba(225,148,133,0.12)" : "rgba(255,255,255,0.04)",
+                  color: "var(--text-primary)",
+                }}
               >
                 {msg.role === "assistant" ? (
                   <>
@@ -3451,7 +3457,7 @@ function ChatTab({
                 )}
               </div>
               {msg.role === "user" && (
-                <div className="w-8 h-8 rounded-full bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0 mt-0.5 text-[var(--accent)] font-semibold text-xs">
+                <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 font-semibold text-xs" style={{ background: "var(--accent-dim)", color: "#E19485" }}>
                   You
                 </div>
               )}
@@ -3467,7 +3473,7 @@ function ChatTab({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
               </svg>
             </div>
-            <div className="bg-[var(--surface)] border border-[var(--border)] px-4 py-3.5 rounded-2xl rounded-bl-sm shadow-sm">
+            <div className="px-4 py-3.5" style={{ background: "rgba(255,255,255,0.04)", borderRadius: 14 }}>
               <div className="flex gap-1.5 items-center">
                 <div className="typing-dot" style={{ animationDelay: "0ms" }} />
                 <div className="typing-dot" style={{ animationDelay: "160ms" }} />
@@ -3479,8 +3485,8 @@ function ChatTab({
         <div ref={chatBottomRef} />
       </div>
 
-      {/* Input */}
-      <div className="border-t border-[var(--border)] p-4 flex-shrink-0">
+      {/* Input — pinned flush at the bottom, full-width */}
+      <div style={{ flexShrink: 0, padding: "16px 28px", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
         <div className="flex gap-3 items-end">
           <div className="flex-1 relative">
             <textarea
@@ -3488,17 +3494,23 @@ function ChatTab({
               value={chatInput}
               onChange={(e) => setChatInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={(e) => { e.currentTarget.style.borderColor = "#E19485"; e.currentTarget.style.boxShadow = "0 0 0 3px rgba(225,148,133,0.12)"; }}
+              onBlur={(e) => { e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; e.currentTarget.style.boxShadow = "none"; }}
               placeholder={canChat ? "Ask a question… (Enter to send, Shift+Enter for newline)" : "Upload materials to start chatting"}
               disabled={chatLoading || chatStreaming || !canChat}
               rows={1}
-              className={`w-full px-4 py-3 border rounded-xl text-sm text-[var(--text-primary)] placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)] transition-all resize-none max-h-32 disabled:bg-[var(--background)] disabled:text-[var(--text-tertiary)] ${chatLoading ? "border-[var(--border)]" : "border-[var(--border)]"}`}
-              style={{ lineHeight: 1.5 }}
+              className="w-full px-4 py-3 text-sm resize-none max-h-32 focus:outline-none transition-all placeholder:text-[var(--text-tertiary)]"
+              style={{ lineHeight: 1.5, background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.1)", borderRadius: 14, color: "var(--text-primary)" }}
             />
           </div>
           <button
             onClick={() => onSend(chatInput)}
             disabled={chatLoading || chatStreaming || !chatInput.trim() || !canChat}
-            className="btn-gradient btn-press flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-white shadow-sm hover:shadow-md transition-shadow disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn-press flex-shrink-0 w-11 h-11 rounded-xl flex items-center justify-center transition-colors disabled:cursor-not-allowed"
+            style={{
+              background: chatInput.trim() && canChat ? "#E19485" : "rgba(255,255,255,0.06)",
+              color: chatInput.trim() && canChat ? "#fff" : "var(--text-tertiary)",
+            }}
           >
             {chatLoading ? (
               <Spinner size="sm" className="border-white/30 border-t-white" />
