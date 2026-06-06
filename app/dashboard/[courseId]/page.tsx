@@ -418,27 +418,17 @@ export default function CoursePage({
   // Reuse the existing inline TABS icons for the sidebar/nav so no new icon library is introduced.
   const iconFor = (id: ActiveTab) => TABS.find((t) => t.id === id)?.icon;
 
-  // Nav model for the sidebar + mobile bar. Order matches the design: Chat, Study Guide, Quiz,
-  // Materials, then Study Plan and Flashcards. Each item reuses the EXISTING view ids and the
-  // EXISTING switch handlers, preserving their side-effects (e.g. opening Quiz still kicks off
-  // generation via handleQuizTab when materials exist; with no materials it just shows the locked
-  // state, matching the old disabled-button behavior).
+  // Nav model for the sidebar + mobile bar. Order: AI Chat, Study Guides, Quizzes, Materials.
+  // Study Plan and Flashcards are intentionally NOT in the nav (removed from the UI for now) —
+  // their components, handlers (handleStudyPlanTab) and conditional renders remain in this file
+  // untouched so the views can be re-added to the rail later. Each item reuses the EXISTING view
+  // ids and switch handlers, preserving side-effects (e.g. opening Quiz still kicks off generation
+  // via handleQuizTab when materials exist; with no materials it shows the locked state).
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; onClick: () => void }[] = [
     { id: "chat", label: "AI Chat", icon: iconFor("chat"), onClick: () => setActiveTab("chat") },
-    { id: "study-guide", label: "Study Guide", icon: iconFor("study-guide"), onClick: handleStudyGuideTab },
-    { id: "quiz", label: "Quiz", icon: iconFor("quiz"), onClick: () => { if (hasNoMaterials) { setActiveTab("quiz"); } else { handleQuizTab(); } } },
+    { id: "study-guide", label: "Study Guides", icon: iconFor("study-guide"), onClick: handleStudyGuideTab },
+    { id: "quiz", label: "Quizzes", icon: iconFor("quiz"), onClick: () => { if (hasNoMaterials) { setActiveTab("quiz"); } else { handleQuizTab(); } } },
     { id: "materials", label: "Materials", icon: iconFor("materials"), onClick: () => setActiveTab("materials") },
-    { id: "study-plan", label: "Study Plan", icon: iconFor("study-plan"), onClick: handleStudyPlanTab },
-    {
-      id: "flashcards",
-      label: "Flashcards",
-      icon: (
-        <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 6v.75m0 3v.75m0 3v.75m0 3V18m-9-5.25h5.25M7.5 15h3M3.375 5.25c-.621 0-1.125.504-1.125 1.125v3.026a2.999 2.999 0 010 5.198v3.026c0 .621.504 1.125 1.125 1.125h17.25c.621 0 1.125-.504 1.125-1.125v-3.026a2.999 2.999 0 010-5.198V6.375c0-.621-.504-1.125-1.125-1.125H3.375z" />
-        </svg>
-      ),
-      onClick: () => setActiveTab("flashcards"),
-    },
   ];
 
   return (
