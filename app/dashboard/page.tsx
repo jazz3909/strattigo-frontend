@@ -356,7 +356,7 @@ export default function DashboardPage() {
           marginLeft: 'calc(50% - 50vw)',
           marginRight: 'calc(50% - 50vw)',
           minHeight: 'calc(100vh - 56px)',
-          background: 'rgba(13,16,24,0.22)',
+          background: 'rgba(13,16,24,0.11)',
           backdropFilter: 'blur(40px) saturate(120%)',
           WebkitBackdropFilter: 'blur(40px) saturate(120%)',
         }}
