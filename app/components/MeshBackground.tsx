@@ -25,22 +25,25 @@ const COLOR_POINTS: ColorPoint[] = [
   { x: 1.0,  y: 0.0,  color: '#4A3A6B', radius: 0.75, opacity: 0.75 },
   // Mid-left — dark teal, large radius to hold left half
   { x: 0.0,  y: 0.5,  color: '#1E3A5A', radius: 0.95, opacity: 0.90 },
-  // Center-right — mauve pushed right, smaller radius
-  { x: 0.70, y: 0.45, color: '#5C3B6B', radius: 0.55, opacity: 0.70 },
-  // Mid-right — purple-mauve, contained to right edge
-  { x: 1.0,  y: 0.4,  color: '#7B4A6B', radius: 0.65, opacity: 0.75 },
+  // Center-right band bridge — mid-value blue-mauve so the gap between the left cool
+  // mass and the right warm mass is filled by a real core, not faint overlapping tails.
+  { x: 0.6,  y: 0.65, color: '#3A4A6B', radius: 0.7,  opacity: 0.6 },
+  // Center-right — mauve, radius widened to fill the band instead of clustering right
+  { x: 0.70, y: 0.45, color: '#5C3B6B', radius: 0.85, opacity: 0.80 },
+  // Mid-right — purple-mauve, widened to carry color across the right 40%
+  { x: 1.0,  y: 0.4,  color: '#7B4A6B', radius: 0.95, opacity: 0.85 },
   // Bottom-left — strong navy anchor, prevents warm bleed
   { x: 0.0,  y: 1.0,  color: '#1F3550', radius: 1.0,  opacity: 0.95 },
-  // Bottom-right area — mauve transition, tight radius
-  { x: 0.75, y: 0.85, color: '#7B4A6B', radius: 0.45, opacity: 0.65 },
-  // Bottom-right — warm transition, confined far right
-  { x: 0.85, y: 0.80, color: '#9A5060', radius: 0.40, opacity: 0.75 },
-  // Bottom-right corner — terracotta strictly confined
-  { x: 1.0,  y: 0.88, color: '#B05857', radius: 0.45, opacity: 0.85 },
-  // Far bottom-right corner lock, small radius
-  { x: 1.0,  y: 1.0,  color: '#C06050', radius: 0.45, opacity: 0.80 },
-  // Bottom-right warm accent, tight to corner
-  { x: 0.85, y: 1.0,  color: '#8A4A60', radius: 0.40, opacity: 0.60 },
+  // Bottom-right area — mauve transition, widened to fill lower-right band
+  { x: 0.75, y: 0.85, color: '#7B4A6B', radius: 0.80, opacity: 0.78 },
+  // Bottom-right — warm transition, widened so it no longer reads as confined
+  { x: 0.85, y: 0.80, color: '#9A5060', radius: 0.70, opacity: 0.80 },
+  // Bottom-right corner — terracotta, radius widened (opacity kept)
+  { x: 1.0,  y: 0.88, color: '#B05857', radius: 0.80, opacity: 0.85 },
+  // Far bottom-right corner lock, widened radius
+  { x: 1.0,  y: 1.0,  color: '#C06050', radius: 0.75, opacity: 0.80 },
+  // Bottom-right warm accent, widened
+  { x: 0.85, y: 1.0,  color: '#8A4A60', radius: 0.70, opacity: 0.72 },
 ];
 
 function drawMesh(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D): void {
