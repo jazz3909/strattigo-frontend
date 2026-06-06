@@ -463,9 +463,9 @@ export default function CoursePage({
           height: "calc(100vh - 56px)", // viewport minus the 56px (h-14) global navbar
           display: "flex",
           flexDirection: "row", // sidebar rail on the far left, full height; top bar + content to its right
-          background: "transparent",
-          backdropFilter: "none",
-          WebkitBackdropFilter: "none",
+          background: "rgba(13,16,24,0.32)",
+          backdropFilter: "blur(40px) saturate(120%)",
+          WebkitBackdropFilter: "blur(40px) saturate(120%)",
           overflow: "hidden",
         }}
       >
