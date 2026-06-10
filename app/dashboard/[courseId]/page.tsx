@@ -316,7 +316,8 @@ export default function CoursePage({
 
   function handleQuizTab() {
     setActiveTab("quiz");
-    if (!quiz && !streamingQuiz) doGenerateQuiz(false);
+    // Generation is now gated behind the "Generate Quiz" / "Regenerate" buttons
+    // (see QuizTab landing state). Opening the tab no longer auto-fires generation.
   }
 
   async function doGenerateStudyPlan(force: boolean) {
@@ -422,12 +423,12 @@ export default function CoursePage({
   // Study Plan and Flashcards are intentionally NOT in the nav (removed from the UI for now) —
   // their components, handlers (handleStudyPlanTab) and conditional renders remain in this file
   // untouched so the views can be re-added to the rail later. Each item reuses the EXISTING view
-  // ids and switch handlers, preserving side-effects (e.g. opening Quiz still kicks off generation
-  // via handleQuizTab when materials exist; with no materials it shows the locked state).
+  // ids and switch handlers. Quiz generation is gated behind the in-tab "Generate Quiz" button —
+  // opening the Quizzes view never auto-fires generation.
   const navItems: { id: ActiveTab; label: string; icon: React.ReactNode; onClick: () => void }[] = [
     { id: "chat", label: "AI Chat", icon: iconFor("chat"), onClick: () => setActiveTab("chat") },
     { id: "study-guide", label: "Study Guides", icon: iconFor("study-guide"), onClick: handleStudyGuideTab },
-    { id: "quiz", label: "Quizzes", icon: iconFor("quiz"), onClick: () => { if (hasNoMaterials) { setActiveTab("quiz"); } else { handleQuizTab(); } } },
+    { id: "quiz", label: "Quizzes", icon: iconFor("quiz"), onClick: handleQuizTab },
     { id: "materials", label: "Materials", icon: iconFor("materials"), onClick: () => setActiveTab("materials") },
   ];
 
@@ -993,10 +994,10 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
   }, [messages.length]);
 
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-8 sm:p-10">
+    <div className="p-8 sm:p-10" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px' }}>
       <div className="flex flex-col items-center text-center gap-5 max-w-sm mx-auto">
         <div className="relative w-14 h-14">
-          <div className="w-14 h-14 rounded-2xl gradient-brand flex items-center justify-center shadow-lg">
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg" style={{ background: 'var(--accent)' }}>
             <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
             </svg>
@@ -1011,8 +1012,10 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
           <p className="text-xs text-[var(--text-tertiary)]">This usually takes 10–30 seconds</p>
         </div>
         <div className="w-full">
-          <ProgressBar value={Math.round(progress)} size="sm" variant="gradient" animated />
-          <p className="text-xs text-[var(--text-tertiary)] mt-2 text-right">{Math.round(progress)}%</p>
+          <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+            <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${Math.round(progress)}%`, background: 'var(--accent)' }} />
+          </div>
+          <p className="text-xs text-[var(--text-secondary)] mt-2 text-right">{Math.round(progress)}%</p>
         </div>
       </div>
     </div>
@@ -2212,6 +2215,8 @@ function QuizTab({
   const [saveModalOpen, setSaveModalOpen] = useState(false);
   const [saveTitleInput, setSaveTitleInput] = useState("");
   const [savingQuiz, setSavingQuiz] = useState(false);
+  // Saved Quizzes list collapsed by default (STATE 3 dropdown)
+  const [savedListOpen, setSavedListOpen] = useState(false);
 
   function resetQuiz() {
     setCurrentQ(0);
@@ -2291,6 +2296,10 @@ function QuizTab({
   const isLoadingFirstQuestion = streamingQuiz && !hasQuestions;
   const nextQuestionLoading = streamingQuiz && currentQ >= effectiveQuestions.length;
 
+  // STATE 1 — landing: no quiz generated/opened this session, not loading, no error.
+  // Decided purely from the EXISTING quiz state (quiz/hasQuestions) + loading/error flags.
+  const showLanding = !loading && !streamingQuiz && !error && !quiz && !hasQuestions;
+
   return (
     <div>
       <div className="flex items-center justify-between mb-5 gap-3 flex-wrap">
@@ -2302,7 +2311,7 @@ function QuizTab({
             </p>
           )}
         </div>
-        <div className="flex items-center gap-3 flex-wrap">
+        <div className="flex items-center gap-3 flex-wrap" style={{ display: showLanding ? 'none' : undefined }}>
           <CollectionSelector
             collections={collections}
             selectedCollectionId={selectedCollectionId}
@@ -2330,6 +2339,9 @@ function QuizTab({
               size="sm"
               onClick={() => { setSaveTitleInput(""); setSaveModalOpen(true); }}
               disabled={savedQuizzes.length >= 5}
+              style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
               title={savedQuizzes.length >= 5 ? "Delete a saved quiz to save a new one" : undefined}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -2347,19 +2359,45 @@ function QuizTab({
 
       {!loading && !streamingQuiz && error && <AiErrorBlock error={error} onRetry={onGenerate} />}
 
-      {!loading && !streamingQuiz && !error && !quiz && (
-        <EmptyState
-          icon={<svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>}
-          title="No quiz yet"
-          description="Click Generate to create practice questions from your course materials."
-          action={
-            <Button variant="primary" size="md" onClick={onGenerate} disabled={!canGenerate}
-              leftIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" /></svg>}
-            >
-              Generate Quiz
-            </Button>
-          }
-        />
+      {showLanding && (
+        <div
+          className="flex flex-col items-center text-center animate-fade-in-up"
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '48px 32px' }}
+        >
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'var(--accent-dim)' }}>
+            <svg className="w-7 h-7" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1.5" style={{ fontFamily: 'var(--font-outfit)' }}>
+            Generate a practice quiz
+          </h3>
+          <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm">
+            Create a quiz from your course materials to test yourself.
+          </p>
+
+          <div className="mb-6">
+            <CollectionSelector
+              collections={collections}
+              selectedCollectionId={selectedCollectionId}
+              onChange={onCollectionChange}
+            />
+          </div>
+
+          <button
+            onClick={onGenerate}
+            disabled={!canGenerate}
+            className="inline-flex items-center gap-2 btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-outfit)', fontWeight: 600, padding: '13px 30px', borderRadius: '14px', fontSize: '0.95rem' }}
+            onMouseEnter={(e) => { if (canGenerate) e.currentTarget.style.background = 'var(--accent-hover)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+          >
+            <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+            </svg>
+            Generate Quiz
+          </button>
+        </div>
       )}
 
       {hasQuestions && !showResults && (
@@ -2375,7 +2413,9 @@ function QuizTab({
               <span>Question {currentQ + 1} of {totalQ}</span>
               <span>{answeredCount} answered</span>
             </div>
-            <ProgressBar value={((currentQ) / totalQ) * 100} size="sm" />
+            <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${((currentQ) / totalQ) * 100}%`, background: 'var(--accent)' }} />
+            </div>
           </div>
 
           <QuizQuestion
@@ -2403,6 +2443,9 @@ function QuizTab({
               size="sm"
               onClick={() => setCurrentQ((q) => Math.max(0, q - 1))}
               disabled={currentQ === 0}
+              style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
@@ -2455,42 +2498,63 @@ function QuizTab({
         />
       )}
 
-      {/* ── Saved Quizzes ─────────────────────────────── */}
+      {/* ── Saved Quizzes (collapsed dropdown) ────────── */}
       <div className="mt-8">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-base font-bold text-[var(--text-primary)]">Saved Quizzes</h3>
-          <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: "var(--surface-2)", color: "var(--text-secondary)" }}>
-            {savedQuizzes.length}/5
-          </span>
-        </div>
+        <button
+          onClick={() => setSavedListOpen((o) => !o)}
+          className="w-full flex items-center justify-between gap-3 transition-colors"
+          style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "14px", padding: "14px 18px" }}
+          aria-expanded={savedListOpen}
+        >
+          <div className="flex items-center gap-2.5">
+            <span className="text-base font-bold text-[var(--text-primary)]">Saved Quizzes</span>
+            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold" style={{ background: "rgba(255,255,255,0.06)", color: "var(--text-secondary)" }}>
+              {savedQuizzes.length}/5
+            </span>
+          </div>
+          <svg
+            className={`w-4 h-4 flex-shrink-0 transition-transform duration-200 ${savedListOpen ? "rotate-180" : ""}`}
+            style={{ color: "var(--text-secondary)" }}
+            fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+          </svg>
+        </button>
 
-        {loadingSaved ? (
-          <div className="space-y-3">
-            {[...Array(2)].map((_, i) => (
-              <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: "var(--surface-2)" }} />
-            ))}
+        <div
+          className="overflow-hidden transition-all duration-300 ease-out"
+          style={{ maxHeight: savedListOpen ? 4000 : 0, opacity: savedListOpen ? 1 : 0 }}
+        >
+          <div className="pt-4">
+            {loadingSaved ? (
+              <div className="space-y-3">
+                {[...Array(2)].map((_, i) => (
+                  <div key={i} className="h-14 rounded-2xl animate-pulse" style={{ background: "var(--surface-2)" }} />
+                ))}
+              </div>
+            ) : savedQuizzes.length === 0 ? (
+              <div className="py-8 text-center text-sm" style={{ color: "var(--text-tertiary)" }}>
+                No saved quizzes yet
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {savedQuizzes.map((sq) => (
+                  <SavedQuizAccordionItem
+                    key={sq.id}
+                    quiz={sq}
+                    isExpanded={expandedQuizId === sq.id}
+                    onToggle={() => setExpandedQuizId(expandedQuizId === sq.id ? null : sq.id)}
+                    isDeleting={deletingQuizId === sq.id}
+                    confirmDelete={quizToDeleteId === sq.id}
+                    onConfirmDelete={() => setQuizToDeleteId(sq.id)}
+                    onCancelDelete={() => setQuizToDeleteId(null)}
+                    onDelete={() => handleDeleteSavedQuiz(sq.id)}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        ) : savedQuizzes.length === 0 ? (
-          <div className="py-8 text-center text-sm" style={{ color: "var(--text-tertiary)" }}>
-            No saved quizzes yet
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {savedQuizzes.map((sq) => (
-              <SavedQuizAccordionItem
-                key={sq.id}
-                quiz={sq}
-                isExpanded={expandedQuizId === sq.id}
-                onToggle={() => setExpandedQuizId(expandedQuizId === sq.id ? null : sq.id)}
-                isDeleting={deletingQuizId === sq.id}
-                confirmDelete={quizToDeleteId === sq.id}
-                onConfirmDelete={() => setQuizToDeleteId(sq.id)}
-                onCancelDelete={() => setQuizToDeleteId(null)}
-                onDelete={() => handleDeleteSavedQuiz(sq.id)}
-              />
-            ))}
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Save Quiz modal */}
@@ -2546,7 +2610,7 @@ function QuizQuestion({
   onSelect: (letter: string) => void;
 }) {
   return (
-    <div className="bg-[var(--surface)] rounded-2xl border border-[var(--border)] shadow-sm p-5 sm:p-6 animate-fade-in-up">
+    <div className="p-5 sm:p-6 animate-fade-in-up" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px' }}>
       <div className="font-semibold text-[var(--text-primary)] mb-5 leading-snug flex items-start gap-1.5">
         <span className="text-[var(--accent)] font-bold flex-shrink-0">{index + 1}.</span>
         <MarkdownWithMath content={question.question} className="flex-1 min-w-0" />
@@ -2561,7 +2625,7 @@ function QuizQuestion({
               key={opt.letter}
               onClick={() => onSelect(opt.letter)}
               disabled={revealed}
-              className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press
+              className={`w-full text-left px-4 py-3.5 rounded-xl border text-sm font-medium transition-all duration-150 btn-press text-[var(--text-primary)]
                 ${revealed
                   ? isSelected && isCorrect
                     ? "answer-correct-pulse"
@@ -2569,47 +2633,43 @@ function QuizQuestion({
                     ? "answer-shake"
                     : ""
                   : isSelected
-                  ? "bg-[var(--accent-dim)] border-[var(--accent)] text-violet-900 shadow-sm"
-                  : "border-[var(--border)] hover:border-[var(--accent-dim)] hover:bg-[var(--accent-dim)]/50 text-[var(--text-primary)]"
+                  ? "bg-[var(--accent-dim)] border-[var(--accent)] shadow-sm"
+                  : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.08)] hover:bg-[rgba(255,255,255,0.06)] hover:border-[rgba(225,148,133,0.3)]"
                 }
               `}
               style={revealed ? {
                 background: isCorrect
-                  ? "rgba(107, 255, 184, 0.08)"
+                  ? "rgba(107,206,170,0.15)"
                   : isSelected
-                  ? "rgba(255, 107, 107, 0.08)"
-                  : "var(--surface)",
+                  ? "rgba(229,115,115,0.15)"
+                  : "rgba(255,255,255,0.03)",
                 borderColor: isCorrect
-                  ? "rgba(107, 255, 184, 0.3)"
+                  ? "var(--success)"
                   : isSelected
-                  ? "rgba(255, 107, 107, 0.3)"
-                  : "var(--border)",
-                color: isCorrect
-                  ? "#6bffb8"
-                  : isSelected
-                  ? "#ff6b6b"
-                  : "var(--text-secondary)",
+                  ? "var(--danger)"
+                  : "rgba(255,255,255,0.08)",
+                color: "var(--text-primary)",
               } : undefined}
             >
               <div className="flex items-start gap-3">
                 {revealed && isCorrect && (
-                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#6bffb8" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--success)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                   </svg>
                 )}
                 {revealed && isSelected && !isCorrect && (
-                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "#ff6b6b" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <svg className="answer-icon-pop w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: "var(--danger)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                   </svg>
                 )}
-                <span className="font-bold flex-shrink-0">{opt.letter}.</span>
+                <span className="font-bold flex-shrink-0" style={{ color: isSelected ? 'var(--accent)' : 'var(--text-secondary)' }}>{opt.letter}.</span>
                 <MarkdownWithMath content={opt.text} className="flex-1 min-w-0" />
               </div>
             </button>
           );
         })}
         {revealed && question.explanation && (
-          <div className="mt-3 px-4 py-3 rounded-xl text-sm border" style={{ background: "var(--surface-2)", borderColor: "var(--border)", color: "var(--text-primary)" }}>
+          <div className="mt-3 px-4 py-3 rounded-xl text-sm border" style={{ background: "rgba(255,255,255,0.03)", borderColor: "rgba(255,255,255,0.08)", color: "var(--text-secondary)" }}>
             <p className="font-semibold mb-0.5 flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
               <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
@@ -2751,7 +2811,7 @@ function SavedQuizAccordionItem({
   }, [isExpanded]);
 
   return (
-    <div className={`bg-[var(--surface)] rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md"}`}>
+    <div className={`group rounded-[14px] border transition-all ${isExpanded ? "bg-[rgba(255,255,255,0.03)] border-[rgba(225,148,133,0.3)]" : "bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.08)] hover:border-[rgba(225,148,133,0.2)]"}`}>
       <div className="flex items-center">
         <button
           onClick={onToggle}
@@ -2770,7 +2830,7 @@ function SavedQuizAccordionItem({
             </p>
           </div>
           <svg
-            className={`w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] flex-shrink-0 transition-all duration-200 ${isExpanded ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -2798,7 +2858,7 @@ function SavedQuizAccordionItem({
             <button
               onClick={(e) => { e.stopPropagation(); onConfirmDelete(); }}
               disabled={isDeleting}
-              className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] rounded-lg transition-colors disabled:opacity-50 cursor-pointer"
               aria-label="Delete quiz"
             >
               {isDeleting ? (
@@ -2820,7 +2880,9 @@ function SavedQuizAccordionItem({
               <span>Question {currentQ + 1} of {questions.length}</span>
               <span>{Object.keys(revealed).length} answered</span>
             </div>
-            <ProgressBar value={(currentQ / questions.length) * 100} size="sm" />
+            <div className="w-full rounded-full overflow-hidden h-1.5" style={{ background: 'rgba(255,255,255,0.08)' }}>
+              <div className="h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${(currentQ / questions.length) * 100}%`, background: 'var(--accent)' }} />
+            </div>
           </div>
           <QuizQuestion
             question={questions[currentQ]}
@@ -2840,6 +2902,9 @@ function SavedQuizAccordionItem({
               size="sm"
               onClick={() => setCurrentQ((q) => Math.max(0, q - 1))}
               disabled={currentQ === 0}
+              style={{ background: 'rgba(255,255,255,0.05)', borderColor: 'rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}
+              onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+              onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
