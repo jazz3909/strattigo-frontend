@@ -1621,10 +1621,12 @@ function CollectionSelector({
   collections,
   selectedCollectionId,
   onChange,
+  glass = false,
 }: {
   collections: Collection[];
   selectedCollectionId: string | null;
   onChange: (id: string | null) => void;
+  glass?: boolean;
 }) {
   if (collections.length === 0) return null;
   return (
@@ -1633,8 +1635,17 @@ function CollectionSelector({
       <select
         value={selectedCollectionId ?? ""}
         onChange={(e) => onChange(e.target.value || null)}
-        className="text-xs border rounded-lg px-2.5 py-1.5 cursor-pointer max-w-[160px] truncate outline-none"
-        style={{ border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)" }}
+        className="text-xs border px-2.5 py-1.5 cursor-pointer max-w-[160px] truncate outline-none"
+        style={
+          glass
+            ? {
+                border: "1px solid rgba(255,255,255,0.08)",
+                background: "rgba(255,255,255,0.03)",
+                color: "var(--text-primary)",
+                borderRadius: "10px",
+              }
+            : { border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)", borderRadius: "0.5rem" }
+        }
       >
         <option value="">All materials</option>
         {collections.map((col) => (
@@ -1807,8 +1818,8 @@ function StudyGuideTab({
 
       {/* Streaming preview */}
       {showStreamPreview && streamState && (
-        <div className="mb-5 bg-[var(--surface)] rounded-2xl border border-[var(--accent-dim)] shadow-sm overflow-hidden">
-          <div className="flex items-center gap-3 px-5 py-3.5 border-b border-[var(--border)]">
+        <div className="mb-5 overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "18px" }}>
+          <div className="flex items-center gap-3 px-5 py-3.5 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
             <div className="w-8 h-8 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
               <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
@@ -1825,7 +1836,10 @@ function StudyGuideTab({
                 <button
                   onClick={handleDiscard}
                   disabled={streamState.saving}
-                  className="px-3 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)] transition-colors disabled:opacity-50"
+                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
                 >
                   Discard
                 </button>
@@ -1841,10 +1855,10 @@ function StudyGuideTab({
               </div>
             )}
           </div>
-          <div className="px-5 py-4 max-h-96 overflow-y-auto">
+          <div className="px-6 py-5 max-h-96 overflow-y-auto">
             {streamState.content ? (
-              <div className="prose prose-sm prose-slate max-w-none">
-                <MarkdownWithMath content={streamState.content} className="text-sm leading-relaxed" />
+              <div className="max-w-none">
+                <MarkdownWithMath content={streamState.content} className="study-guide-content text-sm text-[var(--text-primary)] leading-relaxed" />
                 {isGenerating && <span className="streaming-cursor" />}
               </div>
             ) : (
@@ -1873,31 +1887,36 @@ function StudyGuideTab({
       {/* Guide list */}
       {!showStreamPreview && !loadingGuides && (
         guides.length === 0 ? (
-          <EmptyState
-            icon={
-              <svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+          <div
+            className="flex flex-col items-center text-center animate-fade-in-up"
+            style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: '18px', padding: '48px 32px' }}
+          >
+            <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5" style={{ background: 'var(--accent-dim)' }}>
+              <svg className="w-7 h-7" style={{ color: 'var(--accent)' }} fill="none" stroke="currentColor" strokeWidth={1.8} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
               </svg>
-            }
-            title="No study guides yet"
-            description="Generate your first one to create a comprehensive study guide from your course materials."
-            action={
-              canGenerate ? (
-                <Button
-                  variant="primary"
-                  size="md"
-                  onClick={openTitleModal}
-                  leftIcon={
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
-                    </svg>
-                  }
-                >
-                  Generate Study Guide
-                </Button>
-              ) : undefined
-            }
-          />
+            </div>
+            <h3 className="text-lg font-bold text-[var(--text-primary)] mb-1.5" style={{ fontFamily: 'var(--font-outfit)' }}>
+              Generate a study guide
+            </h3>
+            <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm">
+              Create a comprehensive study guide from your course materials.
+            </p>
+
+            <button
+              onClick={openTitleModal}
+              disabled={!canGenerate}
+              className="inline-flex items-center gap-2 btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-outfit)', fontWeight: 600, padding: '13px 30px', borderRadius: '14px', fontSize: '0.95rem' }}
+              onMouseEnter={(e) => { if (canGenerate) e.currentTarget.style.background = 'var(--accent-hover)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'var(--accent)'; }}
+            >
+              <svg className="w-[18px] h-[18px]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              Generate Study Guide
+            </button>
+          </div>
         ) : (
           <div className="space-y-3">
             {guides.map((guide) => (
@@ -1924,6 +1943,7 @@ function StudyGuideTab({
         title="Generate Study Guide"
         description="Customize your study guide before generating."
         size="sm"
+        glass
       >
         <div className="space-y-5">
           {/* Style selector */}
@@ -1959,21 +1979,32 @@ function StudyGuideTab({
                     onClick={() => setStudyGuideStyle(opt.id)}
                     className="flex-1 flex items-center gap-3 cursor-pointer transition-all duration-150"
                     style={{
-                      padding: "14px 16px",
-                      borderRadius: "var(--radius-md, 12px)",
-                      border: selected ? "2px solid var(--accent)" : "1px solid var(--border)",
-                      background: selected ? "var(--accent-dim)" : "var(--surface-2)",
-                      color: selected ? "var(--accent)" : "var(--text-secondary)",
+                      padding: "16px 18px",
+                      borderRadius: "14px",
+                      border: selected ? "1px solid var(--accent)" : "1px solid rgba(255,255,255,0.08)",
+                      background: selected ? "var(--accent-dim)" : "rgba(255,255,255,0.03)",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!selected) {
+                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(225,148,133,0.3)";
+                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!selected) {
+                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)";
+                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)";
+                      }
                     }}
                   >
                     <div
                       className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: selected ? "var(--accent-dim)" : "var(--surface-3)", color: selected ? "var(--accent)" : "var(--text-secondary)" }}
+                      style={{ background: selected ? "var(--accent-dim)" : "rgba(255,255,255,0.06)", color: selected ? "var(--accent)" : "var(--text-secondary)" }}
                     >
                       {opt.icon}
                     </div>
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight">{opt.title}</p>
+                      <p className="text-sm font-semibold leading-tight" style={{ color: selected ? "var(--accent)" : "var(--text-primary)" }}>{opt.title}</p>
                       <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-secondary)" }}>{opt.subtitle}</p>
                     </div>
                   </div>
@@ -1991,8 +2022,26 @@ function StudyGuideTab({
               onChange={(e) => setTitleInput(e.target.value.slice(0, 60))}
               onKeyDown={(e) => { if (e.key === "Enter" && titleInput.trim()) handleGenerate(); }}
               placeholder="e.g. Chapter 5 — Organic Chemistry"
-              className="w-full border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+              className="w-full text-sm focus:outline-none placeholder:text-[var(--text-tertiary)]"
               maxLength={60}
+              style={{
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
+                borderRadius: "12px",
+                color: "var(--text-primary)",
+                padding: "10px 14px",
+                outline: "none",
+                boxSizing: "border-box",
+                transition: "border-color 150ms ease, box-shadow 150ms ease",
+              }}
+              onFocus={(e) => {
+                e.target.style.borderColor = "var(--accent)";
+                e.target.style.boxShadow = "0 0 0 3px var(--accent-dim)";
+              }}
+              onBlur={(e) => {
+                e.target.style.borderColor = "rgba(255,255,255,0.08)";
+                e.target.style.boxShadow = "none";
+              }}
             />
             <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{titleInput.length}/60 characters</p>
           </div>
@@ -2006,27 +2055,28 @@ function StudyGuideTab({
               placeholder="e.g. Integration by parts, L'Hôpital's rule, Chapter 5 only..."
               rows={3}
               maxLength={500}
+              className="placeholder:text-[var(--text-tertiary)]"
               style={{
                 width: "100%",
-                background: "var(--surface-2)",
-                border: "1px solid var(--border)",
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.08)",
                 color: "var(--text-primary)",
-                borderRadius: "var(--radius-md, 12px)",
+                borderRadius: "12px",
                 padding: "12px 16px",
                 font: "inherit",
                 resize: "vertical",
                 minHeight: "80px",
                 fontSize: "14px",
-                transition: "border-color 150ms ease",
+                transition: "border-color 150ms ease, box-shadow 150ms ease",
                 outline: "none",
                 boxSizing: "border-box",
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = "var(--accent)";
-                e.target.style.boxShadow = "0 0 0 3px rgba(255,176,117,0.15)";
+                e.target.style.boxShadow = "0 0 0 3px var(--accent-dim)";
               }}
               onBlur={(e) => {
-                e.target.style.borderColor = "var(--border)";
+                e.target.style.borderColor = "rgba(255,255,255,0.08)";
                 e.target.style.boxShadow = "none";
               }}
             />
@@ -2040,6 +2090,7 @@ function StudyGuideTab({
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Source materials</label>
               <CollectionSelector
+                glass
                 collections={collections}
                 selectedCollectionId={selectedCollectionId}
                 onChange={onCollectionChange}
@@ -2049,7 +2100,26 @@ function StudyGuideTab({
 
           {/* Actions */}
           <div className="flex gap-2">
-            <Button variant="secondary" size="sm" onClick={() => setTitleModalOpen(false)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setTitleModalOpen(false)}
+              style={{
+                background: "rgba(255,255,255,0.05)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderColor: "rgba(255,255,255,0.1)",
+                color: "var(--text-secondary)",
+                borderRadius: "12px",
+              }}
+              onMouseEnter={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
+                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
+              }}
+            >
               Cancel
             </Button>
             <Button
@@ -2058,6 +2128,21 @@ function StudyGuideTab({
               onClick={handleGenerate}
               disabled={!titleInput.trim()}
               className="flex-1"
+              style={{
+                background: "var(--accent)",
+                color: "white",
+                fontWeight: 600,
+                borderRadius: "12px",
+                boxShadow: "0 4px 16px rgba(225,148,133,0.3)",
+              }}
+              onMouseEnter={(e) => {
+                if (!(e.currentTarget as HTMLButtonElement).disabled) {
+                  (e.currentTarget as HTMLButtonElement).style.background = "var(--accent-hover)";
+                }
+              }}
+              onMouseLeave={(e) => {
+                (e.currentTarget as HTMLButtonElement).style.background = "var(--accent)";
+              }}
             >
               Generate
             </Button>
@@ -2088,7 +2173,7 @@ function GuideAccordionItem({
   onDelete: () => void;
 }) {
   return (
-    <div className={`bg-[var(--surface)] rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:border-[var(--border)] hover:shadow-md"}`}>
+    <div className={`group rounded-[14px] border transition-all ${isExpanded ? "bg-[rgba(255,255,255,0.03)] border-[rgba(225,148,133,0.3)]" : "bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.08)] hover:border-[rgba(225,148,133,0.2)]"}`}>
       <div className="flex items-center">
         <button
           onClick={onToggle}
@@ -2106,7 +2191,7 @@ function GuideAccordionItem({
             </p>
           </div>
           <svg
-            className={`w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            className={`w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] flex-shrink-0 transition-all duration-200 ${isExpanded ? "rotate-180" : ""}`}
             fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
           >
             <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
@@ -2134,7 +2219,7 @@ function GuideAccordionItem({
             <button
               onClick={(e) => { e.stopPropagation(); onConfirmDelete(); }}
               disabled={isDeleting}
-              className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] rounded-lg transition-colors disabled:opacity-50"
               aria-label="Delete guide"
             >
               {isDeleting ? (

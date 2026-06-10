@@ -11,6 +11,8 @@ interface ModalProps {
   children: ReactNode;
   size?: "sm" | "md" | "lg" | "xl";
   hideCloseButton?: boolean;
+  /** Opt-in frosted glass styling for the panel/title (does not affect other modals). */
+  glass?: boolean;
 }
 
 const sizeMap = {
@@ -28,6 +30,7 @@ export function Modal({
   children,
   size = "md",
   hideCloseButton = false,
+  glass = false,
 }: ModalProps) {
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -70,13 +73,31 @@ export function Modal({
         ref={panelRef}
         tabIndex={-1}
         className={`relative w-full ${sizeMap[size]} rounded-2xl shadow-2xl animate-scale-in outline-none`}
-        style={{ background: "var(--surface)", border: "1px solid var(--border)" }}
+        style={
+          glass
+            ? {
+                background: "rgba(13,16,24,0.85)",
+                backdropFilter: "blur(40px) saturate(120%)",
+                WebkitBackdropFilter: "blur(40px) saturate(120%)",
+                border: "1px solid rgba(255,255,255,0.1)",
+                borderRadius: "24px",
+                boxShadow:
+                  "0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.08)",
+              }
+            : { background: "var(--surface)", border: "1px solid var(--border)" }
+        }
       >
         {(title || !hideCloseButton) && (
           <div className="flex items-start justify-between p-6 pb-0">
             <div>
               {title && (
-                <h2 className="text-lg font-bold" style={{ color: "var(--text-primary)" }}>{title}</h2>
+                <h2
+                  className="text-lg font-bold"
+                  style={{
+                    color: "var(--text-primary)",
+                    ...(glass ? { fontFamily: "var(--font-fraunces)", fontWeight: 700 } : {}),
+                  }}
+                >{title}</h2>
               )}
               {description && (
                 <p className="mt-1 text-sm" style={{ color: "var(--text-secondary)" }}>{description}</p>
