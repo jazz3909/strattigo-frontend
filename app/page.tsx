@@ -1,8 +1,17 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { getToken } from "./lib/api";
 
 export default function HomePage() {
+  const [authed, setAuthed] = useState(false);
+  // Logged-out visitors go to signup; logged-in users land on their dashboard.
+  const ctaHref = authed ? "/dashboard" : "/signup";
+
+  useEffect(() => {
+    setAuthed(!!getToken());
+  }, []);
+
   useEffect(() => {
     // Navbar scroll effect
     const navbar = document.getElementById('navbar');
@@ -1465,10 +1474,10 @@ export default function HomePage() {
 
       {/* NAVBAR */}
       <nav id="navbar">
-        <a href="#" className="nav-logo" aria-label="Strattigo home">STRATTIGO</a>
+        <a href={authed ? "/dashboard" : "/"} className="nav-logo" aria-label="Strattigo home">STRATTIGO</a>
         <div className="nav-right">
           <a href="/login" className="nav-signin">Sign in</a>
-          <a href="#pricing" className="nav-cta">Get started</a>
+          <a href={ctaHref} className="nav-cta">Get started</a>
         </div>
       </nav>
 
@@ -1489,8 +1498,8 @@ export default function HomePage() {
           </p>
 
           <div className="hero-ctas">
-            <a href="#pricing" className="btn-primary">Begin studying →</a>
-            <a href="#process" className="btn-secondary">See how it works</a>
+            <a href={ctaHref} className="btn-primary">Begin studying →</a>
+            <a href="#how-it-works" className="btn-secondary">See how it works</a>
           </div>
         </div>
 
@@ -1779,7 +1788,7 @@ export default function HomePage() {
                 <li>Up to 10MB uploads</li>
                 <li>Basic AI chat</li>
               </ul>
-              <a href="/signup" className="btn-secondary" style={{width:'100%', textAlign:'center', display:'block'}}>Get started free</a>
+              <a href={ctaHref} className="btn-secondary" style={{width:'100%', textAlign:'center', display:'block'}}>Get started free</a>
             </div>
 
             {/* Pro */}
@@ -1799,7 +1808,7 @@ export default function HomePage() {
                 <li>Full AI chat tutor access</li>
                 <li>Early access to new features</li>
               </ul>
-              <a href="/signup" className="pac-cta">Start free with BETA15 →</a>
+              <a href={ctaHref} className="pac-cta">Start free with BETA15 →</a>
             </div>
 
           </div>
@@ -1811,7 +1820,7 @@ export default function HomePage() {
         <div className="cta-final-content">
           <span className="cta-final-l1">Ready to study</span>
           <span className="cta-final-l2">smarter?</span>
-          <a href="/signup" className="cta-final-btn">Begin for free →</a>
+          <a href={ctaHref} className="cta-final-btn">Begin for free →</a>
           <p className="cta-final-note">No credit card required &nbsp;•&nbsp; Use code BETA15 for 3 months free</p>
         </div>
       </section>
