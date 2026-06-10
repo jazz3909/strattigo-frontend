@@ -1,7 +1,7 @@
 import { loadStripe } from "@stripe/stripe-js";
 import { apiGet, apiPost } from "./api";
 
-export const MONTHLY_PRICE_ID = "[200~price_1THvxxGm99mbwFrz8JgalyyA";
+export const MONTHLY_PRICE_ID = "price_1THvxxGm99mbwFrz8JgalyyA";
 export const ANNUAL_PRICE_ID = "price_annual";
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
