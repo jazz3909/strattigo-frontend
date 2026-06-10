@@ -67,9 +67,6 @@ export default function PricingPage() {
   const [authed, setAuthed] = useState(false);
   const [proLoading, setProLoading] = useState(false);
   const [annualLoading, setAnnualLoading] = useState(false);
-  const [promoCode, setPromoCode] = useState("");
-  const [promoApplied, setPromoApplied] = useState(false);
-  const [promoError, setPromoError] = useState("");
   const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
@@ -88,23 +85,12 @@ export default function PricingPage() {
     setLoading(true);
     setCheckoutError("");
     try {
-      await checkoutSession(priceId, promoApplied ? promoCode.trim() : undefined);
+      await checkoutSession(priceId);
       // Success navigates to Stripe; keep the spinner until the page unloads.
     } catch (err) {
       setCheckoutError(err instanceof Error ? err.message : "Checkout failed. Please try again.");
       setLoading(false);
     }
-  }
-
-  function handleApplyPromo() {
-    setPromoError("");
-    const code = promoCode.trim();
-    if (!code) {
-      setPromoError("Please enter a promo code.");
-      return;
-    }
-    setPromoCode(code);
-    setPromoApplied(true);
   }
 
   return (
@@ -117,8 +103,6 @@ export default function PricingPage() {
         color: "var(--text-primary)",
       }}
     >
-      <style>{`.promo-input::placeholder { color: var(--text-tertiary); }`}</style>
-
       {/* Header */}
       <header
         className="sticky top-0 z-40"
@@ -330,56 +314,6 @@ export default function PricingPage() {
             {checkoutError}
           </div>
         )}
-
-        {/* Promo code */}
-        <div className="mt-8 max-w-sm mx-auto">
-          <p className="text-center text-sm mb-3" style={{ color: "var(--text-tertiary)" }}>Have a promo code?</p>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={promoCode}
-              onChange={(e) => {
-                setPromoCode(e.target.value);
-                setPromoApplied(false);
-                setPromoError("");
-              }}
-              placeholder="Enter promo code"
-              className="promo-input flex-1 px-4 py-2.5 text-sm outline-none transition-all"
-              style={{
-                background: "rgba(255,255,255,0.04)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderRadius: 12,
-                color: "var(--text-primary)",
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = "var(--accent)";
-                e.currentTarget.style.boxShadow = "0 0 0 3px rgba(225,148,133,0.12)";
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)";
-                e.currentTarget.style.boxShadow = "";
-              }}
-            />
-            <button
-              onClick={handleApplyPromo}
-              className="px-4 py-2.5 text-sm transition-colors cursor-pointer"
-              style={{ background: "var(--accent)", color: "#fff", fontWeight: 600, borderRadius: 12 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-hover)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
-            >
-              Apply
-            </button>
-          </div>
-          {promoApplied && (
-            <p className="mt-2 text-sm flex items-center gap-1.5" style={{ color: "var(--accent)" }}>
-              <CheckIcon className="w-4 h-4" />
-              Promo code applied — discount will appear at checkout
-            </p>
-          )}
-          {promoError && (
-            <p className="mt-2 text-sm" style={{ color: "var(--danger)" }}>{promoError}</p>
-          )}
-        </div>
 
         {/* Footer links */}
         <div className="mt-10 text-center text-sm space-y-2" style={{ color: "var(--text-tertiary)" }}>
