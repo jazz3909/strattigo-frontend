@@ -1199,16 +1199,16 @@ function MaterialsTab({
   return (
     <div>
       {/* Sub-tabs */}
-      <div className="flex gap-1 p-1 bg-[var(--surface-2)] rounded-xl mb-5 w-fit">
+      <div className="flex gap-1 p-1 bg-[rgba(255,255,255,0.03)] rounded-xl mb-5 w-fit">
         <button
           onClick={() => setSubTab("all")}
-          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "all" ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "all" ? "bg-[rgba(225,148,133,0.12)] text-[#E19485]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
         >
           All Files
         </button>
         <button
           onClick={() => setSubTab("collections")}
-          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "collections" ? "bg-[var(--surface)] text-[var(--text-primary)] shadow-sm" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
+          className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-all ${subTab === "collections" ? "bg-[rgba(225,148,133,0.12)] text-[#E19485]" : "text-[var(--text-secondary)] hover:text-[var(--text-primary)]"}`}
         >
           Collections{collections.length > 0 ? ` (${collections.length})` : ""}
         </button>
@@ -1220,7 +1220,7 @@ function MaterialsTab({
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-[var(--text-primary)]">Course Materials</h2>
-              <p className="text-sm text-[var(--text-tertiary)] mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">{materials.length} file{materials.length !== 1 ? "s" : ""} uploaded</p>
             </div>
             <div className="flex items-center gap-2">
               {canvasConnected && (
@@ -1234,24 +1234,14 @@ function MaterialsTab({
                   Import from Canvas
                 </button>
               )}
-              <label className={`btn-press flex items-center gap-2 px-4 py-2.5 text-sm font-semibold rounded-xl cursor-pointer transition-all ${uploading ? "opacity-60 cursor-not-allowed bg-[var(--surface-2)] text-[var(--text-tertiary)]" : "btn-gradient text-white shadow-sm hover:shadow-md"}`}>
-                {uploading ? (
-                  <><Spinner size="sm" className="border-[var(--border-hover)] border-t-slate-600" /> Uploading…</>
-                ) : (
-                  <>
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
-                    </svg>
-                    Upload file
-                  </>
-                )}
-                <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
-              </label>
+              {/* The visible "Upload file" button was removed (the top bar has the universal Upload
+                  button); the canonical fileInputRef input must stay mounted for the upload flow. */}
+              <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </div>
           </div>
 
           {uploading && uploadProgress > 0 && (
-            <div className="mb-5 bg-[var(--surface)] rounded-2xl border border-[var(--border)] p-4">
+            <div className="mb-5 bg-[rgba(255,255,255,0.03)] rounded-[14px] border border-[rgba(255,255,255,0.07)] p-4">
               <div className="flex items-center gap-3 mb-3">
                 <Spinner size="sm" />
                 <span className="text-sm font-medium text-[var(--text-secondary)]">Uploading file…</span>
@@ -1265,15 +1255,15 @@ function MaterialsTab({
             onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
             onDragLeave={() => setDragOver(false)}
             onDrop={(e) => { e.preventDefault(); setDragOver(false); handleFileUpload(e.dataTransfer.files); }}
-            className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${dragOver ? "border-[var(--accent)] bg-[var(--accent-dim)] scale-[1.01]" : "border-[var(--border)] bg-[var(--background)] hover:border-[var(--accent)] hover:bg-[var(--accent-dim)]/30"}`}
+            className={`mb-5 border-2 border-dashed rounded-2xl transition-all ${dragOver ? "border-[#E19485] bg-[rgba(225,148,133,0.05)] scale-[1.01]" : "border-[rgba(225,148,133,0.3)] bg-[rgba(255,255,255,0.02)] hover:border-[#E19485]"}`}
           >
             <label className="flex flex-col items-center justify-center py-8 px-4 cursor-pointer">
-              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-[var(--accent-dim)]" : "bg-[var(--surface)] border border-[var(--border)]"}`}>
-                <svg className={`w-6 h-6 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-tertiary)]"}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <div className={`w-12 h-12 rounded-[14px] flex items-center justify-center mb-3 transition-all ${dragOver ? "bg-[rgba(225,148,133,0.2)]" : "bg-[rgba(225,148,133,0.12)]"}`}>
+                <svg className="w-6 h-6 text-[#E19485]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
                 </svg>
               </div>
-              <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-secondary)]"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
+              <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
               <p className="text-xs text-[var(--text-tertiary)]">PDF, PPTX, DOCX, TXT — up to 25MB</p>
               <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </label>
@@ -1296,7 +1286,7 @@ function MaterialsTab({
                 return (
                   <div
                     key={m.id}
-                    className={`relative z-[1] hover:z-10 flex items-center gap-4 bg-[var(--surface)] px-5 py-4 rounded-2xl border shadow-sm transition-all group animate-fade-in-up ${isRenaming ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md hover:border-[var(--border)]"}`}
+                    className={`relative z-[1] hover:z-10 flex items-center gap-4 bg-[rgba(255,255,255,0.03)] px-5 py-4 rounded-[14px] border transition-all group animate-fade-in-up ${isRenaming ? "border-[var(--accent-dim)]" : "border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
                     style={{ animationDelay: `${i * 40}ms` }}
                   >
                     <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
@@ -1308,12 +1298,12 @@ function MaterialsTab({
                           value={renameValue}
                           onChange={(e) => setRenameValue(e.target.value)}
                           onKeyDown={(e) => { if (e.key === "Enter") handleRename(m.id); if (e.key === "Escape") setRenamingId(null); }}
-                          className="flex-1 min-w-0 text-sm border border-[var(--border)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+                          className="flex-1 min-w-0 text-sm bg-transparent text-[var(--text-primary)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
                         />
                         <button onClick={() => handleRename(m.id)} disabled={renameSaving || !renameValue.trim()} className="px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] disabled:opacity-50 transition-colors flex-shrink-0">
                           {renameSaving ? "Saving…" : "Save"}
                         </button>
-                        <button onClick={() => setRenamingId(null)} className="px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)] transition-colors flex-shrink-0">Cancel</button>
+                        <button onClick={() => setRenamingId(null)} className="px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(255,255,255,0.06)] transition-colors flex-shrink-0">Cancel</button>
                       </div>
                     ) : (
                       <div className="flex-1 min-w-0">
@@ -1338,7 +1328,7 @@ function MaterialsTab({
                           <div className="relative">
                             <button
                               onClick={() => { setAddToCollectionPopoverId(isPopoverOpen ? null : m.id); setConfirmDeleteId(null); }}
-                              className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                              className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                               aria-label="Add to collection"
                             >
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1356,9 +1346,9 @@ function MaterialsTab({
                                       key={col.id}
                                       onClick={() => handleToggleCollection(m.id, col.id)}
                                       disabled={isToggling}
-                                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[var(--background)] transition-colors text-sm text-left disabled:opacity-50"
+                                      className="w-full flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-[rgba(255,255,255,0.06)] transition-colors text-sm text-left disabled:opacity-50"
                                     >
-                                      <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isIn ? "bg-[var(--accent)] border-violet-600" : "border-[var(--border-hover)]"}`}>
+                                      <span className={`w-4 h-4 rounded border flex-shrink-0 flex items-center justify-center transition-colors ${isIn ? "bg-[var(--accent)] border-[var(--accent)]" : "border-[var(--border-hover)]"}`}>
                                         {isIn && (
                                           <svg className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
                                             <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
@@ -1366,7 +1356,7 @@ function MaterialsTab({
                                         )}
                                       </span>
                                       <span className="flex-1 truncate text-[var(--text-primary)]">{col.name}</span>
-                                      {isToggling && <Spinner size="xs" className="border-[var(--border)] border-t-slate-500 flex-shrink-0" />}
+                                      {isToggling && <Spinner size="xs" className="border-[var(--border)] border-t-[var(--text-secondary)] flex-shrink-0" />}
                                     </button>
                                   );
                                 })}
@@ -1378,7 +1368,7 @@ function MaterialsTab({
                         {/* Rename button */}
                         <button
                           onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); setAddToCollectionPopoverId(null); }}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                          className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                           aria-label="Rename"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -1390,11 +1380,11 @@ function MaterialsTab({
                         <button
                           onClick={() => handleDownload(m.id)}
                           disabled={downloadingId === m.id}
-                          className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-blue-500 hover:bg-blue-50 transition-all disabled:opacity-50"
+                          className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all disabled:opacity-50"
                           aria-label="Download"
                         >
                           {downloadingId === m.id ? (
-                            <Spinner size="xs" className="border-blue-200 border-t-blue-500" />
+                            <Spinner size="xs" className="border-[var(--border-hover)] border-t-[var(--text-secondary)]" />
                           ) : (
                             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
@@ -1407,11 +1397,11 @@ function MaterialsTab({
                           <button
                             onClick={() => { setConfirmDeleteId(confirmDeleteId === m.id ? null : m.id); setAddToCollectionPopoverId(null); }}
                             disabled={deletingId === m.id}
-                            className="p-2 rounded-xl text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 transition-all"
+                            className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] transition-all"
                             aria-label="Delete"
                           >
                             {deletingId === m.id ? (
-                              <Spinner size="xs" className="border-red-200 border-t-red-500" />
+                              <Spinner size="xs" className="border-[rgba(229,115,115,0.3)] border-t-[var(--danger)]" />
                             ) : (
                               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
@@ -1422,8 +1412,8 @@ function MaterialsTab({
                             <div className="absolute right-0 top-10 z-10 w-48 bg-[var(--surface)] rounded-xl border border-[var(--border)] shadow-lg p-3 animate-scale-in-fast">
                               <p className="text-xs text-[var(--text-secondary)] mb-3 font-medium">Delete this file?</p>
                               <div className="flex gap-2">
-                                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)]">Cancel</button>
-                                <button onClick={() => handleDeleteMaterial(m.id, m.file_name)} className="flex-1 py-1.5 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600">Delete</button>
+                                <button onClick={() => setConfirmDeleteId(null)} className="flex-1 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(255,255,255,0.06)]">Cancel</button>
+                                <button onClick={() => handleDeleteMaterial(m.id, m.file_name)} className="flex-1 py-1.5 text-xs font-semibold text-white bg-[var(--danger)] rounded-lg hover:opacity-90">Delete</button>
                               </div>
                             </div>
                           )}
@@ -1444,7 +1434,7 @@ function MaterialsTab({
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-[var(--text-primary)]">Collections</h2>
-              <p className="text-sm text-[var(--text-tertiary)] mt-0.5">Group materials for focused AI generation</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Group materials for focused AI generation</p>
             </div>
             <Button
               variant="primary"
@@ -1492,7 +1482,7 @@ function MaterialsTab({
                   const isDeleting = deletingCollectionId === col.id;
                   const confirmDelete = confirmDeleteCollectionId === col.id;
                   return (
-                    <div key={col.id} className={`bg-[var(--surface)] rounded-2xl border shadow-sm transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[var(--border)] hover:shadow-md hover:border-[var(--border)]"}`}>
+                    <div key={col.id} className={`bg-[rgba(255,255,255,0.03)] rounded-[14px] border transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}>
                       <div className="flex items-center">
                         <button
                           onClick={() => setExpandedCollectionId(isExpanded ? null : col.id)}
@@ -1517,16 +1507,16 @@ function MaterialsTab({
                           {confirmDelete ? (
                             <>
                               <span className="text-xs text-[var(--text-secondary)]">Delete?</span>
-                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(null); }} className="px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[var(--background)]">Cancel</button>
-                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id, col.name); }} className="px-2.5 py-1 text-xs font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600">Delete</button>
+                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(null); }} className="px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(255,255,255,0.06)]">Cancel</button>
+                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id, col.name); }} className="px-2.5 py-1 text-xs font-semibold text-white bg-[var(--danger)] rounded-lg hover:opacity-90">Delete</button>
                             </>
                           ) : (
                             <button
                               onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(col.id); }}
                               disabled={isDeleting}
-                              className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] rounded-lg transition-colors disabled:opacity-50"
                             >
-                              {isDeleting ? <Spinner size="xs" className="border-red-200 border-t-red-500" /> : (
+                              {isDeleting ? <Spinner size="xs" className="border-[rgba(229,115,115,0.3)] border-t-[var(--danger)]" /> : (
                                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
                                 </svg>
@@ -1544,12 +1534,12 @@ function MaterialsTab({
                               {colMats.map((mat) => {
                                 const icon = fileIcon(mat.file_name);
                                 return (
-                                  <div key={mat.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[var(--background)] hover:bg-[var(--surface-2)] transition-colors">
+                                  <div key={mat.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.06)] transition-colors">
                                     <div className={`w-8 h-8 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
                                     <p className="flex-1 min-w-0 text-sm font-medium text-[var(--text-primary)] truncate">{mat.file_name}</p>
                                     <button
                                       onClick={() => handleRemoveFromCollection(col.id, mat.id)}
-                                      className="p-1.5 text-[var(--text-tertiary)] hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                                      className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] rounded-lg transition-colors flex-shrink-0"
                                       aria-label="Remove from collection"
                                     >
                                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
@@ -1586,7 +1576,7 @@ function MaterialsTab({
                   onChange={(e) => setNewCollectionName(e.target.value.slice(0, 50))}
                   onKeyDown={(e) => { if (e.key === "Enter") handleCreateCollection(); }}
                   placeholder="e.g. Chapter 5, Week 3 Readings"
-                  className="w-full border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+                  className="w-full bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
                   maxLength={50}
                 />
                 <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{newCollectionName.length}/50 characters</p>
