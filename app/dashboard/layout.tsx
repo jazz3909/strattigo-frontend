@@ -51,6 +51,8 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [email, setEmail] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [subChecked, setSubChecked] = useState(false);
+  const [confirmingCheckout, setConfirmingCheckout] = useState(false);
+  const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
 
   useEffect(() => {
@@ -59,18 +61,72 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }, []);
 
   useEffect(() => {
-    getSubscriptionStatus()
-      .then(({ plan }) => {
-        if (plan !== "pro" && plan !== "annual") {
-          router.replace("/pricing");
-        } else {
-          setSubChecked(true);
-          checkOnboarding();
+    let cancelled = false;
+    const isPaid = (plan: string) => plan === "pro" || plan === "annual";
+    const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+    // Read the param via window.location instead of useSearchParams: this gate
+    // already runs client-side only, and useSearchParams in a prerendered
+    // layout would force a Suspense boundary around the whole dashboard tree.
+    const fromCheckout =
+      new URLSearchParams(window.location.search).get("checkout") === "success";
+
+    async function gate() {
+      if (fromCheckout) {
+        // Returning from Stripe: the webhook that records the subscription can
+        // lag the browser redirect by several seconds, so poll instead of
+        // bouncing a just-paid user to /pricing on the first "free" response.
+        setConfirmingCheckout(true);
+        for (let attempt = 0; attempt < 10; attempt++) {
+          if (cancelled) return;
+          try {
+            const { plan } = await getSubscriptionStatus();
+            if (cancelled) return;
+            if (isPaid(plan)) {
+              router.replace(window.location.pathname);
+              setConfirmingCheckout(false);
+              setSubChecked(true);
+              checkOnboarding();
+              return;
+            }
+          } catch {
+            // transient error — keep polling
+          }
+          await sleep(2000);
         }
-      })
-      .catch(() => {
-        router.replace("/pricing");
-      });
+        if (!cancelled) setConfirmTimedOut(true);
+        return;
+      }
+
+      // Normal mount: a network blip must not eject a paying user — retry once
+      // and only redirect on a successful response that says the plan is free.
+      for (let attempt = 0; attempt < 2; attempt++) {
+        if (cancelled) return;
+        try {
+          const { plan } = await getSubscriptionStatus();
+          if (cancelled) return;
+          if (!isPaid(plan)) {
+            router.replace("/pricing");
+          } else {
+            setSubChecked(true);
+            checkOnboarding();
+          }
+          return;
+        } catch {
+          if (attempt === 0) await sleep(2000);
+        }
+      }
+      // Both attempts errored: let the user in rather than bounce; the backend
+      // enforces plan limits regardless of what this client-side gate decides.
+      if (!cancelled) {
+        setSubChecked(true);
+        checkOnboarding();
+      }
+    }
+
+    gate();
+    return () => {
+      cancelled = true;
+    };
   }, [router]);
 
   async function checkOnboarding() {
@@ -107,6 +163,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     window.location.href = "/login";
   }
 
+  if (confirmTimedOut) {
+    return (
+      <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "transparent" }}>
+        <div
+          className="max-w-md w-full px-7 py-8 text-center"
+          style={{
+            background: "rgba(255,255,255,0.03)",
+            border: "1px solid rgba(255,255,255,0.08)",
+            borderRadius: 18,
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+          }}
+        >
+          <span
+            style={{
+              fontSize: "20px",
+              fontWeight: 800,
+              letterSpacing: "0.12em",
+              color: "var(--accent)",
+            }}
+          >
+            STRATTIGO
+          </span>
+          <p className="mt-5 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+            We&apos;re confirming your payment — this can take a minute. Refresh shortly or contact support.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!subChecked) {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-6" style={{ background: "transparent" }}>
@@ -132,6 +219,11 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             }}
           />
         </div>
+        {confirmingCheckout && (
+          <p className="text-sm" style={{ color: "var(--text-secondary)", animation: "fadeIn 0.5s ease-out both" }}>
+            Confirming your subscription…
+          </p>
+        )}
       </div>
     );
   }

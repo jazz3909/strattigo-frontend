@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkoutSession, MONTHLY_PRICE_ID, ANNUAL_PRICE_ID } from "../lib/stripe";
+import { checkoutSession, getSubscriptionStatus, MONTHLY_PRICE_ID, ANNUAL_PRICE_ID } from "../lib/stripe";
 import { getToken } from "../lib/api";
 import { Spinner } from "../components/ui/Spinner";
 
@@ -65,12 +65,19 @@ function CheckIcon({ className, style }: { className?: string; style?: React.CSS
 export default function PricingPage() {
   const router = useRouter();
   const [authed, setAuthed] = useState(false);
+  const [subscribed, setSubscribed] = useState(false);
   const [proLoading, setProLoading] = useState(false);
   const [annualLoading, setAnnualLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
-    setAuthed(!!getToken());
+    if (!getToken()) return;
+    setAuthed(true);
+    getSubscriptionStatus()
+      .then(({ plan }) => setSubscribed(plan === "pro" || plan === "annual"))
+      .catch(() => {
+        // unknown status — keep showing the upgrade CTAs
+      });
   }, []);
 
   async function startCheckout(priceId: string, setLoading: (v: boolean) => void) {
@@ -234,17 +241,30 @@ export default function PricingPage() {
               </span>
               <span className="text-sm pb-1" style={{ color: "var(--text-tertiary)" }}>/month</span>
             </div>
-            <button
-              onClick={() => startCheckout(MONTHLY_PRICE_ID, setProLoading)}
-              disabled={proLoading}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 btn-press transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg cursor-pointer"
-              style={{ background: "var(--accent)", color: "#fff", fontWeight: 600 }}
-              onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-hover)"; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
-            >
-              {proLoading ? <Spinner size="sm" className="border-white/30 border-t-white" /> : null}
-              Upgrade to Pro
-            </button>
+            {subscribed ? (
+              <Link
+                href="/dashboard"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 transition-all"
+                style={ghostButton}
+                onMouseEnter={(e) => ghostHover(e, true)}
+                onMouseLeave={(e) => ghostHover(e, false)}
+              >
+                <CheckIcon className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                You&apos;re on Pro
+              </Link>
+            ) : (
+              <button
+                onClick={() => startCheckout(MONTHLY_PRICE_ID, setProLoading)}
+                disabled={proLoading}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 btn-press transition-all disabled:opacity-60 disabled:cursor-not-allowed shadow-lg cursor-pointer"
+                style={{ background: "var(--accent)", color: "#fff", fontWeight: 600 }}
+                onMouseEnter={(e) => { e.currentTarget.style.background = "var(--accent-hover)"; }}
+                onMouseLeave={(e) => { e.currentTarget.style.background = "var(--accent)"; }}
+              >
+                {proLoading ? <Spinner size="sm" className="border-white/30 border-t-white" /> : null}
+                Upgrade to Pro
+              </button>
+            )}
             <ul className="space-y-3">
               {PRO_FEATURES.map((f) => (
                 <li key={f} className="flex items-center gap-2.5 text-sm">
@@ -275,17 +295,30 @@ export default function PricingPage() {
               </span>
               <span className="text-sm pb-1" style={{ color: "var(--text-tertiary)" }}>/year</span>
             </div>
-            <button
-              onClick={() => startCheckout(ANNUAL_PRICE_ID, setAnnualLoading)}
-              disabled={annualLoading}
-              className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 btn-press transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-              style={ghostButton}
-              onMouseEnter={(e) => ghostHover(e, true)}
-              onMouseLeave={(e) => ghostHover(e, false)}
-            >
-              {annualLoading ? <Spinner size="sm" className="border-white/30 border-t-white" /> : null}
-              Get Annual — Best Value
-            </button>
+            {subscribed ? (
+              <Link
+                href="/dashboard"
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 transition-all"
+                style={ghostButton}
+                onMouseEnter={(e) => ghostHover(e, true)}
+                onMouseLeave={(e) => ghostHover(e, false)}
+              >
+                <CheckIcon className="w-4 h-4" style={{ color: "var(--accent)" }} />
+                You&apos;re on Pro
+              </Link>
+            ) : (
+              <button
+                onClick={() => startCheckout(ANNUAL_PRICE_ID, setAnnualLoading)}
+                disabled={annualLoading}
+                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 btn-press transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                style={ghostButton}
+                onMouseEnter={(e) => ghostHover(e, true)}
+                onMouseLeave={(e) => ghostHover(e, false)}
+              >
+                {annualLoading ? <Spinner size="sm" className="border-white/30 border-t-white" /> : null}
+                Get Annual — Best Value
+              </button>
+            )}
             <ul className="space-y-3">
               {ANNUAL_FEATURES.map((f) => (
                 <li key={f} className="flex items-center gap-2.5 text-sm">
