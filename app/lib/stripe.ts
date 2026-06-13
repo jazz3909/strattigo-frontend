@@ -35,14 +35,23 @@ export async function checkoutSession(
   window.location.href = url;
 }
 
+// Matches the backend payload exactly: GET /stripe/subscription-status returns
+// {is_pro, plan, expires_at}. `is_pro` is the canonical paid signal — prefer it
+// over string-matching `plan` so a paid account is never misread.
 export interface SubscriptionStatus {
+  is_pro: boolean;
   plan: "free" | "pro" | "annual";
-  status: "active" | "canceled" | "past_due" | "trialing" | null;
-  current_period_end: string | null;
+  expires_at: string | null;
 }
 
 export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
-  return apiGet<SubscriptionStatus>("/stripe/subscription-status");
+  // `cache: "no-store"` guarantees every call is a real network round-trip. The
+  // post-checkout grace-period poll re-requests this same URL every 2s and must
+  // observe the webhook's write the instant it lands — never a cached "free"
+  // served from the first attempt.
+  return apiGet<SubscriptionStatus>("/stripe/subscription-status", true, {
+    cache: "no-store",
+  });
 }
 
 export { getStripe };

@@ -74,8 +74,12 @@ async function request<T>(
   return res.json();
 }
 
-export async function apiGet<T>(path: string, auth = true): Promise<T> {
-  return request<T>(path, { method: "GET" }, auth);
+export async function apiGet<T>(
+  path: string,
+  auth = true,
+  init: RequestInit = {}
+): Promise<T> {
+  return request<T>(path, { method: "GET", ...init }, auth);
 }
 
 export async function apiPost<T>(

@@ -62,7 +62,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   useEffect(() => {
     let cancelled = false;
-    const isPaid = (plan: string) => plan === "pro" || plan === "annual";
+    // Trust the backend's canonical `is_pro` boolean first; fall back to the
+    // plan string so this stays correct regardless of which the backend emits.
+    const isPaid = (s: { is_pro?: boolean; plan?: string }) =>
+      s.is_pro === true || s.plan === "pro" || s.plan === "annual";
     const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
     // Read the param via window.location instead of useSearchParams: this gate
     // already runs client-side only, and useSearchParams in a prerendered
@@ -79,9 +82,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         for (let attempt = 0; attempt < 10; attempt++) {
           if (cancelled) return;
           try {
-            const { plan } = await getSubscriptionStatus();
+            const status = await getSubscriptionStatus();
             if (cancelled) return;
-            if (isPaid(plan)) {
+            if (isPaid(status)) {
               router.replace(window.location.pathname);
               setConfirmingCheckout(false);
               setSubChecked(true);
@@ -102,9 +105,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       for (let attempt = 0; attempt < 2; attempt++) {
         if (cancelled) return;
         try {
-          const { plan } = await getSubscriptionStatus();
+          const status = await getSubscriptionStatus();
           if (cancelled) return;
-          if (!isPaid(plan)) {
+          if (!isPaid(status)) {
             router.replace("/pricing");
           } else {
             setSubChecked(true);
