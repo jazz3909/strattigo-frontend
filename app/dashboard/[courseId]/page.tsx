@@ -479,13 +479,15 @@ export default function CoursePage({
           bottom: 0,
           width: sidebarExpanded ? "220px" : "64px",
           zIndex: 25,
-          // Darker, more opaque dark-navy panel (same glass color family as the shell) so the
-          // expanded menu labels stay clearly legible over busy content showing through. Heavier
-          // backdrop blur further diffuses anything behind it. Deepens more on expand.
-          background: sidebarExpanded ? "rgba(13,16,24,0.7)" : "rgba(13,16,24,0.55)",
+          // Near-solid dark-navy panel: readability is prioritized over the glass effect for the
+          // nav menu, so opacity does the real work regardless of what's behind it. The retained
+          // backdrop blur only softens the edges. A slightly brighter right border + soft shadow
+          // separate the now-solid rail from the content area as a distinct panel.
+          background: sidebarExpanded ? "rgba(13,16,24,0.92)" : "rgba(13,16,24,0.85)",
           backdropFilter: "blur(60px) saturate(120%)",
           WebkitBackdropFilter: "blur(60px) saturate(120%)",
-          borderRight: "1px solid rgba(255,255,255,0.06)",
+          borderRight: "1px solid rgba(255,255,255,0.08)",
+          boxShadow: "2px 0 24px rgba(0,0,0,0.3)",
           transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1), background 240ms ease",
           overflow: "hidden",
           flexDirection: "column",
