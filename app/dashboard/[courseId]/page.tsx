@@ -479,11 +479,12 @@ export default function CoursePage({
           bottom: 0,
           width: sidebarExpanded ? "220px" : "64px",
           zIndex: 25,
-          // Not a separate solid panel — just a gentle deepening of the same frost so the rail reads
-          // as part of one continuous glass. Deepens slightly on expand for label legibility.
-          background: sidebarExpanded ? "rgba(0,0,0,0.25)" : "rgba(0,0,0,0.15)",
-          backdropFilter: "blur(8px)",
-          WebkitBackdropFilter: "blur(8px)",
+          // Darker, more opaque dark-navy panel (same glass color family as the shell) so the
+          // expanded menu labels stay clearly legible over busy content showing through. Heavier
+          // backdrop blur further diffuses anything behind it. Deepens more on expand.
+          background: sidebarExpanded ? "rgba(13,16,24,0.7)" : "rgba(13,16,24,0.55)",
+          backdropFilter: "blur(60px) saturate(120%)",
+          WebkitBackdropFilter: "blur(60px) saturate(120%)",
           borderRight: "1px solid rgba(255,255,255,0.06)",
           transition: "width 240ms cubic-bezier(0.4, 0, 0.2, 1), background 240ms ease",
           overflow: "hidden",
