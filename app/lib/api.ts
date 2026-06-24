@@ -234,8 +234,14 @@ export async function createCollection(courseId: string, name: string): Promise<
   return apiPost<Collection>("/collections", { course_id: courseId, name });
 }
 
-export async function deleteCollection(collectionId: string): Promise<void> {
-  return apiDelete<void>(`/collections/${collectionId}`);
+export interface DeleteCollectionResult {
+  deleted_collection_id: string;
+  deleted_descendant_count: number;
+  total_deleted: number;
+}
+
+export async function deleteCollection(collectionId: string): Promise<DeleteCollectionResult> {
+  return apiDelete<DeleteCollectionResult>(`/collections/${collectionId}`);
 }
 
 export async function addMaterialToCollection(collectionId: string, materialId: string): Promise<void> {

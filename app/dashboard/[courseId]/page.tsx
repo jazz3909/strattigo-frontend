@@ -1176,7 +1176,7 @@ function MaterialsTab({
     setDeletingCollectionId(collectionId);
     setConfirmDeleteCollectionId(null);
     try {
-      await deleteCollection(collectionId);
+      const result = await deleteCollection(collectionId);
       onCollectionsChange(collections.filter((c) => c.id !== collectionId));
       if (expandedCollectionId === collectionId) setExpandedCollectionId(null);
       setMaterialCollectionMap((prev) => {
@@ -1184,7 +1184,13 @@ function MaterialsTab({
         for (const matId of Object.keys(next)) next[matId] = (next[matId] ?? []).filter((c) => c !== collectionId);
         return next;
       });
-      addToast(`"${name}" deleted`, "info");
+      const subCount = result.deleted_descendant_count;
+      addToast(
+        subCount > 0
+          ? `"${name}" and ${subCount} sub-folder${subCount === 1 ? "" : "s"} deleted`
+          : `"${name}" deleted`,
+        "info"
+      );
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to delete collection.", "error");
     } finally {
