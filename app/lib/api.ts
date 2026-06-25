@@ -217,21 +217,67 @@ export interface Collection {
   course_id: string;
   user_id?: string;
   name: string;
+  /** null for a top-level collection; the parent's id for a sub-folder. */
+  parent_id: string | null;
   created_at: string;
+  /** OWN direct file count (does NOT include sub-folders' files). */
   material_count?: number;
+  /** Number of direct child sub-folders. */
+  subfolder_count?: number;
 }
 
-export async function getCollections(courseId: string): Promise<Collection[]> {
+/**
+ * Shape returned by GET /collections/course/{course_id}: a flat list of every
+ * collection in the course, each carrying parent_id (used to build the tree)
+ * plus its OWN direct material_count and direct subfolder_count. Structurally
+ * identical to Collection — aliased for clarity where the flat list is meant.
+ */
+export type CollectionSummary = Collection;
+
+export async function getCollections(courseId: string): Promise<CollectionSummary[]> {
   try {
-    return await apiGet<Collection[]>(`/collections/course/${courseId}`);
+    return await apiGet<CollectionSummary[]>(`/collections/course/${courseId}`);
   } catch (err) {
     if (err instanceof Error && /404|not found/i.test(err.message)) return [];
     throw err;
   }
 }
 
-export async function createCollection(courseId: string, name: string): Promise<Collection> {
-  return apiPost<Collection>("/collections", { course_id: courseId, name });
+/**
+ * Create a collection. Omit parentId (or pass null) for a top-level collection;
+ * pass a parent's id to create a sub-folder under it.
+ */
+export async function createCollection(courseId: string, name: string, parentId?: string | null): Promise<Collection> {
+  const body: Record<string, unknown> = { course_id: courseId, name };
+  if (parentId) body.parent_id = parentId;
+  return apiPost<Collection>("/collections", body);
+}
+
+/** Rename a collection. PATCH /collections/{id} { name }. */
+export async function renameCollection(collectionId: string, name: string): Promise<Collection> {
+  return apiPatch<Collection>(`/collections/${collectionId}`, { name });
+}
+
+/**
+ * Move/reparent a collection. PATCH /collections/{id}/parent { parent_id }.
+ * Pass null to promote to top-level. (Wired for Phase 4 drag-and-drop; the
+ * helper exists now but the Phase 3 UI does not call it.)
+ */
+export async function moveCollection(collectionId: string, parentId: string | null): Promise<Collection> {
+  return apiPatch<Collection>(`/collections/${collectionId}/parent`, { parent_id: parentId });
+}
+
+/** GET /collections/{id}/delete-preview — what a cascade delete would remove. */
+export interface DeleteCollectionPreview {
+  collection_id: string;
+  /** Number of descendant sub-folders that would also be deleted. */
+  descendant_count: number;
+  /** Names of the descendant collections that would be deleted. */
+  affected_collection_names: string[];
+}
+
+export async function deleteCollectionPreview(collectionId: string): Promise<DeleteCollectionPreview> {
+  return apiGet<DeleteCollectionPreview>(`/collections/${collectionId}/delete-preview`);
 }
 
 export interface DeleteCollectionResult {
