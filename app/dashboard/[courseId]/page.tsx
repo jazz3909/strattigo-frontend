@@ -85,6 +85,12 @@ class QuizErrorBoundary extends Component<{ children: ReactNode }, { crashed: bo
   }
 }
 
+// Honest user-facing message when generation yields no usable output — either the
+// resolved materials are below the content threshold, or generation ran but
+// produced nothing parseable (e.g. strict-mode over a garbled/limited collection).
+const NO_USABLE_MATERIALS_MESSAGE =
+  "We couldn't generate this from the selected materials. The materials in this collection may be too limited, or a file may not have processed correctly (e.g. a scanned or formula-heavy PDF). Try adding more materials or re-uploading.";
+
 type ActiveTab = "materials" | "study-guide" | "quiz" | "flashcards" | "study-plan" | "chat";
 
 const TABS: { id: ActiveTab; label: string; icon: React.ReactNode }[] = [
@@ -298,6 +304,14 @@ export default function CoursePage({
 
       // Stream complete — parse full content
       const finalQuestions = parseQuizMarkdown(accumulated);
+      if (finalQuestions.length === 0) {
+        // Generation ran but produced no usable questions (e.g. strict-mode over
+        // garbled/limited materials). Surface honestly instead of an empty quiz.
+        setQuiz(null);
+        setStreamedQuestions([]);
+        setAiError(NO_USABLE_MATERIALS_MESSAGE);
+        return;
+      }
       setQuiz({ questions: finalQuestions });
       setStreamedQuestions(finalQuestions);
       setQuizGeneratedAt(new Date());
@@ -306,6 +320,12 @@ export default function CoursePage({
       // Fallback to non-streaming
       try {
         const data = await generateQuiz(courseId, force, selectedCollectionId ?? undefined);
+        if (data.questions.length === 0) {
+          setQuiz(null);
+          setStreamedQuestions([]);
+          setAiError(NO_USABLE_MATERIALS_MESSAGE);
+          return;
+        }
         setQuiz(data);
         setStreamedQuestions(data.questions);
         setQuizGeneratedAt(new Date());
@@ -2121,8 +2141,17 @@ function StudyGuideTab({
     setStreamState({ title, content: "", done: false, saving: false });
 
     try {
+      let acc = "";
       for await (const chunk of streamStudyGuide(courseId, title, selectedCollectionId ?? undefined, focusTopics, studyGuideStyle)) {
+        acc += chunk;
         setStreamState((prev) => prev ? { ...prev, content: prev.content + chunk } : prev);
+      }
+      if (!acc.trim()) {
+        // Generation produced no usable study guide (e.g. strict-mode over a
+        // garbled/limited collection). Surface honestly instead of an empty guide.
+        setStreamState(null);
+        setGuideError(NO_USABLE_MATERIALS_MESSAGE);
+        return;
       }
       setStreamState((prev) => prev ? { ...prev, done: true } : prev);
       setStudyGuideStyle("detailed");
@@ -3513,6 +3542,13 @@ function StudyPlanTab({
       for await (const chunk of streamEventPlan(selectedEvent.id, hoursPerDay, selectedCollectionId ?? undefined)) {
         acc += chunk;
         setPlanContent(acc);
+      }
+      if (!acc.trim()) {
+        // Generation produced no usable plan. Surface honestly (StudyPlanTab uses
+        // toast-based errors) instead of an empty plan + a success toast.
+        setPlanContent("");
+        addToast(NO_USABLE_MATERIALS_MESSAGE, "error");
+        return;
       }
       addToast("Study plan generated!", "success");
     } catch (err: unknown) {
