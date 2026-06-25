@@ -26,7 +26,9 @@ import {
   streamChat,
   getCollections,
   createCollection,
+  renameCollection,
   deleteCollection,
+  deleteCollectionPreview,
   addMaterialToCollection,
   removeMaterialFromCollection,
   getCollectionMaterials,
@@ -44,6 +46,7 @@ import {
   Course,
   Material,
   Collection,
+  DeleteCollectionPreview,
   ChatMessage,
   AiResponse,
   StudyGuideSaved,
@@ -55,6 +58,7 @@ import {
   type QuizQuestion,
   getToken,
 } from "../../lib/api";
+import { buildCollectionTree, MAX_COLLECTION_DEPTH, type CollectionNode } from "../../lib/collectionTree";
 import { CanvasImportModal } from "../../components/CanvasImportModal";
 import { Button } from "../../components/ui/Button";
 import { Spinner } from "../../components/ui/Spinner";
@@ -1029,6 +1033,12 @@ function AiLoadingProgress({ type }: { type: "study-guide" | "quiz" | "study-pla
 // MATERIALS TAB
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Nested-collection tree layout constants (px). Indentation is deliberately tight
+// so depth-3 names don't get crushed; guide lines sit in the indent gutter.
+const TREE_INDENT = 18; // added left-padding per nesting level
+const TREE_BASE_PAD = 10; // left-padding at depth 1 (the root row)
+const TREE_FILE_OFFSET = 22; // extra indent so file/empty rows align under child folder icons
+
 function MaterialsTab({
   courseId, materials, uploading, uploadProgress, dragOver, setDragOver,
   fileInputRef, handleFileUpload, confirmDeleteId, setConfirmDeleteId, deletingId, handleDeleteMaterial,
@@ -1063,14 +1073,26 @@ function MaterialsTab({
   // Collection state
   const [collectionMaterials, setCollectionMaterials] = useState<Record<string, Material[]>>({});
   const [materialCollectionMap, setMaterialCollectionMap] = useState<Record<string, string[]>>({});
-  const [expandedCollectionId, setExpandedCollectionId] = useState<string | null>(null);
+  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [createModalOpen, setCreateModalOpen] = useState(false);
+  // When set, the create modal creates a sub-folder under this parent; null = top-level.
+  const [createParent, setCreateParent] = useState<{ id: string; name: string } | null>(null);
   const [newCollectionName, setNewCollectionName] = useState("");
   const [creating, setCreating] = useState(false);
+  // Inline collection rename
+  const [renamingCollectionId, setRenamingCollectionId] = useState<string | null>(null);
+  const [collectionRenameValue, setCollectionRenameValue] = useState("");
+  const [collectionRenameSaving, setCollectionRenameSaving] = useState(false);
+  // Cascade-delete preview modal
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
+  const [deletePreview, setDeletePreview] = useState<DeleteCollectionPreview | null>(null);
+  const [deletePreviewLoading, setDeletePreviewLoading] = useState(false);
   const [deletingCollectionId, setDeletingCollectionId] = useState<string | null>(null);
-  const [confirmDeleteCollectionId, setConfirmDeleteCollectionId] = useState<string | null>(null);
   const [addToCollectionPopoverId, setAddToCollectionPopoverId] = useState<string | null>(null);
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
+
+  // Build the nested tree from the flat parent_id list (memoised on the list).
+  const collectionTree = useMemo(() => buildCollectionTree(collections), [collections]);
 
   const collectionIdString = collections.map((c) => c.id).join(",");
 
@@ -1155,16 +1177,56 @@ function MaterialsTab({
     }
   }
 
+  // Re-fetch the flat collection list and push it up. The eager membership-map
+  // effect below is keyed on the id set, so this also rebuilds folder file lists
+  // when the set of collections changes (create / cascade-delete).
+  async function refetchCollections() {
+    try {
+      const cols = await getCollections(courseId);
+      onCollectionsChange(cols);
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to refresh collections.", "error");
+    }
+  }
+
+  function toggleExpand(id: string) {
+    setExpandedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function openCreateTopLevel() {
+    setCreateParent(null);
+    setNewCollectionName("");
+    setCreateModalOpen(true);
+  }
+
+  function openCreateSubfolder(id: string, name: string) {
+    setCreateParent({ id, name });
+    setNewCollectionName("");
+    setCreateModalOpen(true);
+  }
+
   async function handleCreateCollection() {
-    if (!newCollectionName.trim()) return;
+    const name = newCollectionName.trim();
+    if (!name) return;
+    const parent = createParent;
     setCreating(true);
     try {
-      const col = await createCollection(courseId, newCollectionName.trim());
-      onCollectionsChange([...collections, col]);
-      setCollectionMaterials((prev) => ({ ...prev, [col.id]: [] }));
+      const col = await createCollection(courseId, name, parent?.id);
+      await refetchCollections();
+      // Reveal the new sub-folder by expanding its parent.
+      if (parent) setExpandedIds((prev) => new Set(prev).add(parent.id));
       setCreateModalOpen(false);
       setNewCollectionName("");
-      addToast(`Collection "${col.name}" created!`, "success");
+      setCreateParent(null);
+      addToast(
+        parent ? `Sub-folder "${col.name}" created in "${parent.name}"` : `Collection "${col.name}" created!`,
+        "success"
+      );
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to create collection.", "error");
     } finally {
@@ -1172,16 +1234,48 @@ function MaterialsTab({
     }
   }
 
+  async function handleRenameCollection(id: string) {
+    const name = collectionRenameValue.trim();
+    if (!name) return;
+    setCollectionRenameSaving(true);
+    try {
+      await renameCollection(id, name);
+      // Rename leaves the tree structure untouched, so patch the name in place
+      // (no refetch needed — keeps the membership effect from re-running).
+      onCollectionsChange(collections.map((c) => (c.id === id ? { ...c, name } : c)));
+      setRenamingCollectionId(null);
+      addToast("Collection renamed.", "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to rename collection.", "error");
+    } finally {
+      setCollectionRenameSaving(false);
+    }
+  }
+
+  async function openDeleteModal(id: string, name: string) {
+    setDeleteTarget({ id, name });
+    setDeletePreview(null);
+    setDeletePreviewLoading(true);
+    try {
+      setDeletePreview(await deleteCollectionPreview(id));
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to load delete preview.", "error");
+      setDeleteTarget(null);
+    } finally {
+      setDeletePreviewLoading(false);
+    }
+  }
+
   async function handleDeleteCollection(collectionId: string, name: string) {
     setDeletingCollectionId(collectionId);
-    setConfirmDeleteCollectionId(null);
     try {
       const result = await deleteCollection(collectionId);
-      onCollectionsChange(collections.filter((c) => c.id !== collectionId));
-      if (expandedCollectionId === collectionId) setExpandedCollectionId(null);
-      setMaterialCollectionMap((prev) => {
-        const next = { ...prev };
-        for (const matId of Object.keys(next)) next[matId] = (next[matId] ?? []).filter((c) => c !== collectionId);
+      // A cascade delete removes descendants too, so a refetch is required to
+      // avoid stale sub-folders lingering in the tree.
+      await refetchCollections();
+      setExpandedIds((prev) => {
+        const next = new Set(prev);
+        next.delete(collectionId);
         return next;
       });
       const subCount = result.deleted_descendant_count;
@@ -1195,6 +1289,8 @@ function MaterialsTab({
       addToast(err instanceof Error ? err.message : "Failed to delete collection.", "error");
     } finally {
       setDeletingCollectionId(null);
+      setDeleteTarget(null);
+      setDeletePreview(null);
     }
   }
 
@@ -1206,6 +1302,171 @@ function MaterialsTab({
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to remove from collection.", "error");
     }
+  }
+
+  // Compact (dense) file row rendered inside an expanded folder. `depth` is the
+  // owning folder's depth; files align under that folder's child folders.
+  function renderCompactFile(file: Material, depth: number, collectionId: string) {
+    const icon = fileIcon(file.file_name);
+    return (
+      <div
+        key={file.id}
+        className="group/file flex items-center gap-2 py-1.5 pr-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+        style={{ paddingLeft: TREE_BASE_PAD + depth * TREE_INDENT + TREE_FILE_OFFSET }}
+      >
+        <span className={`w-6 h-6 rounded-md ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5`}>{icon.icon}</span>
+        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-primary)] truncate">{file.file_name}</span>
+        {file.created_at && (
+          <span className="text-[11px] text-[var(--text-tertiary)] flex-shrink-0 hidden sm:block">
+            {new Date(file.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+          </span>
+        )}
+        <button
+          onClick={() => handleRemoveFromCollection(collectionId, file.id)}
+          className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] opacity-0 group-hover/file:opacity-100 transition-all flex-shrink-0"
+          aria-label="Remove from collection"
+          title="Remove from this folder"
+        >
+          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+        </button>
+      </div>
+    );
+  }
+
+  // Recursive tree node (folder). Closes over tab state/handlers so children
+  // render without prop-threading; cheap at the small collection counts here.
+  function renderNode(node: CollectionNode): React.ReactNode {
+    const isExpanded = expandedIds.has(node.id);
+    const files = collectionMaterials[node.id] ?? [];
+    const fileCount = collectionMaterials[node.id]?.length ?? node.material_count ?? 0;
+    const subCount = node.children.length;
+    const isRenaming = renamingCollectionId === node.id;
+    const isDeleting = deletingCollectionId === node.id;
+    const canAddSub = node.depth < MAX_COLLECTION_DEPTH;
+    const padLeft = TREE_BASE_PAD + (node.depth - 1) * TREE_INDENT;
+    const guideLeft = TREE_BASE_PAD + (node.depth - 1) * TREE_INDENT + 9;
+    const hasContent = subCount > 0 || files.length > 0;
+
+    return (
+      <div key={node.id}>
+        {/* Folder row */}
+        <div
+          className={`group/node relative flex items-center gap-1.5 pr-1.5 rounded-lg transition-colors ${isExpanded ? "bg-[rgba(255,255,255,0.035)]" : "hover:bg-[rgba(255,255,255,0.03)]"}`}
+          style={{ paddingLeft: padLeft }}
+        >
+          {/* Chevron */}
+          <button
+            onClick={() => toggleExpand(node.id)}
+            className="flex-shrink-0 p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+            aria-label={isExpanded ? "Collapse" : "Expand"}
+            aria-expanded={isExpanded}
+          >
+            <svg className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+
+          {/* Folder icon (salmon accent) */}
+          <span className="w-7 h-7 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
+            <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+            </svg>
+          </span>
+
+          {/* Name + counts, or inline rename */}
+          {isRenaming ? (
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 py-1.5">
+              <input
+                autoFocus
+                value={collectionRenameValue}
+                onChange={(e) => setCollectionRenameValue(e.target.value.slice(0, 50))}
+                onKeyDown={(e) => { if (e.key === "Enter") handleRenameCollection(node.id); if (e.key === "Escape") setRenamingCollectionId(null); }}
+                maxLength={50}
+                className="flex-1 min-w-0 text-sm bg-transparent text-[var(--text-primary)] border border-[var(--border)] rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
+              />
+              <button onClick={() => handleRenameCollection(node.id)} disabled={collectionRenameSaving || !collectionRenameValue.trim()} className="px-2 py-1 text-xs font-semibold bg-[var(--accent)] text-[#0a0a0f] rounded-lg disabled:opacity-50 flex-shrink-0">{collectionRenameSaving ? "…" : "Save"}</button>
+              <button onClick={() => setRenamingCollectionId(null)} className="px-2 py-1 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(255,255,255,0.06)] flex-shrink-0">Cancel</button>
+            </div>
+          ) : (
+            <button onClick={() => toggleExpand(node.id)} className="flex-1 min-w-0 flex items-baseline gap-2 py-2 text-left">
+              <span className="text-sm font-semibold text-[var(--text-primary)] truncate">{node.name}</span>
+              <span className="text-[11px] text-[var(--text-tertiary)] flex-shrink-0 whitespace-nowrap">
+                {fileCount} file{fileCount === 1 ? "" : "s"}{subCount > 0 ? ` · ${subCount} sub-folder${subCount === 1 ? "" : "s"}` : ""}
+              </span>
+            </button>
+          )}
+
+          {/* Hover actions */}
+          {!isRenaming && (
+            <div className="flex items-center gap-0.5 opacity-0 group-hover/node:opacity-100 focus-within:opacity-100 transition-opacity flex-shrink-0">
+              {canAddSub ? (
+                <button
+                  onClick={() => openCreateSubfolder(node.id, node.name)}
+                  className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] transition-all"
+                  aria-label="Add sub-folder"
+                  title="Add sub-folder"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                  </svg>
+                </button>
+              ) : (
+                <span
+                  className="p-1.5 rounded-lg text-[var(--text-tertiary)] opacity-50 cursor-not-allowed"
+                  title="Maximum 3 levels"
+                  aria-label="Maximum nesting depth reached"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 10.5v6m3-3H9m4.06-7.19l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+                  </svg>
+                </span>
+              )}
+              <button
+                onClick={() => { setRenamingCollectionId(node.id); setCollectionRenameValue(node.name); }}
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
+                aria-label="Rename"
+                title="Rename"
+              >
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L10.582 16.07a4.5 4.5 0 01-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 011.13-1.897l8.932-8.931zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0115.75 21H5.25A2.25 2.25 0 013 18.75V8.25A2.25 2.25 0 015.25 6H10" />
+                </svg>
+              </button>
+              <button
+                onClick={() => openDeleteModal(node.id, node.name)}
+                disabled={isDeleting}
+                className="p-1.5 rounded-lg text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] transition-all disabled:opacity-50"
+                aria-label="Delete"
+                title="Delete"
+              >
+                {isDeleting ? <Spinner size="xs" className="border-[rgba(229,115,115,0.3)] border-t-[var(--danger)]" /> : (
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
+                  </svg>
+                )}
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* Children (sub-folders + own files) */}
+        {isExpanded && (
+          <div className="relative">
+            {/* Vertical guide line connecting this folder to its children */}
+            <span aria-hidden className="absolute top-0 bottom-1 w-px bg-[rgba(255,255,255,0.08)]" style={{ left: guideLeft }} />
+            {node.children.map(renderNode)}
+            {files.map((f) => renderCompactFile(f, node.depth, node.id))}
+            {!hasContent && (
+              <p
+                className="text-xs text-[var(--text-tertiary)] italic py-1.5"
+                style={{ paddingLeft: TREE_BASE_PAD + node.depth * TREE_INDENT + TREE_FILE_OFFSET }}
+              >
+                Empty — add files or a sub-folder
+              </p>
+            )}
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
@@ -1446,12 +1707,12 @@ function MaterialsTab({
           <div className="flex items-center justify-between mb-5">
             <div>
               <h2 className="text-lg font-bold text-[var(--text-primary)]">Collections</h2>
-              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Group materials for focused AI generation</p>
+              <p className="text-sm text-[var(--text-secondary)] mt-0.5">Organize materials into nested folders for focused AI generation</p>
             </div>
             <Button
               variant="primary"
               size="sm"
-              onClick={() => setCreateModalOpen(true)}
+              onClick={openCreateTopLevel}
               leftIcon={
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -1470,9 +1731,9 @@ function MaterialsTab({
                 </svg>
               }
               title="No collections yet"
-              description="Create a collection to group related files and generate focused AI content from a subset of your materials."
+              description="Create a collection to group related files, nest sub-folders up to 3 levels, and generate focused AI content from a subset of your materials."
               action={
-                <Button variant="primary" size="md" onClick={() => setCreateModalOpen(true)}
+                <Button variant="primary" size="md" onClick={openCreateTopLevel}
                   leftIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
                 >
                   Create Collection
@@ -1481,120 +1742,42 @@ function MaterialsTab({
             />
           ) : (
             <>
-              <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5 mb-4">
+              <p className="text-xs text-[var(--text-tertiary)] flex items-center gap-1.5 mb-3">
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
                 </svg>
-                Add files from the All Files tab using the + button on each file card
+                Expand a folder for its files &amp; sub-folders. Hover a folder for actions; add files from the All Files tab.
               </p>
-              <div className="space-y-3">
-                {collections.map((col) => {
-                  const colMats = collectionMaterials[col.id] ?? [];
-                  const isExpanded = expandedCollectionId === col.id;
-                  const isDeleting = deletingCollectionId === col.id;
-                  const confirmDelete = confirmDeleteCollectionId === col.id;
-                  return (
-                    <div key={col.id} className={`bg-[rgba(255,255,255,0.03)] rounded-[14px] border transition-all ${isExpanded ? "border-[var(--accent-dim)]" : "border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}>
-                      <div className="flex items-center">
-                        <button
-                          onClick={() => setExpandedCollectionId(isExpanded ? null : col.id)}
-                          className="flex-1 flex items-center gap-3 px-5 py-4 text-left min-w-0"
-                        >
-                          <div className="w-9 h-9 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
-                            <svg className="w-[18px] h-[18px] text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
-                            </svg>
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{col.name}</p>
-                            <p className="text-xs text-[var(--text-tertiary)] mt-0.5">
-                              {colMats.length} file{colMats.length !== 1 ? "s" : ""} · {new Date(col.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
-                            </p>
-                          </div>
-                          <svg className={`w-4 h-4 text-[var(--text-tertiary)] flex-shrink-0 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
-                          </svg>
-                        </button>
-                        <div className="flex items-center gap-2 pr-4 pl-2 flex-shrink-0">
-                          {confirmDelete ? (
-                            <>
-                              <span className="text-xs text-[var(--text-secondary)]">Delete?</span>
-                              <button onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(null); }} className="px-2.5 py-1 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(255,255,255,0.06)]">Cancel</button>
-                              <button onClick={(e) => { e.stopPropagation(); handleDeleteCollection(col.id, col.name); }} className="px-2.5 py-1 text-xs font-semibold text-white bg-[var(--danger)] rounded-lg hover:opacity-90">Delete</button>
-                            </>
-                          ) : (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); setConfirmDeleteCollectionId(col.id); }}
-                              disabled={isDeleting}
-                              className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] rounded-lg transition-colors disabled:opacity-50"
-                            >
-                              {isDeleting ? <Spinner size="xs" className="border-[rgba(229,115,115,0.3)] border-t-[var(--danger)]" /> : (
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 01-2.244 2.077H8.084a2.25 2.25 0 01-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 00-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 013.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 00-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 00-7.5 0" />
-                                </svg>
-                              )}
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                      {isExpanded && (
-                        <div className="border-t border-[var(--border)] px-5 py-4">
-                          {colMats.length === 0 ? (
-                            <p className="text-sm text-[var(--text-tertiary)] text-center py-4">No files in this collection yet. Add files from the All Files tab.</p>
-                          ) : (
-                            <div className="space-y-2">
-                              {colMats.map((mat) => {
-                                const icon = fileIcon(mat.file_name);
-                                return (
-                                  <div key={mat.id} className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.06)] transition-colors">
-                                    <div className={`w-8 h-8 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
-                                    <p className="flex-1 min-w-0 text-sm font-medium text-[var(--text-primary)] truncate">{mat.file_name}</p>
-                                    <button
-                                      onClick={() => handleRemoveFromCollection(col.id, mat.id)}
-                                      className="p-1.5 text-[var(--text-secondary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] rounded-lg transition-colors flex-shrink-0"
-                                      aria-label="Remove from collection"
-                                    >
-                                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+              <div className="space-y-0.5">
+                {collectionTree.map(renderNode)}
               </div>
             </>
           )}
 
+          {/* Create top-level collection OR sub-folder (createParent decides) */}
           <Modal
             open={createModalOpen}
-            onClose={() => { setCreateModalOpen(false); setNewCollectionName(""); }}
-            title="Create Collection"
-            description="Group related files for focused AI generation."
+            onClose={() => { setCreateModalOpen(false); setNewCollectionName(""); setCreateParent(null); }}
+            title={createParent ? "New sub-folder" : "Create Collection"}
+            description={createParent ? `Inside “${createParent.name}”` : "Group related files for focused AI generation."}
             size="sm"
           >
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Collection name</label>
+                <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">{createParent ? "Sub-folder name" : "Collection name"}</label>
                 <input
                   autoFocus
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value.slice(0, 50))}
                   onKeyDown={(e) => { if (e.key === "Enter") handleCreateCollection(); }}
-                  placeholder="e.g. Chapter 5, Week 3 Readings"
+                  placeholder={createParent ? "e.g. Lecture slides, Problem sets" : "e.g. Chapter 5, Week 3 Readings"}
                   className="w-full bg-[rgba(255,255,255,0.04)] text-[var(--text-primary)] border border-[var(--border)] rounded-xl px-3.5 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
                   maxLength={50}
                 />
                 <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{newCollectionName.length}/50 characters</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="secondary" size="sm" onClick={() => { setCreateModalOpen(false); setNewCollectionName(""); }}>Cancel</Button>
+                <Button variant="secondary" size="sm" onClick={() => { setCreateModalOpen(false); setNewCollectionName(""); setCreateParent(null); }}>Cancel</Button>
                 <Button
                   variant="primary"
                   size="sm"
@@ -1604,6 +1787,60 @@ function MaterialsTab({
                   leftIcon={creating ? <Spinner size="sm" className="border-white/30 border-t-white" /> : undefined}
                 >
                   {creating ? "Creating…" : "Create"}
+                </Button>
+              </div>
+            </div>
+          </Modal>
+
+          {/* Cascade-delete preview / confirmation */}
+          <Modal
+            open={!!deleteTarget}
+            onClose={() => { if (!deletingCollectionId) { setDeleteTarget(null); setDeletePreview(null); } }}
+            title="Delete collection?"
+            size="sm"
+          >
+            <div className="space-y-4">
+              {deletePreviewLoading || !deletePreview ? (
+                <div className="flex items-center gap-2.5 py-2 text-sm text-[var(--text-secondary)]">
+                  <Spinner size="sm" className="border-[var(--border-hover)] border-t-[var(--text-secondary)]" />
+                  Checking what will be removed…
+                </div>
+              ) : deletePreview.descendant_count === 0 ? (
+                <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                  Delete <span className="font-semibold text-[var(--text-primary)]">“{deleteTarget?.name}”</span>? Your files won&rsquo;t be deleted — they&rsquo;ll just leave this collection.
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-3 p-3 rounded-xl bg-[rgba(229,115,115,0.08)] border border-[rgba(229,115,115,0.2)]">
+                    <svg className="w-5 h-5 text-[var(--danger)] flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" /></svg>
+                    <p className="text-sm text-[var(--text-secondary)] leading-relaxed">
+                      Delete <span className="font-semibold text-[var(--text-primary)]">“{deleteTarget?.name}”</span>? This will also delete <span className="font-semibold text-[var(--text-primary)]">{deletePreview.descendant_count}</span> sub-folder{deletePreview.descendant_count === 1 ? "" : "s"}.
+                    </p>
+                  </div>
+                  {deletePreview.affected_collection_names.length > 0 && (
+                    <div className="max-h-32 overflow-y-auto rounded-lg border border-[var(--border)] bg-[rgba(255,255,255,0.02)] p-2 space-y-0.5">
+                      {deletePreview.affected_collection_names.map((n, i) => (
+                        <p key={i} className="text-xs text-[var(--text-tertiary)] truncate flex items-center gap-1.5">
+                          <svg className="w-3 h-3 flex-shrink-0 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
+                          {n}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+                  <p className="text-xs text-[var(--text-tertiary)]">Your files will not be deleted.</p>
+                </div>
+              )}
+              <div className="flex gap-2">
+                <Button variant="secondary" size="sm" onClick={() => { setDeleteTarget(null); setDeletePreview(null); }} disabled={!!deletingCollectionId}>Cancel</Button>
+                <Button
+                  variant="danger"
+                  size="sm"
+                  onClick={() => deleteTarget && handleDeleteCollection(deleteTarget.id, deleteTarget.name)}
+                  disabled={deletePreviewLoading || !!deletingCollectionId}
+                  className="flex-1"
+                  leftIcon={deletingCollectionId ? <Spinner size="sm" className="border-white/30 border-t-white" /> : undefined}
+                >
+                  {deletingCollectionId ? "Deleting…" : "Delete"}
                 </Button>
               </div>
             </div>
