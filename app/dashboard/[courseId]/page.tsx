@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import {
   DndContext,
   DragOverlay,
-  PointerSensor,
+  MouseSensor,
+  TouchSensor,
   KeyboardSensor,
+  closestCenter,
   useSensor,
   useSensors,
   useDraggable,
@@ -1080,20 +1082,37 @@ function GripIcon({ className = "" }: { className?: string }) {
   );
 }
 
-// Wrapper: makes its child a draggable file via a dedicated handle. The render
-// prop gets the row ref, handle props (spread onto the grip), and isDragging
-// (to dim the source while the DragOverlay shows the lifted preview).
+// Spread on interactive children INSIDE a draggable card/row (action buttons,
+// the remove-×, the rename input) so a press there never starts a card drag.
+// The active sensors are Mouse + Touch, which activate on mousedown/touchstart —
+// so those are the events to stop. (Stopping pointerdown would do nothing, since
+// neither sensor listens for it; the drag would still start on a press-and-move.)
+// stopPropagation, not preventDefault, so the child's own click/focus still works.
+const STOP_CARD_DRAG = {
+  onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
+  onTouchStart: (e: React.TouchEvent) => e.stopPropagation(),
+};
+
+// Wrapper: makes its child file draggable by the WHOLE card/row (dragProps are
+// spread on the outer element, not a handle). The render prop gets the ref,
+// dragProps, and isDragging (to dim the source while the DragOverlay shows the
+// lifted preview). When `disabled`, dragProps is empty so the card's own click
+// (All Files select-mode toggle) is the only behavior.
 function DraggableFile({
   dragId,
   material,
+  disabled = false,
   children,
 }: {
   dragId: string;
   material: Material;
-  children: (d: { ref: (el: HTMLElement | null) => void; handleProps: Record<string, unknown>; isDragging: boolean }) => React.ReactElement;
+  disabled?: boolean;
+  children: (d: { ref: (el: HTMLElement | null) => void; dragProps: Record<string, unknown>; isDragging: boolean }) => React.ReactElement;
 }) {
-  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: dragId, data: { material } });
-  return children({ ref: setNodeRef, handleProps: { ...listeners, ...attributes }, isDragging });
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: dragId, data: { material }, disabled });
+  // dragProps go on the WHOLE card/row. When disabled (All Files select-mode), expose
+  // none so the card's own click (multi-select toggle) is the only behavior.
+  return children({ ref: setNodeRef, dragProps: disabled ? {} : { ...listeners, ...attributes }, isDragging });
 }
 
 // Wrapper: makes its child folder row a drop target. The render prop gets the row
@@ -1185,11 +1204,15 @@ function MaterialsTab({
 
   // ── Drag-and-drop: drag files into folders (Phase 4 Slice 1) ──────────────
   const [activeDragFile, setActiveDragFile] = useState<Material | null>(null);
-  // Drag initiates only from a file's grip handle (which sets touch-action:none).
-  // The 8px movement threshold means a stray tap on the handle isn't a drag, and
-  // touching anywhere else still scrolls/clicks normally. KeyboardSensor = a11y.
+  // The WHOLE card/row is draggable, so scroll vs drag is separated per input type
+  // (no touch-action:none anywhere, which would kill mobile scrolling):
+  //   Mouse — 8px movement starts a drag, so a click (no move) stays a click.
+  //   Touch — a 200ms press-and-hold starts a drag, so a quick tap (open/select)
+  //           and a vertical swipe (scroll the list) are NOT mistaken for drags.
+  //   Keyboard — focus a card, Space to lift, arrows to move, Space to drop (a11y).
   const sensors = useSensors(
-    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
     useSensor(KeyboardSensor),
   );
 
@@ -1214,11 +1237,20 @@ function MaterialsTab({
       addToast(`Already in “${folderName}”`, "info");
       return;
     }
+    // File isn't in this folder yet (already-in returns above), so its current
+    // memberships are all OTHER collections — surfaced so the user sees it was
+    // ADDED (kept elsewhere), not moved.
+    const otherCount = (materialCollectionMap[file.id] ?? []).length;
     setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: [...(prev[file.id] ?? []), folderId] }));
     setCollectionMaterials((prev) => ({ ...prev, [folderId]: [...(prev[folderId] ?? []), file] }));
     try {
       await addMaterialToCollection(folderId, file.id);
-      addToast(`Added to “${folderName}”`, "success");
+      addToast(
+        otherCount > 0
+          ? `Added to “${folderName}” (also in ${otherCount} other${otherCount === 1 ? "" : "s"})`
+          : `Added to “${folderName}”`,
+        "success",
+      );
     } catch (err: unknown) {
       setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: (prev[file.id] ?? []).filter((c) => c !== folderId) }));
       setCollectionMaterials((prev) => ({ ...prev, [folderId]: (prev[folderId] ?? []).filter((m) => m.id !== file.id) }));
@@ -1494,23 +1526,17 @@ function MaterialsTab({
     const icon = fileIcon(file.file_name);
     return (
       <DraggableFile key={file.id} dragId={`file-tree-${collectionId}-${file.id}`} material={file}>
-        {({ ref, handleProps, isDragging }) => (
+        {({ ref, dragProps, isDragging }) => (
           <div
             ref={ref}
-            className="group/file flex items-center gap-1.5 py-1.5 pr-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+            {...dragProps}
+            className="group/file flex items-center gap-1.5 py-1.5 pr-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] cursor-grab active:cursor-grabbing transition-colors"
             style={{ paddingLeft: TREE_BASE_PAD + depth * TREE_INDENT, opacity: isDragging ? 0.4 : undefined }}
           >
-            {/* Subtle drag handle — faint on dense tree rows; occupies the chevron column so file icons stay aligned under sub-folders */}
-            <button
-              {...handleProps}
-              type="button"
-              style={{ touchAction: "none" }}
-              className="flex-shrink-0 p-1 rounded text-[var(--text-tertiary)] opacity-30 hover:opacity-70 cursor-grab active:cursor-grabbing transition-opacity"
-              aria-label={`Drag ${file.file_name} to a folder`}
-              title="Drag into another folder"
-            >
+            {/* Grip = a faint "draggable" hint only; the whole row is the drag region */}
+            <span className="flex-shrink-0 p-1 text-[var(--text-tertiary)] opacity-30" aria-hidden="true">
               <GripIcon className="w-3.5 h-3.5" />
-            </button>
+            </span>
             <span className={`w-6 h-6 rounded-md ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5`}>{icon.icon}</span>
             <span className="flex-1 min-w-0 text-[13px] text-[var(--text-primary)] truncate">{file.file_name}</span>
             {file.created_at && (
@@ -1520,6 +1546,7 @@ function MaterialsTab({
             )}
             <button
               onClick={() => handleRemoveFromCollection(collectionId, file.id)}
+              {...STOP_CARD_DRAG}
               className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] opacity-0 group-hover/file:opacity-100 transition-all flex-shrink-0"
               aria-label="Remove from collection"
               title="Remove from this folder"
@@ -1676,6 +1703,7 @@ function MaterialsTab({
   return (
     <DndContext
       sensors={sensors}
+      collisionDetection={closestCenter}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
@@ -1810,12 +1838,13 @@ function MaterialsTab({
                 const isPopoverOpen = addToCollectionPopoverId === m.id;
                 const isSelected = selectedFileIds.has(m.id);
                 return (
-                  <DraggableFile key={m.id} dragId={`file-all-${m.id}`} material={m}>
-                    {({ ref, handleProps, isDragging }) => (
+                  <DraggableFile key={m.id} dragId={`file-all-${m.id}`} material={m} disabled={selectMode}>
+                    {({ ref, dragProps, isDragging }) => (
                     <div
                       ref={ref}
+                      {...dragProps}
                       onClick={selectMode ? () => toggleFileSelected(m.id) : undefined}
-                      className={`relative z-[1] hover:z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all group animate-fade-in-up ${selectMode ? "cursor-pointer" : ""} ${selectMode && isSelected ? "border-[var(--accent)] bg-[rgba(225,148,133,0.08)]" : isRenaming ? "border-[var(--accent-dim)] bg-[rgba(255,255,255,0.03)]" : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
+                      className={`relative z-[1] hover:z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all group animate-fade-in-up ${selectMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing"} ${selectMode && isSelected ? "border-[var(--accent)] bg-[rgba(225,148,133,0.08)]" : isRenaming ? "border-[var(--accent-dim)] bg-[rgba(255,255,255,0.03)]" : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
                       style={{ animationDelay: `${i * 30}ms`, opacity: isDragging ? 0.4 : undefined }}
                     >
                       {selectMode ? (
@@ -1823,21 +1852,14 @@ function MaterialsTab({
                           {isSelected && <svg className="w-3 h-3 text-[#0a0a0f]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
                         </span>
                       ) : (
-                        <button
-                          {...handleProps}
-                          type="button"
-                          style={{ touchAction: "none" }}
-                          className="flex-shrink-0 -ml-0.5 p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] cursor-grab active:cursor-grabbing transition-colors"
-                          aria-label={`Drag ${m.file_name} into a folder`}
-                          title="Drag into a folder"
-                        >
+                        <span className="flex-shrink-0 -ml-0.5 p-1 text-[var(--text-tertiary)] opacity-60" aria-hidden="true">
                           <GripIcon className="w-4 h-4" />
-                        </button>
+                        </span>
                       )}
                       <div className={`w-9 h-9 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-[18px] [&>svg]:h-[18px]`}>{icon.icon}</div>
 
                     {isRenaming ? (
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                      <div className="flex-1 min-w-0 flex items-center gap-2" {...STOP_CARD_DRAG}>
                         <input
                           autoFocus
                           value={renameValue}
@@ -1867,7 +1889,7 @@ function MaterialsTab({
                     )}
 
                     {!isRenaming && !selectMode && (
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity" {...STOP_CARD_DRAG}>
                         {/* Add to collection button */}
                         {collections.length > 0 && (
                           <div className="relative">
