@@ -58,7 +58,7 @@ import {
   type QuizQuestion,
   getToken,
 } from "../../lib/api";
-import { buildCollectionTree, MAX_COLLECTION_DEPTH, type CollectionNode } from "../../lib/collectionTree";
+import { buildCollectionTree, flattenTree, MAX_COLLECTION_DEPTH, type CollectionNode } from "../../lib/collectionTree";
 import { CanvasImportModal } from "../../components/CanvasImportModal";
 import { Button } from "../../components/ui/Button";
 import { Spinner } from "../../components/ui/Spinner";
@@ -1094,6 +1094,21 @@ function MaterialsTab({
   // Build the nested tree from the flat parent_id list (memoised on the list).
   const collectionTree = useMemo(() => buildCollectionTree(collections), [collections]);
 
+  // All Files: search + multi-select
+  const [allFilesQuery, setAllFilesQuery] = useState("");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedFileIds, setSelectedFileIds] = useState<Set<string>>(new Set());
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [addingToCollection, setAddingToCollection] = useState(false);
+
+  // Flat, depth-ordered collection list for the hierarchy picker.
+  const flatCollections = useMemo(() => flattenTree(collectionTree), [collectionTree]);
+  // Instant, case-insensitive name filter for the All Files list.
+  const filteredMaterials = useMemo(() => {
+    const q = allFilesQuery.trim().toLowerCase();
+    return q ? materials.filter((m) => m.file_name.toLowerCase().includes(q)) : materials;
+  }, [materials, allFilesQuery]);
+
   const collectionIdString = collections.map((c) => c.id).join(",");
 
   useEffect(() => {
@@ -1301,6 +1316,58 @@ function MaterialsTab({
       setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: (prev[materialId] ?? []).filter((c) => c !== collectionId) }));
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to remove from collection.", "error");
+    }
+  }
+
+  function toggleFileSelected(id: string) {
+    setSelectedFileIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function enterSelectMode() {
+    setSelectMode(true);
+    setRenamingId(null);
+    setAddToCollectionPopoverId(null);
+    setConfirmDeleteId(null);
+  }
+
+  function exitSelectMode() {
+    setSelectMode(false);
+    setSelectedFileIds(new Set());
+  }
+
+  // Add every selected file to the chosen collection (skipping ones already in
+  // it); optimistic so chips/counts update without a full refetch.
+  async function handleAddSelectedToCollection(collectionId: string) {
+    const target = collections.find((c) => c.id === collectionId);
+    const ids = [...selectedFileIds];
+    setAddingToCollection(true);
+    try {
+      let added = 0;
+      for (const fileId of ids) {
+        if ((materialCollectionMap[fileId] ?? []).includes(collectionId)) continue;
+        await addMaterialToCollection(collectionId, fileId);
+        added++;
+        setMaterialCollectionMap((prev) => ({ ...prev, [fileId]: [...(prev[fileId] ?? []), collectionId] }));
+        const mat = materials.find((m) => m.id === fileId);
+        if (mat) setCollectionMaterials((prev) => ({ ...prev, [collectionId]: [...(prev[collectionId] ?? []), mat] }));
+      }
+      addToast(
+        added > 0
+          ? `Added ${added} file${added === 1 ? "" : "s"} to “${target?.name ?? "collection"}”`
+          : "Those files are already in that collection.",
+        added > 0 ? "success" : "info"
+      );
+      setPickerOpen(false);
+      exitSelectMode();
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to add files to collection.", "error");
+    } finally {
+      setAddingToCollection(false);
     }
   }
 
@@ -1542,6 +1609,46 @@ function MaterialsTab({
             </label>
           </div>
 
+          {/* Toolbar: search + enter-select, or the multi-select action bar */}
+          {materials.length > 0 && (
+            selectMode ? (
+              <div className="flex items-center gap-2 mb-3 flex-wrap">
+                <span className="text-sm font-semibold text-[var(--text-primary)]">{selectedFileIds.size} selected</span>
+                <button onClick={() => setSelectedFileIds(new Set(filteredMaterials.map((m) => m.id)))} className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded-lg hover:bg-[rgba(255,255,255,0.06)] transition-colors">Select all</button>
+                <button onClick={() => setSelectedFileIds(new Set())} className="text-xs font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] px-2 py-1 rounded-lg hover:bg-[rgba(255,255,255,0.06)] transition-colors">Clear</button>
+                <div className="flex-1" />
+                <Button
+                  variant="primary"
+                  size="sm"
+                  disabled={selectedFileIds.size === 0 || collections.length === 0}
+                  onClick={() => setPickerOpen(true)}
+                  leftIcon={<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>}
+                >
+                  Add to collection
+                </Button>
+                <Button variant="secondary" size="sm" onClick={exitSelectMode}>Done</Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 mb-3">
+                <div className="relative flex-1">
+                  <svg className="w-4 h-4 text-[var(--text-tertiary)] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" /></svg>
+                  <input
+                    value={allFilesQuery}
+                    onChange={(e) => setAllFilesQuery(e.target.value)}
+                    placeholder="Search files…"
+                    className="w-full bg-[rgba(255,255,255,0.03)] text-[var(--text-primary)] border border-[var(--border)] rounded-xl pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)] placeholder:text-[var(--text-tertiary)]"
+                  />
+                </div>
+                {collections.length > 0 && (
+                  <button onClick={enterSelectMode} className="btn-press flex items-center gap-2 px-3.5 py-2 text-sm font-semibold rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--border-hover)] transition-all whitespace-nowrap">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Select
+                  </button>
+                )}
+              </div>
+            )
+          )}
+
           {materials.length === 0 ? (
             <EmptyState
               icon={<svg className="w-8 h-8 text-[var(--text-tertiary)]" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>}
@@ -1549,20 +1656,29 @@ function MaterialsTab({
               description="Upload PDFs, PowerPoints, or Word documents to get started with AI features."
               className="py-10"
             />
+          ) : filteredMaterials.length === 0 ? (
+            <p className="text-sm text-[var(--text-tertiary)] text-center py-10">No files match &ldquo;{allFilesQuery}&rdquo;.</p>
           ) : (
-            <div className="space-y-2 overflow-visible">
-              {materials.map((m, i) => {
+            <div className="space-y-1.5 overflow-visible">
+              {filteredMaterials.map((m, i) => {
                 const icon = fileIcon(m.file_name);
                 const isRenaming = renamingId === m.id;
                 const matCols = (materialCollectionMap[m.id] ?? []).map((cid) => collections.find((c) => c.id === cid)).filter(Boolean) as Collection[];
                 const isPopoverOpen = addToCollectionPopoverId === m.id;
+                const isSelected = selectedFileIds.has(m.id);
                 return (
                   <div
                     key={m.id}
-                    className={`relative z-[1] hover:z-10 flex items-center gap-4 bg-[rgba(255,255,255,0.03)] px-5 py-4 rounded-[14px] border transition-all group animate-fade-in-up ${isRenaming ? "border-[var(--accent-dim)]" : "border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
-                    style={{ animationDelay: `${i * 40}ms` }}
+                    onClick={selectMode ? () => toggleFileSelected(m.id) : undefined}
+                    className={`relative z-[1] hover:z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all group animate-fade-in-up ${selectMode ? "cursor-pointer" : ""} ${selectMode && isSelected ? "border-[var(--accent)] bg-[rgba(225,148,133,0.08)]" : isRenaming ? "border-[var(--accent-dim)] bg-[rgba(255,255,255,0.03)]" : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
+                    style={{ animationDelay: `${i * 30}ms` }}
                   >
-                    <div className={`w-10 h-10 rounded-xl ${icon.color} flex items-center justify-center flex-shrink-0`}>{icon.icon}</div>
+                    {selectMode && (
+                      <span className={`w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[var(--accent)] border-[var(--accent)]" : "border-[var(--border-hover)]"}`}>
+                        {isSelected && <svg className="w-3 h-3 text-[#0a0a0f]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
+                      </span>
+                    )}
+                    <div className={`w-9 h-9 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-[18px] [&>svg]:h-[18px]`}>{icon.icon}</div>
 
                     {isRenaming ? (
                       <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -1594,7 +1710,7 @@ function MaterialsTab({
                       </div>
                     )}
 
-                    {!isRenaming && (
+                    {!isRenaming && !selectMode && (
                       <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         {/* Add to collection button */}
                         {collections.length > 0 && (
@@ -1698,6 +1814,37 @@ function MaterialsTab({
               })}
             </div>
           )}
+
+          {/* Multi-select "add to collection" hierarchy picker */}
+          <Modal
+            open={pickerOpen}
+            onClose={() => { if (!addingToCollection) setPickerOpen(false); }}
+            title="Add to collection"
+            description={`${selectedFileIds.size} file${selectedFileIds.size === 1 ? "" : "s"} selected`}
+            size="sm"
+          >
+            {flatCollections.length === 0 ? (
+              <p className="text-sm text-[var(--text-tertiary)] text-center py-6">No collections yet — create one from the Collections tab first.</p>
+            ) : (
+              <div className="max-h-72 overflow-y-auto -mx-1 px-1">
+                {flatCollections.map((node) => (
+                  <button
+                    key={node.id}
+                    onClick={() => handleAddSelectedToCollection(node.id)}
+                    disabled={addingToCollection}
+                    className="w-full flex items-center gap-2 py-2 pr-2 rounded-lg hover:bg-[rgba(255,255,255,0.06)] transition-colors text-left disabled:opacity-50"
+                    style={{ paddingLeft: 6 + (node.depth - 1) * 16 }}
+                  >
+                    <span className="w-6 h-6 rounded-md bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
+                      <svg className="w-3.5 h-3.5 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" /></svg>
+                    </span>
+                    <span className="flex-1 truncate text-sm text-[var(--text-primary)]">{node.name}</span>
+                    {addingToCollection && <Spinner size="xs" className="border-[var(--border)] border-t-[var(--text-secondary)] flex-shrink-0" />}
+                  </button>
+                ))}
+              </div>
+            )}
+          </Modal>
         </>
       )}
 
