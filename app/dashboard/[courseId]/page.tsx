@@ -10,6 +10,8 @@ import {
   KeyboardSensor,
   useSensor,
   useSensors,
+  useDraggable,
+  useDroppable,
   type DragStartEvent,
   type DragEndEvent,
 } from "@dnd-kit/core";
@@ -1069,6 +1071,48 @@ const TREE_INDENT = 18; // added left-padding per nesting level
 const TREE_BASE_PAD = 10; // left-padding at depth 1 (the root row)
 const TREE_FILE_OFFSET = 22; // extra indent so file/empty rows align under child folder icons
 
+function GripIcon({ className = "" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+      <circle cx="9" cy="5" r="1.4" /><circle cx="9" cy="12" r="1.4" /><circle cx="9" cy="19" r="1.4" />
+      <circle cx="15" cy="5" r="1.4" /><circle cx="15" cy="12" r="1.4" /><circle cx="15" cy="19" r="1.4" />
+    </svg>
+  );
+}
+
+// Wrapper: makes its child a draggable file via a dedicated handle. The render
+// prop gets the row ref, handle props (spread onto the grip), and isDragging
+// (to dim the source while the DragOverlay shows the lifted preview).
+function DraggableFile({
+  dragId,
+  material,
+  children,
+}: {
+  dragId: string;
+  material: Material;
+  children: (d: { ref: (el: HTMLElement | null) => void; handleProps: Record<string, unknown>; isDragging: boolean }) => React.ReactElement;
+}) {
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: dragId, data: { material } });
+  return children({ ref: setNodeRef, handleProps: { ...listeners, ...attributes }, isDragging });
+}
+
+// Wrapper: makes its child folder row a drop target. The render prop gets the row
+// ref and isOver (true while a dragged file hovers this folder).
+function DroppableFolder({
+  dropId,
+  folderId,
+  name,
+  children,
+}: {
+  dropId: string;
+  folderId: string;
+  name: string;
+  children: (d: { ref: (el: HTMLElement | null) => void; isOver: boolean }) => React.ReactElement;
+}) {
+  const { setNodeRef, isOver } = useDroppable({ id: dropId, data: { folderId, name } });
+  return children({ ref: setNodeRef, isOver });
+}
+
 function MaterialsTab({
   courseId, materials, uploading, uploadProgress, dragOver, setDragOver,
   fileInputRef, handleFileUpload, confirmDeleteId, setConfirmDeleteId, deletingId, handleDeleteMaterial,
@@ -1449,27 +1493,42 @@ function MaterialsTab({
   function renderCompactFile(file: Material, depth: number, collectionId: string) {
     const icon = fileIcon(file.file_name);
     return (
-      <div
-        key={file.id}
-        className="group/file flex items-center gap-2 py-1.5 pr-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors"
-        style={{ paddingLeft: TREE_BASE_PAD + depth * TREE_INDENT + TREE_FILE_OFFSET }}
-      >
-        <span className={`w-6 h-6 rounded-md ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5`}>{icon.icon}</span>
-        <span className="flex-1 min-w-0 text-[13px] text-[var(--text-primary)] truncate">{file.file_name}</span>
-        {file.created_at && (
-          <span className="text-[11px] text-[var(--text-tertiary)] flex-shrink-0 hidden sm:block">
-            {new Date(file.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-          </span>
+      <DraggableFile key={file.id} dragId={`file-tree-${collectionId}-${file.id}`} material={file}>
+        {({ ref, handleProps, isDragging }) => (
+          <div
+            ref={ref}
+            className="group/file flex items-center gap-1.5 py-1.5 pr-2 rounded-lg hover:bg-[rgba(255,255,255,0.04)] transition-colors"
+            style={{ paddingLeft: TREE_BASE_PAD + depth * TREE_INDENT, opacity: isDragging ? 0.4 : undefined }}
+          >
+            {/* Subtle drag handle — faint on dense tree rows; occupies the chevron column so file icons stay aligned under sub-folders */}
+            <button
+              {...handleProps}
+              type="button"
+              style={{ touchAction: "none" }}
+              className="flex-shrink-0 p-1 rounded text-[var(--text-tertiary)] opacity-30 hover:opacity-70 cursor-grab active:cursor-grabbing transition-opacity"
+              aria-label={`Drag ${file.file_name} to a folder`}
+              title="Drag into another folder"
+            >
+              <GripIcon className="w-3.5 h-3.5" />
+            </button>
+            <span className={`w-6 h-6 rounded-md ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-3.5 [&>svg]:h-3.5`}>{icon.icon}</span>
+            <span className="flex-1 min-w-0 text-[13px] text-[var(--text-primary)] truncate">{file.file_name}</span>
+            {file.created_at && (
+              <span className="text-[11px] text-[var(--text-tertiary)] flex-shrink-0 hidden sm:block">
+                {new Date(file.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+              </span>
+            )}
+            <button
+              onClick={() => handleRemoveFromCollection(collectionId, file.id)}
+              className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] opacity-0 group-hover/file:opacity-100 transition-all flex-shrink-0"
+              aria-label="Remove from collection"
+              title="Remove from this folder"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+            </button>
+          </div>
         )}
-        <button
-          onClick={() => handleRemoveFromCollection(collectionId, file.id)}
-          className="p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--danger)] hover:bg-[rgba(229,115,115,0.1)] opacity-0 group-hover/file:opacity-100 transition-all flex-shrink-0"
-          aria-label="Remove from collection"
-          title="Remove from this folder"
-        >
-          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
-        </button>
-      </div>
+      </DraggableFile>
     );
   }
 
@@ -1489,11 +1548,14 @@ function MaterialsTab({
 
     return (
       <div key={node.id}>
-        {/* Folder row */}
-        <div
-          className={`group/node relative flex items-center gap-1.5 pr-1.5 rounded-lg transition-colors ${isExpanded ? "bg-[rgba(255,255,255,0.035)]" : "hover:bg-[rgba(255,255,255,0.03)]"}`}
-          style={{ paddingLeft: padLeft }}
-        >
+        {/* Folder row (drop target) */}
+        <DroppableFolder dropId={`folder-${node.id}`} folderId={node.id} name={node.name}>
+          {({ ref, isOver }) => (
+            <div
+              ref={ref}
+              className={`group/node relative flex items-center gap-1.5 pr-1.5 rounded-lg transition-colors ${isOver ? "bg-[rgba(225,148,133,0.14)] ring-2 ring-inset ring-[var(--accent)]" : activeDragFile ? "ring-1 ring-inset ring-[rgba(225,148,133,0.28)]" : isExpanded ? "bg-[rgba(255,255,255,0.035)]" : "hover:bg-[rgba(255,255,255,0.03)]"}`}
+              style={{ paddingLeft: padLeft }}
+            >
           {/* Chevron */}
           <button
             onClick={() => toggleExpand(node.id)}
@@ -1586,7 +1648,9 @@ function MaterialsTab({
               </button>
             </div>
           )}
-        </div>
+            </div>
+          )}
+        </DroppableFolder>
 
         {/* Children (sub-folders + own files) */}
         {isExpanded && (
@@ -1746,18 +1810,31 @@ function MaterialsTab({
                 const isPopoverOpen = addToCollectionPopoverId === m.id;
                 const isSelected = selectedFileIds.has(m.id);
                 return (
-                  <div
-                    key={m.id}
-                    onClick={selectMode ? () => toggleFileSelected(m.id) : undefined}
-                    className={`relative z-[1] hover:z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all group animate-fade-in-up ${selectMode ? "cursor-pointer" : ""} ${selectMode && isSelected ? "border-[var(--accent)] bg-[rgba(225,148,133,0.08)]" : isRenaming ? "border-[var(--accent-dim)] bg-[rgba(255,255,255,0.03)]" : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
-                    style={{ animationDelay: `${i * 30}ms` }}
-                  >
-                    {selectMode && (
-                      <span className={`w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[var(--accent)] border-[var(--accent)]" : "border-[var(--border-hover)]"}`}>
-                        {isSelected && <svg className="w-3 h-3 text-[#0a0a0f]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
-                      </span>
-                    )}
-                    <div className={`w-9 h-9 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-[18px] [&>svg]:h-[18px]`}>{icon.icon}</div>
+                  <DraggableFile key={m.id} dragId={`file-all-${m.id}`} material={m}>
+                    {({ ref, handleProps, isDragging }) => (
+                    <div
+                      ref={ref}
+                      onClick={selectMode ? () => toggleFileSelected(m.id) : undefined}
+                      className={`relative z-[1] hover:z-10 flex items-center gap-3 px-3.5 py-2.5 rounded-xl border transition-all group animate-fade-in-up ${selectMode ? "cursor-pointer" : ""} ${selectMode && isSelected ? "border-[var(--accent)] bg-[rgba(225,148,133,0.08)]" : isRenaming ? "border-[var(--accent-dim)] bg-[rgba(255,255,255,0.03)]" : "bg-[rgba(255,255,255,0.03)] border-[rgba(255,255,255,0.07)] hover:border-[rgba(225,148,133,0.2)] hover:bg-[rgba(255,255,255,0.05)]"}`}
+                      style={{ animationDelay: `${i * 30}ms`, opacity: isDragging ? 0.4 : undefined }}
+                    >
+                      {selectMode ? (
+                        <span className={`w-5 h-5 rounded-md border flex-shrink-0 flex items-center justify-center transition-colors ${isSelected ? "bg-[var(--accent)] border-[var(--accent)]" : "border-[var(--border-hover)]"}`}>
+                          {isSelected && <svg className="w-3 h-3 text-[#0a0a0f]" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" /></svg>}
+                        </span>
+                      ) : (
+                        <button
+                          {...handleProps}
+                          type="button"
+                          style={{ touchAction: "none" }}
+                          className="flex-shrink-0 -ml-0.5 p-1 rounded-md text-[var(--text-tertiary)] hover:text-[var(--accent)] hover:bg-[var(--accent-dim)] cursor-grab active:cursor-grabbing transition-colors"
+                          aria-label={`Drag ${m.file_name} into a folder`}
+                          title="Drag into a folder"
+                        >
+                          <GripIcon className="w-4 h-4" />
+                        </button>
+                      )}
+                      <div className={`w-9 h-9 rounded-lg ${icon.color} flex items-center justify-center flex-shrink-0 [&>svg]:w-[18px] [&>svg]:h-[18px]`}>{icon.icon}</div>
 
                     {isRenaming ? (
                       <div className="flex-1 min-w-0 flex items-center gap-2">
@@ -1888,7 +1965,9 @@ function MaterialsTab({
                         </div>
                       </div>
                     )}
-                  </div>
+                    </div>
+                    )}
+                  </DraggableFile>
                 );
               })}
             </div>
