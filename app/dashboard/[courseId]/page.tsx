@@ -4,6 +4,16 @@ import { Component, ReactNode, use, useEffect, useMemo, useRef, useState } from 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  KeyboardSensor,
+  useSensor,
+  useSensors,
+  type DragStartEvent,
+  type DragEndEvent,
+} from "@dnd-kit/core";
+import {
   getCourse,
   getMaterials,
   uploadMaterial,
@@ -1129,6 +1139,49 @@ function MaterialsTab({
     return q ? materials.filter((m) => m.file_name.toLowerCase().includes(q)) : materials;
   }, [materials, allFilesQuery]);
 
+  // ── Drag-and-drop: drag files into folders (Phase 4 Slice 1) ──────────────
+  const [activeDragFile, setActiveDragFile] = useState<Material | null>(null);
+  // Drag initiates only from a file's grip handle (which sets touch-action:none).
+  // The 8px movement threshold means a stray tap on the handle isn't a drag, and
+  // touching anywhere else still scrolls/clicks normally. KeyboardSensor = a11y.
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor),
+  );
+
+  function handleDragStart(event: DragStartEvent) {
+    setActiveDragFile((event.active.data.current?.material as Material | undefined) ?? null);
+  }
+  function handleDragCancel() {
+    setActiveDragFile(null);
+  }
+  function handleDragEnd(event: DragEndEvent) {
+    setActiveDragFile(null);
+    const folderId = event.over?.data.current?.folderId as string | undefined;
+    const material = event.active.data.current?.material as Material | undefined;
+    if (folderId && material) handleDropFileIntoFolder(material, folderId);
+  }
+
+  // Dropping a file on a folder ADDS it (files live in multiple collections; this
+  // never removes it from anywhere). Optimistic update, reverted on API error.
+  async function handleDropFileIntoFolder(file: Material, folderId: string) {
+    const folderName = collections.find((c) => c.id === folderId)?.name ?? "folder";
+    if ((materialCollectionMap[file.id] ?? []).includes(folderId)) {
+      addToast(`Already in “${folderName}”`, "info");
+      return;
+    }
+    setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: [...(prev[file.id] ?? []), folderId] }));
+    setCollectionMaterials((prev) => ({ ...prev, [folderId]: [...(prev[folderId] ?? []), file] }));
+    try {
+      await addMaterialToCollection(folderId, file.id);
+      addToast(`Added to “${folderName}”`, "success");
+    } catch (err: unknown) {
+      setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: (prev[file.id] ?? []).filter((c) => c !== folderId) }));
+      setCollectionMaterials((prev) => ({ ...prev, [folderId]: (prev[folderId] ?? []).filter((m) => m.id !== file.id) }));
+      addToast(err instanceof Error ? err.message : "Failed to add to folder.", "error");
+    }
+  }
+
   const collectionIdString = collections.map((c) => c.id).join(",");
 
   useEffect(() => {
@@ -1557,6 +1610,12 @@ function MaterialsTab({
   }
 
   return (
+    <DndContext
+      sensors={sensors}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={handleDragCancel}
+    >
     <div>
       {/* Sub-tabs */}
       <div className="flex gap-1 p-1 bg-[rgba(255,255,255,0.03)] rounded-xl mb-5 w-fit">
@@ -2023,6 +2082,17 @@ function MaterialsTab({
         existingMaterials={materials}
       />
     </div>
+
+      {/* Lifted preview of the file being dragged (portal — no layout shift). */}
+      <DragOverlay dropAnimation={null}>
+        {activeDragFile ? (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--accent)] shadow-2xl shadow-black/50 max-w-[260px] cursor-grabbing">
+            <span className={`w-7 h-7 rounded-lg ${fileIcon(activeDragFile.file_name).color} flex items-center justify-center flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>{fileIcon(activeDragFile.file_name).icon}</span>
+            <span className="text-sm font-medium text-[var(--text-primary)] truncate">{activeDragFile.file_name}</span>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
   );
 }
 
