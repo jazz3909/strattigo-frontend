@@ -66,6 +66,48 @@ export function flattenTree(nodes: CollectionNode[]): CollectionNode[] {
   return out;
 }
 
+/** Find a node anywhere in the tree by id (depth-first). */
+export function findNode(nodes: CollectionNode[], id: string): CollectionNode | null {
+  for (const n of nodes) {
+    if (n.id === id) return n;
+    const hit = findNode(n.children, id);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * Ids of every descendant of `node` (children, grandchildren, …), NOT including
+ * the node itself. Used to forbid reparenting a folder into its own subtree
+ * (which would create a cycle).
+ */
+export function descendantIds(node: CollectionNode): Set<string> {
+  const ids = new Set<string>();
+  const walk = (n: CollectionNode) => {
+    for (const c of n.children) {
+      ids.add(c.id);
+      walk(c);
+    }
+  };
+  walk(node);
+  return ids;
+}
+
+/**
+ * Height of `node`'s subtree counted in levels INCLUDING the node itself: a leaf
+ * folder is height 1, a folder with one level of children is height 2, etc.
+ * Mirrors the backend's get_subtree_height concept so the client can predict
+ * whether a reparent would overflow MAX_COLLECTION_DEPTH: a move under `target`
+ * is allowed iff `target.depth + subtreeHeight(dragged) <= MAX_COLLECTION_DEPTH`
+ * (the dragged folder lands at target.depth + 1 and its deepest descendant at
+ * target.depth + height). Consistent with the existing
+ * `canAddSub = depth < MAX_COLLECTION_DEPTH` rule for a single (height-1) folder.
+ */
+export function subtreeHeight(node: CollectionNode): number {
+  if (node.children.length === 0) return 1;
+  return 1 + Math.max(...node.children.map(subtreeHeight));
+}
+
 /**
  * Filter the tree to nodes whose name matches `query` (case-insensitive) OR that
  * have a matching descendant — keeping ancestor folders so matches stay

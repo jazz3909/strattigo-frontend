@@ -9,7 +9,7 @@ import {
   MouseSensor,
   TouchSensor,
   KeyboardSensor,
-  closestCenter,
+  pointerWithin,
   useSensor,
   useSensors,
   useDraggable,
@@ -42,6 +42,7 @@ import {
   createCollection,
   renameCollection,
   deleteCollection,
+  moveCollection,
   deleteCollectionPreview,
   addMaterialToCollection,
   removeMaterialFromCollection,
@@ -72,7 +73,7 @@ import {
   type QuizQuestion,
   getToken,
 } from "../../lib/api";
-import { buildCollectionTree, flattenTree, MAX_COLLECTION_DEPTH, type CollectionNode } from "../../lib/collectionTree";
+import { buildCollectionTree, flattenTree, findNode, descendantIds, subtreeHeight, MAX_COLLECTION_DEPTH, type CollectionNode } from "../../lib/collectionTree";
 import { CanvasImportModal } from "../../components/CanvasImportModal";
 import { Button } from "../../components/ui/Button";
 import { Spinner } from "../../components/ui/Spinner";
@@ -1109,27 +1110,57 @@ function DraggableFile({
   disabled?: boolean;
   children: (d: { ref: (el: HTMLElement | null) => void; dragProps: Record<string, unknown>; isDragging: boolean }) => React.ReactElement;
 }) {
-  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: dragId, data: { material }, disabled });
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: dragId, data: { type: "file", material }, disabled });
   // dragProps go on the WHOLE card/row. When disabled (All Files select-mode), expose
   // none so the card's own click (multi-select toggle) is the only behavior.
   return children({ ref: setNodeRef, dragProps: disabled ? {} : { ...listeners, ...attributes }, isDragging });
 }
 
-// Wrapper: makes its child folder row a drop target. The render prop gets the row
-// ref and isOver (true while a dragged file hovers this folder).
-function DroppableFolder({
-  dropId,
-  folderId,
-  name,
+// Wrapper: a folder row is BOTH draggable (reparent it — Slice 2) and droppable
+// (receive a file from Slice 1, or another folder from Slice 2). Both dnd-kit
+// refs share the one DOM node. The drag payload carries `type: "folder"` so
+// onDragEnd can route folder-drops separately from file-drops. `dropDisabled`
+// turns the droppable off for invalid folder→folder targets (self, descendants,
+// current parent, or a move that would exceed MAX_COLLECTION_DEPTH) so releasing
+// over them is a clean no-op rather than an error. The whole row is the drag
+// region; the 8px MouseSensor / TouchSensor-delay separates a press-drag from a
+// click, and dnd-kit swallows the trailing click after a real drag, so a plain
+// click on the row still expands/collapses the folder.
+function DraggableDroppableFolder({
+  node,
+  dropDisabled,
   children,
 }: {
-  dropId: string;
-  folderId: string;
-  name: string;
-  children: (d: { ref: (el: HTMLElement | null) => void; isOver: boolean }) => React.ReactElement;
+  node: CollectionNode;
+  dropDisabled: boolean;
+  children: (d: {
+    ref: (el: HTMLElement | null) => void;
+    dragProps: Record<string, unknown>;
+    isDragging: boolean;
+    isOver: boolean;
+  }) => React.ReactElement;
 }) {
-  const { setNodeRef, isOver } = useDroppable({ id: dropId, data: { folderId, name } });
-  return children({ ref: setNodeRef, isOver });
+  const drag = useDraggable({ id: `folder-drag-${node.id}`, data: { type: "folder", folderId: node.id, name: node.name } });
+  const drop = useDroppable({ id: `folder-${node.id}`, data: { type: "folder-target", folderId: node.id, name: node.name }, disabled: dropDisabled });
+  const setRef = (el: HTMLElement | null) => { drag.setNodeRef(el); drop.setNodeRef(el); };
+  return children({ ref: setRef, dragProps: { ...drag.listeners, ...drag.attributes }, isDragging: drag.isDragging, isOver: drop.isOver });
+}
+
+// Root drop strip (Slice 2 un-nest): shown only while a NESTED folder is dragged,
+// so the user can drop it here to promote it to the top level (parent_id = null).
+function RootDropZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: "root-drop-zone", data: { isRoot: true } });
+  return (
+    <div
+      ref={setNodeRef}
+      className={`mb-2 flex items-center justify-center gap-2 py-3 rounded-xl border-2 border-dashed text-sm font-medium transition-all ${isOver ? "border-[var(--accent)] bg-[rgba(225,148,133,0.12)] text-[var(--accent)]" : "border-[rgba(225,148,133,0.3)] text-[var(--text-tertiary)]"}`}
+    >
+      <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M9 9l6-6m0 0l6 6m-6-6v12a6 6 0 01-6 6H3" />
+      </svg>
+      Drop here to move to the top level
+    </div>
+  );
 }
 
 function MaterialsTab({
@@ -1202,8 +1233,15 @@ function MaterialsTab({
     return q ? materials.filter((m) => m.file_name.toLowerCase().includes(q)) : materials;
   }, [materials, allFilesQuery]);
 
-  // ── Drag-and-drop: drag files into folders (Phase 4 Slice 1) ──────────────
+  // ── Drag-and-drop: files into folders (Slice 1) + folders into folders (Slice 2) ──
   const [activeDragFile, setActiveDragFile] = useState<Material | null>(null);
+  // The folder currently being dragged (Slice 2), or null. Drives the DragOverlay
+  // and tells folder rows a folder-drag is in progress (so they show valid/invalid).
+  const [activeDragFolder, setActiveDragFolder] = useState<CollectionNode | null>(null);
+  // Ids of folders that are VALID drop targets for the in-flight folder drag,
+  // computed once at drag start (Part 3). null = no folder drag in progress.
+  // During a FILE drag this stays null and every folder is a valid target.
+  const [validFolderTargets, setValidFolderTargets] = useState<Set<string> | null>(null);
   // The WHOLE card/row is draggable, so scroll vs drag is separated per input type
   // (no touch-action:none anywhere, which would kill mobile scrolling):
   //   Mouse — 8px movement starts a drag, so a click (no move) stays a click.
@@ -1216,17 +1254,63 @@ function MaterialsTab({
     useSensor(KeyboardSensor),
   );
 
+  // Which folders may receive the dragged folder (Part 3). Invalid: the dragged
+  // folder itself and its descendants (a cycle), its current parent (no-op), and
+  // any target where target.depth + height(draggedSubtree) > MAX_COLLECTION_DEPTH
+  // (the move would push the dragged subtree past 3 levels). Mirrors the backend.
+  function computeValidFolderTargets(dragged: CollectionNode): Set<string> {
+    const forbidden = descendantIds(dragged); // descendants → cycle
+    forbidden.add(dragged.id); // the folder itself
+    const height = subtreeHeight(dragged);
+    const valid = new Set<string>();
+    const walk = (nodes: CollectionNode[]) => {
+      for (const n of nodes) {
+        const isCurrentParent = dragged.parent_id === n.id;
+        const depthOk = n.depth + height <= MAX_COLLECTION_DEPTH;
+        if (!forbidden.has(n.id) && !isCurrentParent && depthOk) valid.add(n.id);
+        walk(n.children);
+      }
+    };
+    walk(collectionTree);
+    return valid;
+  }
+
   function handleDragStart(event: DragStartEvent) {
-    setActiveDragFile((event.active.data.current?.material as Material | undefined) ?? null);
+    const data = event.active.data.current;
+    if (data?.type === "folder") {
+      const node = findNode(collectionTree, data.folderId as string);
+      setActiveDragFolder(node);
+      setValidFolderTargets(node ? computeValidFolderTargets(node) : new Set());
+    } else {
+      setActiveDragFile((data?.material as Material | undefined) ?? null);
+    }
+  }
+  function resetDragState() {
+    setActiveDragFile(null);
+    setActiveDragFolder(null);
+    setValidFolderTargets(null);
   }
   function handleDragCancel() {
-    setActiveDragFile(null);
+    resetDragState();
   }
   function handleDragEnd(event: DragEndEvent) {
-    setActiveDragFile(null);
-    const folderId = event.over?.data.current?.folderId as string | undefined;
-    const material = event.active.data.current?.material as Material | undefined;
-    if (folderId && material) handleDropFileIntoFolder(material, folderId);
+    const data = event.active.data.current;
+    const over = event.over;
+    resetDragState();
+    if (!over) return; // released over empty space (pointerWithin found no droppable) → no-op
+    if (data?.type === "folder") {
+      const draggedId = data.folderId as string;
+      if (over.data.current?.isRoot) {
+        handleUnnestFolder(draggedId);
+      } else {
+        const targetId = over.data.current?.folderId as string | undefined;
+        if (targetId) handleDropFolderIntoFolder(draggedId, targetId);
+      }
+    } else {
+      const folderId = over.data.current?.folderId as string | undefined;
+      const material = data?.material as Material | undefined;
+      if (folderId && material) handleDropFileIntoFolder(material, folderId);
+    }
   }
 
   // Dropping a file on a folder ADDS it (files live in multiple collections; this
@@ -1255,6 +1339,41 @@ function MaterialsTab({
       setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: (prev[file.id] ?? []).filter((c) => c !== folderId) }));
       setCollectionMaterials((prev) => ({ ...prev, [folderId]: (prev[folderId] ?? []).filter((m) => m.id !== file.id) }));
       addToast(err instanceof Error ? err.message : "Failed to add to folder.", "error");
+    }
+  }
+
+  // Reparent a folder under another folder (Slice 2). Validity (cycle/depth) is
+  // already enforced — invalid targets are disabled droppables, so they never
+  // become `over`. We still guard self / current-parent (quiet no-ops). On
+  // success: auto-expand the target so the moved folder is visible nested inside,
+  // then refetch so parent_id, structure, and counts are authoritative.
+  async function handleDropFolderIntoFolder(draggedId: string, targetId: string) {
+    if (draggedId === targetId) return;
+    const dragged = collections.find((c) => c.id === draggedId);
+    const target = collections.find((c) => c.id === targetId);
+    if (!dragged || !target) return;
+    if (dragged.parent_id === targetId) return; // already there → quiet no-op
+    try {
+      await moveCollection(draggedId, targetId);
+      setExpandedIds((prev) => new Set(prev).add(targetId)); // reveal the nested result
+      await refetchCollections();
+      addToast(`Moved “${dragged.name}” into “${target.name}”`, "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Couldn’t move that folder.", "error");
+    }
+  }
+
+  // Un-nest a folder back to the top level (parent_id = null) by dropping it on
+  // the root drop strip shown only while a nested folder is being dragged.
+  async function handleUnnestFolder(draggedId: string) {
+    const dragged = collections.find((c) => c.id === draggedId);
+    if (!dragged || dragged.parent_id === null) return; // already top-level → no-op
+    try {
+      await moveCollection(draggedId, null);
+      await refetchCollections();
+      addToast(`Moved “${dragged.name}” to the top level`, "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Couldn’t move that folder.", "error");
     }
   }
 
@@ -1573,19 +1692,43 @@ function MaterialsTab({
     const guideLeft = TREE_BASE_PAD + (node.depth - 1) * TREE_INDENT + 9;
     const hasContent = subCount > 0 || files.length > 0;
 
+    // Drop-target state for THIS folder given what's being dragged (Parts 1 & 3):
+    //   • File drag  → every folder is a valid target (Slice 1 unchanged).
+    //   • Folder drag → only folders in validFolderTargets accept; the rest
+    //     (self, descendants, current parent, too-deep) are dimmed + disabled.
+    const isFolderDrag = activeDragFolder !== null;
+    const isFileDrag = activeDragFile !== null;
+    const anyDrag = isFolderDrag || isFileDrag;
+    const isValidTarget = isFileDrag || (isFolderDrag && (validFolderTargets?.has(node.id) ?? false));
+    const dropDisabled = isFolderDrag && !isValidTarget;
+
     return (
       <div key={node.id}>
-        {/* Folder row (drop target) */}
-        <DroppableFolder dropId={`folder-${node.id}`} folderId={node.id} name={node.name}>
-          {({ ref, isOver }) => (
+        {/* Folder row — draggable (reparent) AND droppable (receive file/folder) */}
+        <DraggableDroppableFolder node={node} dropDisabled={dropDisabled}>
+          {({ ref, dragProps, isDragging, isOver }) => (
             <div
               ref={ref}
-              className={`group/node relative flex items-center gap-1.5 pr-1.5 rounded-lg transition-colors ${isOver ? "bg-[rgba(225,148,133,0.14)] ring-2 ring-inset ring-[var(--accent)]" : activeDragFile ? "ring-1 ring-inset ring-[rgba(225,148,133,0.28)]" : isExpanded ? "bg-[rgba(255,255,255,0.035)]" : "hover:bg-[rgba(255,255,255,0.03)]"}`}
+              {...(isRenaming ? {} : dragProps)}
+              className={`group/node relative flex items-center gap-1.5 pr-1.5 rounded-lg transition-all ${isRenaming ? "" : "cursor-grab active:cursor-grabbing"} ${
+                isDragging
+                  ? "opacity-40"
+                  : isOver && isValidTarget
+                    ? "bg-[rgba(225,148,133,0.14)] ring-2 ring-inset ring-[var(--accent)]"
+                    : isFolderDrag && !isValidTarget
+                      ? "opacity-40"
+                      : anyDrag && isValidTarget
+                        ? "ring-1 ring-inset ring-[rgba(225,148,133,0.28)]"
+                        : isExpanded
+                          ? "bg-[rgba(255,255,255,0.035)]"
+                          : "hover:bg-[rgba(255,255,255,0.03)]"
+              }`}
               style={{ paddingLeft: padLeft }}
             >
-          {/* Chevron */}
+          {/* Chevron — pure expand control: guard so a press here never starts a drag */}
           <button
             onClick={() => toggleExpand(node.id)}
+            {...STOP_CARD_DRAG}
             className="flex-shrink-0 p-1 rounded text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
             aria-label={isExpanded ? "Collapse" : "Expand"}
             aria-expanded={isExpanded}
@@ -1625,9 +1768,9 @@ function MaterialsTab({
             </button>
           )}
 
-          {/* Hover actions */}
+          {/* Hover actions — guard the row so clicking these never starts a drag */}
           {!isRenaming && (
-            <div className="flex items-center gap-0.5 opacity-0 group-hover/node:opacity-100 focus-within:opacity-100 transition-opacity flex-shrink-0">
+            <div {...STOP_CARD_DRAG} className="flex items-center gap-0.5 opacity-0 group-hover/node:opacity-100 focus-within:opacity-100 transition-opacity flex-shrink-0">
               {canAddSub ? (
                 <button
                   onClick={() => openCreateSubfolder(node.id, node.name)}
@@ -1677,7 +1820,7 @@ function MaterialsTab({
           )}
             </div>
           )}
-        </DroppableFolder>
+        </DraggableDroppableFolder>
 
         {/* Children (sub-folders + own files) */}
         {isExpanded && (
@@ -1703,7 +1846,7 @@ function MaterialsTab({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={closestCenter}
+      collisionDetection={pointerWithin}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
@@ -2073,8 +2216,10 @@ function MaterialsTab({
                 <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 18v-5.25m0 0a6.01 6.01 0 001.5-.189m-1.5.189a6.01 6.01 0 01-1.5-.189m3.75 7.478a12.06 12.06 0 01-4.5 0m3.75 2.383a14.406 14.406 0 01-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 10-7.517 0c.85.493 1.509 1.333 1.509 2.316V18" />
                 </svg>
-                Expand a folder for its files &amp; sub-folders. Hover a folder for actions; add files from the All Files tab.
+                Expand a folder for its files &amp; sub-folders. Hover a folder for actions; add files from the All Files tab. Drag a folder onto another to nest it.
               </p>
+              {/* Un-nest affordance: only while dragging a folder that has a parent */}
+              {activeDragFolder && activeDragFolder.parent_id !== null && <RootDropZone />}
               <div className="space-y-0.5">
                 {collectionTree.map(renderNode)}
               </div>
@@ -2184,12 +2329,21 @@ function MaterialsTab({
       />
     </div>
 
-      {/* Lifted preview of the file being dragged (portal — no layout shift). */}
+      {/* Lifted preview of the file OR folder being dragged (portal — no layout shift). */}
       <DragOverlay dropAnimation={null}>
         {activeDragFile ? (
           <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--accent)] shadow-2xl shadow-black/50 max-w-[260px] cursor-grabbing">
             <span className={`w-7 h-7 rounded-lg ${fileIcon(activeDragFile.file_name).color} flex items-center justify-center flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4`}>{fileIcon(activeDragFile.file_name).icon}</span>
             <span className="text-sm font-medium text-[var(--text-primary)] truncate">{activeDragFile.file_name}</span>
+          </div>
+        ) : activeDragFolder ? (
+          <div className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[var(--surface-2)] border border-[var(--accent)] shadow-2xl shadow-black/50 max-w-[260px] cursor-grabbing">
+            <span className="w-7 h-7 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
+              <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+              </svg>
+            </span>
+            <span className="text-sm font-medium text-[var(--text-primary)] truncate">{activeDragFolder.name}</span>
           </div>
         ) : null}
       </DragOverlay>
