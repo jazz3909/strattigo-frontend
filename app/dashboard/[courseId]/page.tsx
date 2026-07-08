@@ -1,6 +1,7 @@
 "use client";
 
 import { Component, ReactNode, use, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -697,32 +698,12 @@ export default function CoursePage({
                 views from one place. Glass-styled to read on the frosted top bar. Hidden until at
                 least one collection exists (mirrors the old CollectionSelector's null-return). */}
             {collections.length > 0 && (
-              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <span style={{ fontFamily: "var(--font-outfit)", fontSize: "13px", color: "var(--text-secondary)", whiteSpace: "nowrap" }}>
-                  Generate from:
-                </span>
-                <select
-                  value={selectedCollectionId ?? ""}
-                  onChange={(e) => setSelectedCollectionId(e.target.value || null)}
-                  aria-label="Generate from source"
-                  className="cursor-pointer truncate outline-none"
-                  style={{
-                    background: "rgba(255,255,255,0.04)",
-                    border: "1px solid rgba(255,255,255,0.1)",
-                    borderRadius: "10px",
-                    color: "var(--text-primary)",
-                    fontFamily: "var(--font-outfit)",
-                    fontSize: "13px",
-                    padding: "8px 12px",
-                    maxWidth: "180px",
-                  }}
-                >
-                  <option value="">All materials</option>
-                  {collections.map((col) => (
-                    <option key={col.id} value={col.id}>{col.name}</option>
-                  ))}
-                </select>
-              </div>
+              <CollectionScopePicker
+                collections={collections}
+                selectedCollectionId={selectedCollectionId}
+                onChange={setSelectedCollectionId}
+                variant="topbar"
+              />
             )}
             {/* Upload — salmon. Label-wrapped input reuses the existing handleFileUpload. */}
             <label
@@ -817,7 +798,6 @@ export default function CoursePage({
                     quizGenerationId={quizGenerationId}
                     collections={collections}
                     selectedCollectionId={selectedCollectionId}
-                    onCollectionChange={setSelectedCollectionId}
                   />
                 </QuizErrorBoundary>
               )}
@@ -826,9 +806,7 @@ export default function CoursePage({
               {activeTab === "study-plan" && (
                 <StudyPlanTab
                   courseId={courseId}
-                  collections={collections}
                   selectedCollectionId={selectedCollectionId}
-                  onCollectionChange={setSelectedCollectionId}
                 />
               )}
 
@@ -2355,42 +2333,342 @@ function MaterialsTab({
 // COLLECTION SELECTOR
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CollectionSelector({
+// ── Layout constants for the picker's indented rows (a touch tighter than the
+//    Materials tree, since the popover is narrower). ──
+const SCOPE_INDENT = 15; // extra left-pad per nesting level
+const SCOPE_BASE_PAD = 8; // left-pad of a depth-1 row
+
+/** Total number of descendants (children, grandchildren, …) beneath a node. */
+function countDescendants(node: CollectionNode): number {
+  let n = 0;
+  for (const c of node.children) n += 1 + countDescendants(c);
+  return n;
+}
+
+/**
+ * Hierarchical "Generate from" scope picker — a custom dropdown (trigger button +
+ * portalled popover) that replaces the old flat <select>. It still resolves to a
+ * SINGLE selectedCollectionId (null = "All materials"); the backend already
+ * expands a chosen collection to its whole subtree, so picking a parent scopes to
+ * that folder + every descendant. The popover mirrors the Materials tree's visual
+ * language: salmon folder icons, per-level indentation, and subtle guide lines.
+ *
+ * The popover is portalled to <body> with fixed positioning so it can never be
+ * clipped by an ancestor's `overflow: hidden` (the shell's right column) or a
+ * modal panel, and it flips above the trigger when there isn't room below.
+ *
+ * `variant`:
+ *   • "topbar" — the canonical, always-visible selector on the course top bar.
+ *     Right-aligned popover; button reads "Generate from: <name>".
+ *   • "modal"  — used inside generation modals (where the top bar is unreachable
+ *     behind the overlay). Full-width, left-aligned; button shows just <name>.
+ */
+function CollectionScopePicker({
   collections,
   selectedCollectionId,
   onChange,
-  glass = false,
+  variant = "topbar",
 }: {
   collections: Collection[];
   selectedCollectionId: string | null;
   onChange: (id: string | null) => void;
-  glass?: boolean;
+  variant?: "topbar" | "modal";
 }) {
-  if (collections.length === 0) return null;
-  return (
-    <div className="flex items-center gap-2">
-      <span className="text-xs font-medium text-[var(--text-secondary)] whitespace-nowrap">Generate from:</span>
-      <select
-        value={selectedCollectionId ?? ""}
-        onChange={(e) => onChange(e.target.value || null)}
-        className="text-xs border px-2.5 py-1.5 cursor-pointer max-w-[160px] truncate outline-none"
-        style={
-          glass
-            ? {
-                border: "1px solid rgba(255,255,255,0.08)",
-                background: "rgba(255,255,255,0.03)",
-                color: "var(--text-primary)",
-                borderRadius: "10px",
-              }
-            : { border: "1px solid var(--border)", background: "var(--surface)", color: "var(--text-primary)", borderRadius: "0.5rem" }
+  const tree = useMemo(() => buildCollectionTree(collections), [collections]);
+  const byId = useMemo(() => {
+    const m = new Map<string, Collection>();
+    for (const c of collections) m.set(c.id, c);
+    return m;
+  }, [collections]);
+  const selectedNode = useMemo(
+    () => (selectedCollectionId ? findNode(tree, selectedCollectionId) : null),
+    [tree, selectedCollectionId]
+  );
+  const descCount = selectedNode ? countDescendants(selectedNode) : 0;
+
+  const [open, setOpen] = useState(false);
+  // We track COLLAPSED folders (empty set = fully expanded). Default fully
+  // expanded so the whole tree is visible on open — simplest for the common
+  // small-tree case — while still letting users collapse big branches.
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
+  const [popStyle, setPopStyle] = useState<React.CSSProperties | null>(null);
+
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const popRef = useRef<HTMLDivElement>(null);
+
+  const isExpanded = (id: string) => !collapsed.has(id);
+  const toggle = (id: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // Position the portalled popover under (or above) the trigger, flipping when
+  // there isn't room below. Recomputed on open, scroll, and resize.
+  useEffect(() => {
+    if (!open) return;
+    const place = () => {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const gap = 6;
+      const spaceBelow = vh - r.bottom - 12;
+      const spaceAbove = r.top - 12;
+      const openUp = spaceBelow < 240 && spaceAbove > spaceBelow;
+      const maxHeight = Math.max(180, Math.min(380, (openUp ? spaceAbove : spaceBelow) - gap));
+      const s: React.CSSProperties = { position: "fixed", maxHeight, zIndex: 70 };
+      if (openUp) s.bottom = vh - r.top + gap;
+      else s.top = r.bottom + gap;
+      if (variant === "modal") {
+        s.left = r.left;
+        s.width = r.width;
+      } else {
+        s.right = Math.max(8, vw - r.right);
+        s.minWidth = Math.max(248, r.width);
+        s.maxWidth = Math.min(360, vw - 16);
+      }
+      setPopStyle(s);
+    };
+    place();
+    window.addEventListener("scroll", place, true);
+    window.addEventListener("resize", place);
+    return () => {
+      window.removeEventListener("scroll", place, true);
+      window.removeEventListener("resize", place);
+    };
+  }, [open, variant]);
+
+  // Close on outside click (trigger + portalled popover both count as "inside")
+  // and on Escape. Escape is captured so it closes only the picker, not an
+  // enclosing modal that also listens for Escape.
+  useEffect(() => {
+    if (!open) return;
+    const onDown = (e: MouseEvent) => {
+      const t = e.target as Node;
+      if (triggerRef.current?.contains(t) || popRef.current?.contains(t)) return;
+      setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setOpen(false);
+        e.stopPropagation();
+      }
+    };
+    document.addEventListener("mousedown", onDown);
+    document.addEventListener("keydown", onKey, true);
+    return () => {
+      document.removeEventListener("mousedown", onDown);
+      document.removeEventListener("keydown", onKey, true);
+    };
+  }, [open]);
+
+  function openMenu() {
+    // Force-expand the ancestors of the current selection so it's always visible.
+    if (selectedCollectionId) {
+      setCollapsed((prev) => {
+        const next = new Set(prev);
+        let cur = byId.get(selectedCollectionId);
+        while (cur && cur.parent_id) {
+          next.delete(cur.parent_id);
+          cur = byId.get(cur.parent_id);
         }
+        return next;
+      });
+    }
+    setOpen(true);
+  }
+
+  function choose(id: string | null) {
+    onChange(id);
+    setOpen(false);
+  }
+
+  const triggerName = selectedNode?.name ?? "All materials";
+
+  const folderIcon = (
+    <svg className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-8.69-6.44l-2.12-2.12a1.5 1.5 0 00-1.061-.44H4.5A2.25 2.25 0 002.25 6v12a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9a2.25 2.25 0 00-2.25-2.25h-5.379a1.5 1.5 0 01-1.06-.44z" />
+    </svg>
+  );
+  const allIcon = (
+    <svg className="w-3.5 h-3.5" style={{ color: "var(--accent)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
+    </svg>
+  );
+  const check = (
+    <svg className="w-3.5 h-3.5 flex-shrink-0" style={{ color: "var(--accent)" }} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+    </svg>
+  );
+
+  // One selectable row (used for both "All materials" and each collection node).
+  const optionRow = (opts: {
+    id: string | null;
+    name: string;
+    icon: React.ReactNode;
+    depth: number;
+    subCount: number;
+    hasChildren: boolean;
+    expanded: boolean;
+  }) => {
+    const isSel = opts.id === selectedCollectionId;
+    const pad = SCOPE_BASE_PAD + (opts.depth - 1) * SCOPE_INDENT;
+    return (
+      <div className="flex items-center" style={{ paddingLeft: pad }}>
+        {opts.hasChildren ? (
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); toggle(opts.id as string); }}
+            className="flex-shrink-0 flex items-center justify-center w-8 h-11 rounded-md text-[var(--text-tertiary)] hover:text-[var(--text-secondary)] transition-colors"
+            style={{ touchAction: "manipulation" }}
+            aria-label={opts.expanded ? "Collapse" : "Expand"}
+            aria-expanded={opts.expanded}
+          >
+            <svg className={`w-3 h-3 transition-transform duration-200 ${opts.expanded ? "rotate-90" : ""}`} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+            </svg>
+          </button>
+        ) : (
+          <span className="flex-shrink-0 w-8" aria-hidden />
+        )}
+        <button
+          type="button"
+          role="option"
+          aria-selected={isSel}
+          onClick={() => choose(opts.id)}
+          className={`flex-1 min-w-0 flex items-center gap-2 py-1.5 pl-1.5 pr-2 my-0.5 rounded-lg text-left transition-colors ${isSel ? "bg-[var(--accent-dim)]" : "hover:bg-[rgba(255,255,255,0.05)]"}`}
+          style={{ minHeight: 44, touchAction: "manipulation" }}
+        >
+          <span className="w-7 h-7 rounded-md bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
+            {opts.icon}
+          </span>
+          <span className="flex-1 min-w-0 flex items-baseline gap-1.5">
+            <span className={`text-[13px] truncate ${isSel ? "font-semibold" : "font-medium"} text-[var(--text-primary)]`}>{opts.name}</span>
+            {opts.subCount > 0 && (
+              <span className="text-[10px] text-[var(--text-tertiary)] flex-shrink-0 whitespace-nowrap">{opts.subCount} sub</span>
+            )}
+          </span>
+          {isSel && check}
+        </button>
+      </div>
+    );
+  };
+
+  const renderNode = (node: CollectionNode): React.ReactNode => {
+    const expanded = isExpanded(node.id);
+    const hasChildren = node.children.length > 0;
+    const pad = SCOPE_BASE_PAD + (node.depth - 1) * SCOPE_INDENT;
+    return (
+      <div key={node.id}>
+        {optionRow({
+          id: node.id,
+          name: node.name,
+          icon: folderIcon,
+          depth: node.depth,
+          subCount: node.children.length,
+          hasChildren,
+          expanded,
+        })}
+        {hasChildren && expanded && (
+          <div className="relative">
+            <span aria-hidden className="absolute top-0 bottom-1 w-px bg-[rgba(255,255,255,0.08)]" style={{ left: pad + 13 }} />
+            {node.children.map(renderNode)}
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const triggerBase: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "7px",
+    background: "rgba(255,255,255,0.04)",
+    border: `1px solid ${open ? "rgba(225,148,133,0.5)" : "rgba(255,255,255,0.1)"}`,
+    borderRadius: "10px",
+    color: "var(--text-primary)",
+    fontFamily: "var(--font-outfit)",
+    fontSize: "13px",
+    padding: "8px 11px",
+    minHeight: 40,
+    cursor: "pointer",
+    transition: "border-color 160ms ease, background 160ms ease",
+    touchAction: "manipulation",
+  };
+  const triggerStyle: React.CSSProperties =
+    variant === "modal"
+      ? { ...triggerBase, width: "100%", justifyContent: "flex-start" }
+      : { ...triggerBase, maxWidth: 240 };
+
+  return (
+    <>
+      <button
+        ref={triggerRef}
+        type="button"
+        onClick={() => (open ? setOpen(false) : openMenu())}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={`Generate from: ${triggerName}${descCount > 0 ? `, includes ${descCount} sub-folders` : ""}`}
+        style={triggerStyle}
+        onMouseEnter={(e) => { if (!open) e.currentTarget.style.borderColor = "rgba(255,255,255,0.18)"; }}
+        onMouseLeave={(e) => { if (!open) e.currentTarget.style.borderColor = "rgba(255,255,255,0.1)"; }}
       >
-        <option value="">All materials</option>
-        {collections.map((col) => (
-          <option key={col.id} value={col.id}>{col.name}</option>
-        ))}
-      </select>
-    </div>
+        <span className="flex-shrink-0">{selectedNode ? folderIcon : allIcon}</span>
+        <span className="truncate" style={{ flex: 1, textAlign: "left" }}>
+          {variant === "topbar" && <span style={{ color: "var(--text-secondary)" }}>Generate from: </span>}
+          {triggerName}
+        </span>
+        <svg className={`w-3.5 h-3.5 flex-shrink-0 transition-transform duration-200 ${open ? "rotate-180" : ""}`} style={{ color: "var(--text-secondary)" }} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+        </svg>
+      </button>
+
+      {open && popStyle && createPortal(
+        <div
+          ref={popRef}
+          role="listbox"
+          aria-label="Generate from source"
+          className="flex flex-col animate-scale-in"
+          style={{
+            ...popStyle,
+            background: "rgba(17,24,37,0.97)",
+            backdropFilter: "blur(28px) saturate(120%)",
+            WebkitBackdropFilter: "blur(28px) saturate(120%)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: "14px",
+            boxShadow: "0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)",
+            overflow: "hidden",
+            transformOrigin: "top",
+          }}
+        >
+          <div className="overflow-y-auto px-1.5 py-1.5" style={{ flex: 1, minHeight: 0 }}>
+            {optionRow({ id: null, name: "All materials", icon: allIcon, depth: 1, subCount: 0, hasChildren: false, expanded: false })}
+            {tree.length > 0 && <div className="my-1 mx-2 border-t" style={{ borderColor: "rgba(255,255,255,0.07)" }} />}
+            {tree.map(renderNode)}
+          </div>
+          {/* Scope hint — makes the "a parent includes its sub-folders" behavior explicit. */}
+          <div
+            className="flex-shrink-0 px-3 py-2 text-[11px] leading-snug"
+            style={{ borderTop: "1px solid rgba(255,255,255,0.08)", color: "var(--text-tertiary)", background: "rgba(255,255,255,0.02)" }}
+          >
+            {selectedNode ? (
+              descCount > 0 ? (
+                <>Generating from <span style={{ color: "var(--accent)", fontWeight: 600 }}>{selectedNode.name}</span> + all {descCount} sub-folder{descCount === 1 ? "" : "s"}</>
+              ) : (
+                <>Generating from <span style={{ color: "var(--accent)", fontWeight: 600 }}>{selectedNode.name}</span> only</>
+              )
+            ) : (
+              <>Generating from <span style={{ color: "var(--accent)", fontWeight: 600 }}>every material</span> in this course</>
+            )}
+          </div>
+        </div>,
+        document.body
+      )}
+    </>
   );
 }
 
@@ -2534,11 +2812,6 @@ function StudyGuideTab({
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap">
-          <CollectionSelector
-            collections={collections}
-            selectedCollectionId={selectedCollectionId}
-            onChange={onCollectionChange}
-          />
           <Button
             variant="primary"
             size="sm"
@@ -2832,15 +3105,16 @@ function StudyGuideTab({
             )}
           </div>
 
-          {/* Collection selector (if collections exist) */}
+          {/* Scope picker (if collections exist) — same hierarchical picker as the
+              top bar; usable here because the top bar is unreachable behind the modal. */}
           {collections.length > 0 && (
             <div>
               <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Source materials</label>
-              <CollectionSelector
-                glass
+              <CollectionScopePicker
                 collections={collections}
                 selectedCollectionId={selectedCollectionId}
                 onChange={onCollectionChange}
+                variant="modal"
               />
             </div>
           )}
@@ -3014,7 +3288,7 @@ const EXPECTED_QUIZ_QUESTIONS = 10;
 function QuizTab({
   courseId, rawQuizContent,
   quiz, loading, error, generatedAt, onGenerate, onRegenerate, canGenerate,
-  streamingQuiz, streamedQuestions, quizGenerationId, collections, selectedCollectionId, onCollectionChange,
+  streamingQuiz, streamedQuestions, quizGenerationId, collections, selectedCollectionId,
 }: {
   courseId: string;
   rawQuizContent: string;
@@ -3030,7 +3304,6 @@ function QuizTab({
   quizGenerationId: number;
   collections: Collection[];
   selectedCollectionId: string | null;
-  onCollectionChange: (id: string | null) => void;
 }) {
   const { addToast } = useToast();
   const [currentQ, setCurrentQ] = useState(0);
@@ -3144,11 +3417,6 @@ function QuizTab({
           )}
         </div>
         <div className="flex items-center gap-3 flex-wrap" style={{ display: showLanding ? 'none' : undefined }}>
-          <CollectionSelector
-            collections={collections}
-            selectedCollectionId={selectedCollectionId}
-            onChange={onCollectionChange}
-          />
           <Button
             variant="primary"
             size="sm"
@@ -3207,14 +3475,6 @@ function QuizTab({
           <p className="text-sm text-[var(--text-secondary)] mb-6 max-w-sm">
             Create a quiz from your course materials to test yourself.
           </p>
-
-          <div className="mb-6">
-            <CollectionSelector
-              collections={collections}
-              selectedCollectionId={selectedCollectionId}
-              onChange={onCollectionChange}
-            />
-          </div>
 
           <button
             onClick={onGenerate}
@@ -3807,14 +4067,10 @@ const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
 function StudyPlanTab({
   courseId,
-  collections,
   selectedCollectionId,
-  onCollectionChange,
 }: {
   courseId: string;
-  collections: Collection[];
   selectedCollectionId: string | null;
-  onCollectionChange: (id: string | null) => void;
 }) {
   const { addToast } = useToast();
 
@@ -3919,7 +4175,6 @@ function StudyPlanTab({
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">Add events, then generate AI study plans for each</p>
         </div>
         <div className="flex items-center gap-2">
-          <CollectionSelector collections={collections} selectedCollectionId={selectedCollectionId} onChange={onCollectionChange} />
           <Button
             variant="primary"
             size="sm"
@@ -4545,7 +4800,6 @@ function FlashcardsTab({
           <p className="text-sm text-[var(--text-tertiary)] mt-0.5">AI-generated flashcards with spaced repetition</p>
         </div>
         <div className="flex items-center gap-2">
-          <CollectionSelector collections={collections} selectedCollectionId={selectedCollectionId} onChange={onCollectionChange} />
           <Button
             variant="primary"
             size="sm"
@@ -4711,10 +4965,17 @@ function FlashcardGenerateModal({
               autoFocus
             />
           </div>
-          <div>
-            <label className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">Source</label>
-            <CollectionSelector collections={collections} selectedCollectionId={selectedCollectionId} onChange={onCollectionChange} />
-          </div>
+          {collections.length > 0 && (
+            <div>
+              <label className="block text-sm font-semibold text-[var(--text-primary)] mb-1.5">Source</label>
+              <CollectionScopePicker
+                collections={collections}
+                selectedCollectionId={selectedCollectionId}
+                onChange={onCollectionChange}
+                variant="modal"
+              />
+            </div>
+          )}
           {generating && (
             <div className="flex items-center gap-3 bg-[var(--accent-dim)] rounded-xl px-4 py-3">
               <Spinner size="sm" />
