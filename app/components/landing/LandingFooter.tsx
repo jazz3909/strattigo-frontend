@@ -91,17 +91,17 @@ export function LandingFooter() {
             <h4 className="text-sm font-semibold mb-4" style={{ color: "var(--text-primary)" }}>Company</h4>
             <ul className="space-y-2.5">
               {[
-                { label: "Privacy Policy", href: "#" },
-                { label: "Terms of Service", href: "#" },
+                { label: "Privacy Policy", href: "/privacy" },
+                { label: "Terms of Service", href: "/terms" },
                 { label: "Contact us", href: "#" },
               ].map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className="text-sm transition-colors" style={{ color: "var(--text-secondary)" }}
+                  <Link href={item.href} className="text-sm transition-colors" style={{ color: "var(--text-secondary)" }}
                     onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; }}
                     onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; }}
                   >
                     {item.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>

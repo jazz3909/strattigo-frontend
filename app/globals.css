@@ -740,6 +740,69 @@ body {
   font-style: italic;
 }
 
+/* ─── Legal Pages (/terms, /privacy) ─────────────────────────────────────── */
+.legal-prose p {
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.8;
+  margin-bottom: 0.875rem;
+}
+
+.legal-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose ul {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 0.875rem;
+}
+
+.legal-prose ul li {
+  position: relative;
+  padding-left: 1.375rem;
+  margin-bottom: 0.5rem;
+  color: var(--text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.7;
+}
+
+.legal-prose ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  width: 5px;
+  height: 5px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+
+.legal-prose strong {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.legal-prose a {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.legal-prose a:hover {
+  color: var(--accent-hover);
+}
+
+.legal-placeholder {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+  background: var(--accent-dim);
+  color: var(--accent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
 /* ─── Chat Markdown ──────────────────────────────────────────────────────── */
 .chat-markdown p { margin-bottom: 0.5rem; }
 .chat-markdown p:last-child { margin-bottom: 0; }

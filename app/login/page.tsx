@@ -203,8 +203,8 @@ export default function LoginPage() {
 
           <p className="text-center mt-8 text-xs" style={{ color: "var(--text-tertiary)" }}>
             By continuing, you agree to our{" "}
-            <a href="#" className="underline" style={{ color: "var(--text-tertiary)" }}>Terms</a> and{" "}
-            <a href="#" className="underline" style={{ color: "var(--text-tertiary)" }}>Privacy Policy</a>.
+            <Link href="/terms" className="underline" style={{ color: "var(--text-tertiary)" }}>Terms</Link> and{" "}
+            <Link href="/privacy" className="underline" style={{ color: "var(--text-tertiary)" }}>Privacy Policy</Link>.
           </p>
         </div>
       </div>
