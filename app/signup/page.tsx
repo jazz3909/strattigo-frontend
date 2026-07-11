@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { signup, login, setToken, setUser } from "../lib/api";
+import { signup, login, persistSession } from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
@@ -64,9 +64,7 @@ export default function SignupPage() {
     try {
       await signup(email, password);
       const data = await login(email, password);
-      setToken(data.access_token);
-      setUser(data.user_id, data.email);
-      document.cookie = `strattigo_token=${data.access_token}; path=/; max-age=604800; SameSite=Lax`;
+      persistSession(data);
       const { plan } = await getSubscriptionStatus();
       router.push(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
     } catch (err: unknown) {
