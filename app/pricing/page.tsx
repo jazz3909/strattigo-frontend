@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { checkoutSession, getSubscriptionStatus, MONTHLY_PRICE_ID, ANNUAL_PRICE_ID } from "../lib/stripe";
+import { checkoutSession, getSubscriptionStatus, MONTHLY_PRICE_ID } from "../lib/stripe";
 import { getToken } from "../lib/api";
 import { Spinner } from "../components/ui/Spinner";
 
@@ -16,18 +16,6 @@ const FREE_FEATURES = [
 ];
 
 const PRO_FEATURES = [
-  "Unlimited courses",
-  "Unlimited AI generations",
-  "Study guides, quizzes & plans",
-  "Unlimited AI chat",
-  "Canvas LMS integration",
-  "Priority AI generation",
-  "Export to PDF",
-];
-
-const ANNUAL_FEATURES = [
-  "Everything in Pro",
-  "2 months free vs monthly",
   "Unlimited courses",
   "Unlimited AI generations",
   "Study guides, quizzes & plans",
@@ -67,7 +55,6 @@ export default function PricingPage() {
   const [authed, setAuthed] = useState(false);
   const [subscribed, setSubscribed] = useState(false);
   const [proLoading, setProLoading] = useState(false);
-  const [annualLoading, setAnnualLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState("");
 
   useEffect(() => {
@@ -178,7 +165,7 @@ export default function PricingPage() {
 
       {/* Cards */}
       <div className="max-w-6xl mx-auto px-4 sm:px-6 pb-6">
-        <div className="grid md:grid-cols-3 gap-6 items-start">
+        <div className="grid md:grid-cols-2 gap-6 items-start max-w-3xl mx-auto">
 
           {/* Free */}
           <div className="p-7" style={glassCard}>
@@ -275,59 +262,6 @@ export default function PricingPage() {
             </ul>
           </div>
 
-          {/* Annual */}
-          <div className="p-7 relative" style={glassCard}>
-            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
-              <span
-                className="inline-flex items-center gap-1.5 text-xs font-bold px-3.5 py-1 rounded-full"
-                style={{ background: "rgba(225,148,133,0.12)", color: "var(--accent)" }}
-              >
-                Best Value
-              </span>
-            </div>
-            <h2 className="text-lg mb-1" style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, color: "var(--text-primary)" }}>
-              Annual
-            </h2>
-            <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>Save 42% vs monthly — 2 months free</p>
-            <div className="flex items-end gap-1.5 mb-6">
-              <span className="text-4xl" style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, color: "var(--text-primary)" }}>
-                $49
-              </span>
-              <span className="text-sm pb-1" style={{ color: "var(--text-tertiary)" }}>/year</span>
-            </div>
-            {subscribed ? (
-              <Link
-                href="/dashboard"
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 transition-all"
-                style={ghostButton}
-                onMouseEnter={(e) => ghostHover(e, true)}
-                onMouseLeave={(e) => ghostHover(e, false)}
-              >
-                <CheckIcon className="w-4 h-4" style={{ color: "var(--accent)" }} />
-                You&apos;re on Pro
-              </Link>
-            ) : (
-              <button
-                onClick={() => startCheckout(ANNUAL_PRICE_ID, setAnnualLoading)}
-                disabled={annualLoading}
-                className="flex items-center justify-center gap-2 w-full py-3 rounded-xl text-sm mb-7 btn-press transition-all disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-                style={ghostButton}
-                onMouseEnter={(e) => ghostHover(e, true)}
-                onMouseLeave={(e) => ghostHover(e, false)}
-              >
-                {annualLoading ? <Spinner size="sm" className="border-white/30 border-t-white" /> : null}
-                Get Annual — Best Value
-              </button>
-            )}
-            <ul className="space-y-3">
-              {ANNUAL_FEATURES.map((f) => (
-                <li key={f} className="flex items-center gap-2.5 text-sm">
-                  <CheckIcon className="w-4 h-4 flex-shrink-0" style={{ color: "var(--text-secondary)" }} />
-                  <span style={{ color: "var(--text-secondary)" }}>{f}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
         </div>
 
         {/* Checkout error */}
