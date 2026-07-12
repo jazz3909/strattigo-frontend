@@ -1801,9 +1801,9 @@ export default function HomePage() {
               </div>
               <div className="pac-beta-badge">Use BETA15 — 3 months free</div>
               <ul className="pac-features" aria-label="Pro plan features">
-                <li>200 study guides / month</li>
-                <li>300 quizzes / month — save &amp; organize sets</li>
-                <li>AI chat tutor (1,000 messages / month)</li>
+                <li>Unlimited AI study guides</li>
+                <li>Unlimited quizzes — save &amp; organize sets</li>
+                <li>Unlimited AI chat</li>
                 <li>Store up to 500 materials</li>
                 <li>Canvas LMS integration</li>
                 <li>Priority AI processing</li>

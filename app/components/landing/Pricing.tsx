@@ -33,9 +33,10 @@ const plans = [
     badge: "Most popular",
     features: [
       "Unlimited courses",
-      "200 study guides & 300 quizzes / month",
+      "Unlimited AI study guides",
+      "Unlimited quizzes",
+      "Unlimited AI chat",
       "Study plans & flashcards",
-      "AI chat tutor (1,000 messages / month)",
       "Store up to 500 materials",
       "Canvas LMS integration",
       "Priority AI generation",

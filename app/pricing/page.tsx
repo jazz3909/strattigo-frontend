@@ -7,9 +7,11 @@ import { checkoutSession, getSubscriptionStatus, MONTHLY_PRICE_ID } from "../lib
 import { getToken } from "../lib/api";
 import { Spinner } from "../components/ui/Spinner";
 
-// Feature copy mirrors the backend's real quotas (api/config/plan_limits.py:
-// free 10/15/50 + 20 materials, pro 200/300/1000 + 500 materials; uploads
-// capped at 50MB per file) — keep in sync with the landing-page pricing cards.
+// FREE copy mirrors the backend's real quotas (api/config/plan_limits.py:
+// 10/15/50 + 20 materials; uploads capped at 50MB per file) — keep in sync
+// with the landing-page pricing cards. PRO copy deliberately uses
+// "Unlimited" marketing wording (owner's call, 2026-07-12) even though the
+// backend enforces generous caps (200/300/1000).
 const FREE_FEATURES = [
   "Up to 3 courses",
   "10 study guides / month",
@@ -21,9 +23,10 @@ const FREE_FEATURES = [
 
 const PRO_FEATURES = [
   "Unlimited courses",
-  "200 study guides & 300 quizzes / month",
+  "Unlimited AI study guides",
+  "Unlimited quizzes",
+  "Unlimited AI chat",
   "Study plans & flashcards",
-  "AI chat tutor (1,000 messages / month)",
   "Store up to 500 materials",
   "Canvas LMS integration",
   "Priority AI generation",
