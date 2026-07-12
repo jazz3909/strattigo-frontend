@@ -1,10 +1,13 @@
 import { loadStripe } from "@stripe/stripe-js";
 import { apiGet, apiPost } from "./api";
 
-// The only live Stripe price ($/month). Annual was removed for beta — its ID
-// was a never-configured placeholder ("price_annual") that failed checkout
-// with resource_missing whenever selected.
-export const MONTHLY_PRICE_ID = "price_1THvxxGm99mbwFrz8JgalyyA";
+// The only live Stripe price ($7.99/month, verified active 2026-07-12).
+// Replaced the leftover $2.00 beta price. Annual was removed for beta — its
+// ID was a never-configured placeholder ("price_annual") that failed
+// checkout with resource_missing whenever selected. Must stay in sync with
+// MONTHLY_PRICE_ID in the backend's stripe_routes.py (its allowlist rejects
+// anything else).
+export const MONTHLY_PRICE_ID = "price_1TsD19Gm99mbwFrzu0uWwOLK";
 
 let stripePromise: ReturnType<typeof loadStripe> | null = null;
 

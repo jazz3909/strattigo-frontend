@@ -473,7 +473,7 @@ function Step3Upload({
                 Drop files here or click to browse
               </p>
               <p style={{ color: "var(--text-tertiary)", fontSize: "12px" }}>
-                PDF, PPTX, DOCX, TXT, images — up to 25MB
+                PDF, PPTX, DOCX, TXT, images — up to 50MB
               </p>
             </>
           )}

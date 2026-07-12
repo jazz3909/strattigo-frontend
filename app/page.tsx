@@ -1783,10 +1783,11 @@ export default function HomePage() {
               <span className="pac-plan-free">Free</span>
               <div className="pac-price-free">$0 / month</div>
               <ul className="pac-features" aria-label="Free plan features">
-                <li>3 study guide generations / month</li>
-                <li>1 quiz set / month</li>
-                <li>Up to 10MB uploads</li>
-                <li>Basic AI chat</li>
+                <li>10 study guides / month</li>
+                <li>15 quizzes / month</li>
+                <li>AI chat (50 messages / month)</li>
+                <li>Store up to 20 materials</li>
+                <li>Uploads up to 50MB per file</li>
               </ul>
               <a href={ctaHref} className="btn-secondary" style={{width:'100%', textAlign:'center', display:'block'}}>Get started free</a>
             </div>
@@ -1795,17 +1796,17 @@ export default function HomePage() {
             <div className="pricing-atm-card pac-pro">
               <span className="pac-plan-pro">Pro</span>
               <div className="pac-price-pro">
-                <span className="pac-dollar">$7</span>
+                <span className="pac-dollar">$7.99</span>
                 <span className="pac-per">/ month</span>
               </div>
               <div className="pac-beta-badge">Use BETA15 — 3 months free</div>
               <ul className="pac-features" aria-label="Pro plan features">
-                <li>Unlimited study guide generations</li>
-                <li>Unlimited quizzes — save &amp; organize sets</li>
+                <li>200 study guides / month</li>
+                <li>300 quizzes / month — save &amp; organize sets</li>
+                <li>AI chat tutor (1,000 messages / month)</li>
+                <li>Store up to 500 materials</li>
                 <li>Canvas LMS integration</li>
-                <li>Upload up to 500MB per course</li>
                 <li>Priority AI processing</li>
-                <li>Full AI chat tutor access</li>
                 <li>Early access to new features</li>
               </ul>
               <a href={ctaHref} className="pac-cta">Start free with BETA15 →</a>

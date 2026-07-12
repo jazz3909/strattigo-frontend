@@ -7,22 +7,26 @@ import { checkoutSession, getSubscriptionStatus, MONTHLY_PRICE_ID } from "../lib
 import { getToken } from "../lib/api";
 import { Spinner } from "../components/ui/Spinner";
 
+// Feature copy mirrors the backend's real quotas (api/config/plan_limits.py:
+// free 10/15/50 + 20 materials, pro 200/300/1000 + 500 materials; uploads
+// capped at 50MB per file) — keep in sync with the landing-page pricing cards.
 const FREE_FEATURES = [
   "Up to 3 courses",
-  "10 AI generations / month",
-  "Study guides & quizzes",
-  "AI chat (50 messages/mo)",
-  "PDF & document upload",
+  "10 study guides / month",
+  "15 quizzes / month",
+  "AI chat (50 messages / month)",
+  "Store up to 20 materials",
+  "PDF & document uploads up to 50MB",
 ];
 
 const PRO_FEATURES = [
   "Unlimited courses",
-  "Unlimited AI generations",
-  "Study guides, quizzes & plans",
-  "Unlimited AI chat",
+  "200 study guides & 300 quizzes / month",
+  "Study plans & flashcards",
+  "AI chat tutor (1,000 messages / month)",
+  "Store up to 500 materials",
   "Canvas LMS integration",
   "Priority AI generation",
-  "Export to PDF",
 ];
 
 const glassCard: React.CSSProperties = {
@@ -224,7 +228,7 @@ export default function PricingPage() {
             <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>For serious students who want it all</p>
             <div className="flex items-end gap-1.5 mb-6">
               <span className="text-4xl" style={{ fontFamily: "var(--font-fraunces)", fontWeight: 700, color: "var(--text-primary)" }}>
-                $7
+                $7.99
               </span>
               <span className="text-sm pb-1" style={{ color: "var(--text-tertiary)" }}>/month</span>
             </div>

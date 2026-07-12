@@ -32,7 +32,7 @@ const faqs = [
   {
     question: "Is there a limit on how many materials I can upload?",
     answer:
-      "Free accounts can upload materials for up to 3 courses. Pro accounts get unlimited courses and uploads. Individual files can be up to 25MB each.",
+      "Free accounts can store up to 20 materials across up to 3 courses. Pro accounts get unlimited courses and up to 500 stored materials. Individual files can be up to 50MB each.",
   },
 ];
 

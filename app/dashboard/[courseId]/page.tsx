@@ -1896,7 +1896,7 @@ function MaterialsTab({
                 </svg>
               </div>
               <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">PDF, PPTX, DOCX, TXT — up to 25MB</p>
+              <p className="text-xs text-[var(--text-tertiary)]">PDF, PPTX, DOCX, TXT — up to 50MB</p>
               <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </label>
           </div>
