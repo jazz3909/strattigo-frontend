@@ -233,7 +233,6 @@ export default function CoursePage({
 
   async function handleFileUpload(files: FileList | null) {
     if (!files || files.length === 0) return;
-    const file = files[0];
 
     const allowed = [
       "application/pdf",
@@ -242,33 +241,68 @@ export default function CoursePage({
       "application/msword",
       "text/plain",
     ];
-    if (!allowed.includes(file.type) && !file.name.match(/\.(pdf|pptx|docx|doc|txt)$/i)) {
-      addToast("Please upload a PDF, PPTX, DOCX, or TXT file.", "error");
+    const isSupported = (f: File) => allowed.includes(f.type) || /\.(pdf|pptx|docx|doc|txt)$/i.test(f.name);
+
+    const accepted: File[] = [];
+    const skipped: string[] = []; // "name (reason)" — accumulated across validation AND upload
+    for (const f of Array.from(files)) {
+      if (isSupported(f)) accepted.push(f);
+      else skipped.push(`${f.name} (not a PDF, PPTX, DOCX, or TXT)`);
+    }
+    const total = files.length;
+
+    if (accepted.length === 0) {
+      addToast(`Nothing uploaded — skipped: ${skipped.join("; ")}`, "error", 8000);
+      if (fileInputRef.current) fileInputRef.current.value = "";
       return;
     }
 
     setUploading(true);
-    setUploadProgress(10);
+    setUploadProgress(0);
 
-    // Simulate progress
-    const progressInterval = setInterval(() => {
-      setUploadProgress((p) => Math.min(p + 15, 85));
-    }, 300);
+    // Each file uploads sequentially so every one gets its own backend verdict
+    // (e.g. a duplicate-name 409 on file 3 must not mask files 4 and 5).
+    const uploadedNames: string[] = [];
+    for (let i = 0; i < accepted.length; i++) {
+      const file = accepted[i];
+      // Simulate progress within this file's proportional slice of the bar
+      const floor = Math.max(Math.round((i / accepted.length) * 100), 5);
+      const ceiling = Math.max(Math.round(((i + 1) / accepted.length) * 100) - 5, floor);
+      setUploadProgress(floor);
+      const progressInterval = setInterval(() => {
+        setUploadProgress((p) => Math.min(p + 5, ceiling));
+      }, 300);
+      try {
+        const material = await uploadMaterial(courseId, file);
+        setMaterials((prev) => [material, ...prev]);
+        uploadedNames.push(file.name);
+      } catch (err: unknown) {
+        skipped.push(`${file.name} (${err instanceof Error ? err.message : "upload failed"})`);
+      } finally {
+        clearInterval(progressInterval);
+      }
+      setUploadProgress(Math.round(((i + 1) / accepted.length) * 100));
+    }
 
-    try {
-      const material = await uploadMaterial(courseId, file);
-      clearInterval(progressInterval);
-      setUploadProgress(100);
-      setTimeout(() => { setUploading(false); setUploadProgress(0); }, 600);
-      setMaterials((prev) => [material, ...prev]);
-      addToast(`"${file.name}" uploaded successfully`, "success");
-    } catch (err: unknown) {
-      clearInterval(progressInterval);
-      setUploading(false);
-      setUploadProgress(0);
-      addToast(err instanceof Error ? err.message : "Upload failed.", "error");
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = "";
+    setTimeout(() => { setUploading(false); setUploadProgress(0); }, 600);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+
+    // Per-file honesty: never report blanket success when anything was skipped.
+    if (skipped.length === 0) {
+      addToast(
+        uploadedNames.length === 1
+          ? `"${uploadedNames[0]}" uploaded successfully`
+          : `${uploadedNames.length} files uploaded successfully`,
+        "success",
+      );
+    } else if (uploadedNames.length === 0) {
+      addToast(`0 of ${total} uploaded — skipped: ${skipped.join("; ")}`, "error", 8000);
+    } else {
+      addToast(
+        `${uploadedNames.length} of ${total} uploaded, ${skipped.length} skipped: ${skipped.join("; ")}`,
+        "warning",
+        8000,
+      );
     }
   }
 
@@ -713,7 +747,7 @@ export default function CoursePage({
             >
               <span style={{ fontSize: "15px", lineHeight: 1 }}>↑</span>
               {uploading ? "Uploading…" : "Upload"}
-              <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+              <input type="file" multiple accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </label>
           </div>
         </header>
@@ -1172,9 +1206,13 @@ function MaterialsTab({
   const [renameSaving, setRenameSaving] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
-  // Collection state
-  const [collectionMaterials, setCollectionMaterials] = useState<Record<string, Material[]>>({});
+  // Collection state. The per-collection cache stores MEMBERSHIP ONLY (material
+  // ids); tree rows always resolve those ids through the flat `materials` prop,
+  // so a rename or delete in the flat list can never leave stale names or ghost
+  // rows in the tree — a deleted id simply stops resolving.
+  const [collectionMaterialIds, setCollectionMaterialIds] = useState<Record<string, string[]>>({});
   const [materialCollectionMap, setMaterialCollectionMap] = useState<Record<string, string[]>>({});
+  const materialsById = useMemo(() => new Map(materials.map((m) => [m.id, m])), [materials]);
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [createModalOpen, setCreateModalOpen] = useState(false);
   // When set, the create modal creates a sub-folder under this parent; null = top-level.
@@ -1304,7 +1342,7 @@ function MaterialsTab({
     // ADDED (kept elsewhere), not moved.
     const otherCount = (materialCollectionMap[file.id] ?? []).length;
     setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: [...(prev[file.id] ?? []), folderId] }));
-    setCollectionMaterials((prev) => ({ ...prev, [folderId]: [...(prev[folderId] ?? []), file] }));
+    setCollectionMaterialIds((prev) => ({ ...prev, [folderId]: [...(prev[folderId] ?? []), file.id] }));
     try {
       await addMaterialToCollection(folderId, file.id);
       addToast(
@@ -1315,7 +1353,7 @@ function MaterialsTab({
       );
     } catch (err: unknown) {
       setMaterialCollectionMap((prev) => ({ ...prev, [file.id]: (prev[file.id] ?? []).filter((c) => c !== folderId) }));
-      setCollectionMaterials((prev) => ({ ...prev, [folderId]: (prev[folderId] ?? []).filter((m) => m.id !== file.id) }));
+      setCollectionMaterialIds((prev) => ({ ...prev, [folderId]: (prev[folderId] ?? []).filter((id) => id !== file.id) }));
       addToast(err instanceof Error ? err.message : "Failed to add to folder.", "error");
     }
   }
@@ -1364,17 +1402,17 @@ function MaterialsTab({
   useEffect(() => {
     if (collections.length === 0) {
       setMaterialCollectionMap({});
-      setCollectionMaterials({});
+      setCollectionMaterialIds({});
       return;
     }
     async function buildMap() {
       const map: Record<string, string[]> = {};
-      const colMats: Record<string, Material[]> = {};
+      const colMats: Record<string, string[]> = {};
       await Promise.all(
         collections.map(async (col) => {
           try {
             const mats = await getCollectionMaterials(col.id);
-            colMats[col.id] = mats;
+            colMats[col.id] = mats.map((m) => m.id);
             for (const m of mats) {
               if (!map[m.id]) map[m.id] = [];
               map[m.id].push(col.id);
@@ -1383,7 +1421,7 @@ function MaterialsTab({
         })
       );
       setMaterialCollectionMap(map);
-      setCollectionMaterials(colMats);
+      setCollectionMaterialIds(colMats);
     }
     buildMap();
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1424,12 +1462,11 @@ function MaterialsTab({
       if (isIn) {
         await removeMaterialFromCollection(collectionId, materialId);
         setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: (prev[materialId] ?? []).filter((c) => c !== collectionId) }));
-        setCollectionMaterials((prev) => ({ ...prev, [collectionId]: (prev[collectionId] ?? []).filter((m) => m.id !== materialId) }));
+        setCollectionMaterialIds((prev) => ({ ...prev, [collectionId]: (prev[collectionId] ?? []).filter((id) => id !== materialId) }));
       } else {
         await addMaterialToCollection(collectionId, materialId);
         setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: [...(prev[materialId] ?? []), collectionId] }));
-        const mat = materials.find((m) => m.id === materialId);
-        if (mat) setCollectionMaterials((prev) => ({ ...prev, [collectionId]: [...(prev[collectionId] ?? []), mat] }));
+        setCollectionMaterialIds((prev) => ({ ...prev, [collectionId]: [...(prev[collectionId] ?? []), materialId] }));
       }
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to update collection.", "error");
@@ -1558,7 +1595,7 @@ function MaterialsTab({
   async function handleRemoveFromCollection(collectionId: string, materialId: string) {
     try {
       await removeMaterialFromCollection(collectionId, materialId);
-      setCollectionMaterials((prev) => ({ ...prev, [collectionId]: (prev[collectionId] ?? []).filter((m) => m.id !== materialId) }));
+      setCollectionMaterialIds((prev) => ({ ...prev, [collectionId]: (prev[collectionId] ?? []).filter((id) => id !== materialId) }));
       setMaterialCollectionMap((prev) => ({ ...prev, [materialId]: (prev[materialId] ?? []).filter((c) => c !== collectionId) }));
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to remove from collection.", "error");
@@ -1599,8 +1636,7 @@ function MaterialsTab({
         await addMaterialToCollection(collectionId, fileId);
         added++;
         setMaterialCollectionMap((prev) => ({ ...prev, [fileId]: [...(prev[fileId] ?? []), collectionId] }));
-        const mat = materials.find((m) => m.id === fileId);
-        if (mat) setCollectionMaterials((prev) => ({ ...prev, [collectionId]: [...(prev[collectionId] ?? []), mat] }));
+        setCollectionMaterialIds((prev) => ({ ...prev, [collectionId]: [...(prev[collectionId] ?? []), fileId] }));
       }
       addToast(
         added > 0
@@ -1660,8 +1696,12 @@ function MaterialsTab({
   // render without prop-threading; cheap at the small collection counts here.
   function renderNode(node: CollectionNode): React.ReactNode {
     const isExpanded = expandedIds.has(node.id);
-    const files = collectionMaterials[node.id] ?? [];
-    const fileCount = collectionMaterials[node.id]?.length ?? node.material_count ?? 0;
+    // Resolve membership ids against the live flat list; ids whose material was
+    // deleted resolve to nothing, so rows and counts stay honest without any
+    // cache surgery in the rename/delete paths.
+    const memberIds = collectionMaterialIds[node.id];
+    const files = (memberIds ?? []).map((id) => materialsById.get(id)).filter((m): m is Material => m !== undefined);
+    const fileCount = memberIds ? files.length : node.material_count ?? 0;
     const subCount = node.children.length;
     const isRenaming = renamingCollectionId === node.id;
     const isDeleting = deletingCollectionId === node.id;
@@ -1868,7 +1908,7 @@ function MaterialsTab({
               )}
               {/* The visible "Upload file" button was removed (the top bar has the universal Upload
                   button); the canonical fileInputRef input must stay mounted for the upload flow. */}
-              <input ref={fileInputRef} type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+              <input ref={fileInputRef} type="file" multiple accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </div>
           </div>
 
@@ -1876,7 +1916,7 @@ function MaterialsTab({
             <div className="mb-5 bg-[rgba(255,255,255,0.03)] rounded-[14px] border border-[rgba(255,255,255,0.07)] p-4">
               <div className="flex items-center gap-3 mb-3">
                 <Spinner size="sm" />
-                <span className="text-sm font-medium text-[var(--text-secondary)]">Uploading file…</span>
+                <span className="text-sm font-medium text-[var(--text-secondary)]">Uploading…</span>
                 <span className="text-sm text-[var(--text-tertiary)] ml-auto">{uploadProgress}%</span>
               </div>
               <ProgressBar value={uploadProgress} size="sm" />
@@ -1897,7 +1937,7 @@ function MaterialsTab({
               </div>
               <p className={`text-sm font-semibold mb-1 ${dragOver ? "text-[var(--accent)]" : "text-[var(--text-primary)]"}`}>{dragOver ? "Drop to upload" : "Drag & drop files here"}</p>
               <p className="text-xs text-[var(--text-tertiary)]">PDF, PPTX, DOCX, TXT — up to 50MB</p>
-              <input type="file" accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
+              <input type="file" multiple accept=".pdf,.pptx,.docx,.doc,.txt" className="hidden" onChange={(e) => handleFileUpload(e.target.files)} disabled={uploading} />
             </label>
           </div>
 
