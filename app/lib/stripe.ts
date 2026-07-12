@@ -37,6 +37,23 @@ export async function checkoutSession(
   window.location.href = url;
 }
 
+interface PortalSessionResponse {
+  url: string;
+}
+
+// Stripe's hosted Customer Billing Portal: cancel subscription, update
+// payment method, view invoices. The backend resolves the caller's Stripe
+// customer and returns a single-use portal URL.
+export async function openBillingPortal(): Promise<void> {
+  const { url } = await apiPost<PortalSessionResponse>(
+    "/stripe/create-portal-session",
+    {}
+  );
+
+  if (!url) throw new Error("No portal URL returned from server");
+  window.location.href = url;
+}
+
 // Matches the backend payload exactly: GET /stripe/subscription-status returns
 // {is_pro, plan, expires_at}. `is_pro` is the canonical paid signal — prefer it
 // over string-matching `plan` so a paid account is never misread.
