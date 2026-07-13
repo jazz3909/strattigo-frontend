@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strattigo — Course Colors</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page:#F4F1E9; --sheet:#FBFAF6; --raised:#FFFFFF; --sunk:#EFEBE1;
+    --ink:#23211C; --ink-soft:#4A4740; --ink-faint:#86827A;
+    --rule:#E3DED2; --rule-soft:#EDE9DF; --rule-strong:#D6D0C2;
+    --accent:#5E7185; --accent-hover:#4E6072; --accent-deep:#3B4A5A;
+    --accent-tint:#E5EAF0; --accent-tint2:#D9E1EA;
+    --r-sm:8px; --r-md:10px; --r-lg:12px; --r-xl:16px;
+    --display:"Fraunces",Georgia,serif; --read:"Newsreader",Georgia,serif; --sans:"Outfit",system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans); }
+  .wrap { max-width:1000px; margin:0 auto; padding:0 40px 100px; }
+  .lbl { padding:48px 0 0; display:flex; align-items:baseline; gap:14px; }
+  .lbl .tag { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .lbl .name { font-family:var(--display); font-size:20px; font-weight:500; }
+  .lbl .desc { font-size:13px; color:var(--ink-faint); font-family:var(--read); font-style:italic; }
+  .divider { border:0; border-top:1px dashed var(--rule); margin:56px 0 0; }
+
+  .sec-head { font-family:var(--display); font-weight:600; font-size:22px; margin:40px 0 6px; }
+  .sec-lead { font-family:var(--read); font-size:15.5px; color:var(--ink-soft); margin:0 0 26px; max-width:560px; line-height:1.5; }
+
+  /* ===== PALETTE SWATCHES ===== */
+  .palette { display:grid; grid-template-columns:repeat(5, 1fr); gap:16px; }
+  .pal { border:1px solid var(--rule); border-radius:var(--r-lg); overflow:hidden; background:var(--sheet); }
+  .pal .pchip { height:60px; }
+  .pal .pmeta { padding:10px 12px; }
+  .pal .pn { font-size:13px; font-weight:600; }
+  .pal .ph { font-size:11.5px; color:var(--ink-faint); margin-top:2px; }
+
+  /* ===== MODAL with color picker ===== */
+  .modal-stage { padding:44px 0; background:transparent; display:flex; justify-content:center; }
+  .modal { width:100%; max-width:480px; background:var(--sheet); border-radius:var(--r-xl); border:1px solid var(--rule); overflow:hidden; box-shadow:0 20px 50px rgba(35,33,28,.10); }
+  .modal-head { padding:24px 28px 0; }
+  .mh-e { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-deep); margin-bottom:10px; }
+  .modal-head h3 { font-family:var(--display); font-weight:600; font-size:23px; margin:0 0 6px; }
+  .modal-head p { font-family:var(--read); font-size:14.5px; color:var(--ink-soft); margin:0; line-height:1.5; }
+  .modal-body { padding:22px 28px; }
+  .fg { margin-bottom:22px; }
+  .fl { display:flex; justify-content:space-between; font-size:12.5px; font-weight:500; color:var(--ink-soft); margin-bottom:8px; }
+  .fl .cc { color:var(--ink-faint); font-weight:400; }
+  .field { width:100%; font-family:var(--sans); font-size:14px; color:var(--ink); background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-sm); padding:10px 12px; }
+  .field:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-tint); }
+  textarea.field { resize:none; font-family:var(--read); line-height:1.5; }
+
+  /* live preview of the card as you pick */
+  .preview { display:flex; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--rule); background:var(--raised); margin-bottom:22px; }
+  .preview .pv-spine { width:5px; flex-shrink:0; background:var(--sel); }
+  .preview .pv-body { padding:14px 16px; display:flex; align-items:center; gap:11px; }
+  .preview .pv-tile { width:38px; height:38px; border-radius:9px; background:var(--sel); color:#fff; display:grid; place-items:center; font-family:var(--display); font-weight:600; font-size:18px; }
+  .preview .pv-name { font-family:var(--display); font-weight:500; font-size:16px; }
+  .preview .pv-meta { font-size:12px; color:var(--ink-faint); margin-top:1px; }
+
+  /* the swatch picker row */
+  .swatches { display:flex; gap:10px; flex-wrap:wrap; }
+  .sw { width:34px; height:34px; border-radius:50%; cursor:pointer; position:relative; border:2px solid transparent; transition:transform .12s; }
+  .sw:hover { transform:scale(1.08); }
+  .sw.on { border-color:var(--sheet); box-shadow:0 0 0 2px var(--ink); }
+  .sw.on::after { content:"\2713"; position:absolute; inset:0; display:grid; place-items:center; color:#fff; font-size:14px; font-weight:700; }
+
+  .modal-foot { padding:18px 28px; border-top:1px solid var(--rule-soft); display:flex; justify-content:flex-end; gap:10px; }
+  .btn { font-family:var(--sans); font-size:13.5px; font-weight:500; border-radius:var(--r-sm); padding:9px 16px; cursor:pointer; border:1px solid transparent; }
+  .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-hover); }
+  .btn-secondary { background:transparent; border-color:var(--rule-strong); color:var(--ink-soft); } .btn-secondary:hover { background:var(--rule-soft); }
+
+  /* ===== FULL SHELF in mixed colors ===== */
+  .courses { display:grid; grid-template-columns:repeat(3, 1fr); gap:16px; margin-top:10px; }
+  .course { display:flex; border-radius:var(--r-lg); overflow:hidden; border:1px solid var(--rule); background:var(--raised); }
+  .course .c-spine { width:5px; flex-shrink:0; }
+  .course .c-body { flex:1; padding:16px 16px 14px; }
+  .course .c-top { display:flex; align-items:center; gap:10px; margin-bottom:12px; }
+  .course .c-tile { width:38px; height:38px; border-radius:9px; display:grid; place-items:center; color:#fff; font-family:var(--display); font-weight:600; font-size:18px; }
+  .course .c-name { font-family:var(--display); font-weight:500; font-size:15.5px; }
+  .course .c-desc { font-family:var(--read); font-size:13.5px; line-height:1.4; color:var(--ink-soft); margin:0; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- palette -->
+  <div class="lbl"><span class="tag">Course colors</span><span class="name">The curated palette</span><span class="desc">— ten muted hues, all at home in the cream world</span></div>
+  <h2 class="sec-head">Ten subject colors</h2>
+  <p class="sec-lead">A fixed set — not a free color picker. Every hue is muted and cream-compatible, so a student can personalize their shelf without ever breaking the calm. Each does identity work only; buttons and states stay Dusk Blue.</p>
+  <div class="palette">
+    <div class="pal"><div class="pchip" style="background:#5E7185"></div><div class="pmeta"><div class="pn">Dusk</div><div class="ph">#5E7185</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#6E7F5E"></div><div class="pmeta"><div class="pn">Sage</div><div class="ph">#6E7F5E</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#A07A34"></div><div class="pmeta"><div class="pn">Ochre</div><div class="ph">#A07A34</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#9E5847"></div><div class="pmeta"><div class="pn">Clay</div><div class="ph">#9E5847</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#6E5A7A"></div><div class="pmeta"><div class="pn">Plum</div><div class="ph">#6E5A7A</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#4E7A6E"></div><div class="pmeta"><div class="pn">Pine</div><div class="ph">#4E7A6E</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#38607A"></div><div class="pmeta"><div class="pn">Slate</div><div class="ph">#38607A</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#B06A50"></div><div class="pmeta"><div class="pn">Terracotta</div><div class="ph">#B06A50</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#8A7B4A"></div><div class="pmeta"><div class="pn">Moss gold</div><div class="ph">#8A7B4A</div></div></div>
+    <div class="pal"><div class="pchip" style="background:#7A5E5A"></div><div class="pmeta"><div class="pn">Cocoa</div><div class="ph">#7A5E5A</div></div></div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- picker in modal -->
+  <div class="lbl"><span class="tag">Where students pick</span><span class="name">In the course modal</span><span class="desc">— live preview updates as they choose</span></div>
+  <div class="modal-stage">
+    <div class="modal" style="--sel:#4E7A6E">
+      <div class="modal-head">
+        <div class="mh-e">New course</div>
+        <h3>Add a course</h3>
+        <p>Name it, then pick a color for its place on your shelf.</p>
+      </div>
+      <div class="modal-body">
+        <div class="preview">
+          <div class="pv-spine"></div>
+          <div class="pv-body">
+            <div class="pv-tile">O</div>
+            <div><div class="pv-name">Organic Chemistry II</div><div class="pv-meta">New course · pick a color below</div></div>
+          </div>
+        </div>
+
+        <div class="fg">
+          <div class="fl"><span>Course name</span><span class="cc">20 / 100</span></div>
+          <input class="field" value="Organic Chemistry II" />
+        </div>
+
+        <div class="fg">
+          <div class="fl"><span>Shelf color</span></div>
+          <div class="swatches">
+            <div class="sw" style="background:#5E7185"></div>
+            <div class="sw" style="background:#6E7F5E"></div>
+            <div class="sw" style="background:#A07A34"></div>
+            <div class="sw" style="background:#9E5847"></div>
+            <div class="sw" style="background:#6E5A7A"></div>
+            <div class="sw on" style="background:#4E7A6E"></div>
+            <div class="sw" style="background:#38607A"></div>
+            <div class="sw" style="background:#B06A50"></div>
+            <div class="sw" style="background:#8A7B4A"></div>
+            <div class="sw" style="background:#7A5E5A"></div>
+          </div>
+        </div>
+
+        <div class="fg" style="margin-bottom:0">
+          <div class="fl"><span>Description <span style="font-weight:400;color:var(--ink-faint)">· optional</span></span></div>
+          <textarea class="field" rows="2" placeholder="Reaction mechanisms, stereochemistry, and synthesis strategy."></textarea>
+        </div>
+      </div>
+      <div class="modal-foot">
+        <button class="btn btn-secondary">Cancel</button>
+        <button class="btn btn-primary">Create course</button>
+      </div>
+    </div>
+  </div>
+
+  <hr class="divider">
+
+  <!-- full shelf mixed -->
+  <div class="lbl"><span class="tag">The result</span><span class="name">A personalized shelf</span></div>
+  <div class="courses">
+    <div class="course"><div class="c-spine" style="background:#5E7185"></div><div class="c-body"><div class="c-top"><div class="c-tile" style="background:#5E7185">B</div><div class="c-name">Biochemistry 301</div></div><p class="c-desc">Metabolism, enzymes, and the pathways that power the cell.</p></div></div>
+    <div class="course"><div class="c-spine" style="background:#4E7A6E"></div><div class="c-body"><div class="c-top"><div class="c-tile" style="background:#4E7A6E">O</div><div class="c-name">Organic Chemistry II</div></div><p class="c-desc">Reaction mechanisms, stereochemistry, and synthesis.</p></div></div>
+    <div class="course"><div class="c-spine" style="background:#6E5A7A"></div><div class="c-body"><div class="c-top"><div class="c-tile" style="background:#6E5A7A">C</div><div class="c-name">Cognitive Psychology</div></div><p class="c-desc">Memory, attention, and how the mind processes information.</p></div></div>
+    <div class="course"><div class="c-spine" style="background:#B06A50"></div><div class="c-body"><div class="c-top"><div class="c-tile" style="background:#B06A50">L</div><div class="c-name">Linear Algebra</div></div><p class="c-desc">Vectors, matrices, eigenvalues, and transformations.</p></div></div>
+    <div class="course"><div class="c-spine" style="background:#8A7B4A"></div><div class="c-body"><div class="c-top"><div class="c-tile" style="background:#8A7B4A">W</div><div class="c-name">World History</div></div><p class="c-desc">Empires, revolutions, and the forces that shaped them.</p></div></div>
+    <div class="course"><div class="c-spine" style="background:#38607A"></div><div class="c-body"><div class="c-top"><div class="c-tile" style="background:#38607A">S</div><div class="c-name">Statistics 200</div></div><p class="c-desc">Distributions, inference, and testing hypotheses.</p></div></div>
+  </div>
+
+</div>
+<div style="height:60px"></div>
+</body>
+</html>

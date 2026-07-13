@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strattigo — Workspace + Chat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page:#F4F1E9; --sheet:#FBFAF6; --raised:#FFFFFF; --sunk:#EFEBE1;
+    --ink:#23211C; --ink-soft:#4A4740; --ink-faint:#86827A;
+    --rule:#E3DED2; --rule-soft:#EDE9DF; --rule-strong:#D6D0C2;
+    --accent:#5E7185; --accent-hover:#4E6072; --accent-deep:#3B4A5A;
+    --accent-tint:#E5EAF0; --accent-tint2:#D9E1EA;
+    --ok:#4E7A57; --ok-tint:#E6EEE4; --bad:#A6503F; --bad-tint:#F2E1DA;
+    --r-sm:8px; --r-md:10px; --r-lg:12px; --r-xl:16px;
+    --display:"Fraunces",Georgia,serif; --read:"Newsreader",Georgia,serif; --sans:"Outfit",system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans); }
+  .lbl { max-width:1100px; margin:0 auto; padding:44px 40px 0; display:flex; align-items:baseline; gap:14px; flex-wrap:wrap; }
+  .lbl .tag { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .lbl .name { font-family:var(--display); font-size:20px; font-weight:500; }
+  .lbl .desc { font-size:13px; color:var(--ink-faint); font-family:var(--read); font-style:italic; }
+  .divider { max-width:1100px; margin:56px auto 0; border:0; border-top:1px dashed var(--rule); }
+
+  .frame { max-width:1100px; margin:20px auto 0; background:var(--sheet); border-radius:16px; border:1px solid var(--rule); overflow:hidden; display:grid; grid-template-columns:66px 1fr; height:720px; }
+  .rail { background:var(--page); border-right:1px solid var(--rule); padding:16px 0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .rail .logo { width:34px; height:34px; border-radius:9px; background:var(--accent); display:grid; place-items:center; font-family:var(--display); font-weight:600; font-size:18px; color:#fff; margin-bottom:14px; }
+  .rail button { width:42px; height:42px; border:0; background:transparent; border-radius:10px; color:var(--ink-faint); display:grid; place-items:center; cursor:pointer; font-size:18px; position:relative; }
+  .rail button:hover { background:var(--rule-soft); }
+  .rail button.active { color:var(--accent-deep); background:var(--accent-tint); }
+  .rail button.active::before { content:""; position:absolute; left:-10px; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); }
+  .rail .spacer { flex:1; }
+  .content { display:flex; flex-direction:column; min-width:0; }
+  .topbar { height:62px; border-bottom:1px solid var(--rule); display:flex; align-items:center; padding:0 26px; gap:16px; flex-shrink:0; }
+  .course-id { display:flex; align-items:center; gap:11px; }
+  .course-avatar { width:30px; height:30px; border-radius:8px; background:var(--accent); display:grid; place-items:center; font-family:var(--display); font-weight:600; font-size:15px; color:#fff; }
+  .course-name { font-family:var(--display); font-weight:500; font-size:17px; }
+  .course-meta { font-size:13px; color:var(--ink-faint); display:flex; align-items:center; gap:6px; }
+  .cm-dot { width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .topbar .spacer { flex:1; }
+  .scope { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); padding:8px 13px; border:1px solid var(--rule-strong); border-radius:var(--r-sm); background:var(--raised); cursor:pointer; }
+  .scope b { color:var(--accent-deep); font-weight:500; }
+  .btn { font-family:var(--sans); font-size:13.5px; font-weight:500; border-radius:var(--r-sm); padding:9px 16px; cursor:pointer; border:1px solid transparent; display:inline-flex; align-items:center; gap:7px; }
+  .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-hover); }
+
+  /* ===== CHAT (full-bleed destination) ===== */
+  .chat { flex:1; display:flex; flex-direction:column; min-height:0; }
+  .chat-scroll { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+
+  /* empty state */
+  .chat-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 24px; text-align:center; }
+  .ce-mark { width:56px; height:56px; border-radius:16px; background:var(--accent-tint); color:var(--accent-deep); display:grid; place-items:center; font-size:26px; margin-bottom:22px; }
+  .chat-empty h2 { font-family:var(--display); font-weight:600; font-size:27px; margin:0 0 10px; }
+  .chat-empty p { font-family:var(--read); font-size:16.5px; color:var(--ink-soft); margin:0 0 8px; max-width:440px; line-height:1.5; }
+  .ce-scope { display:inline-flex; align-items:center; gap:7px; font-family:var(--sans); font-size:12.5px; color:var(--accent-deep); background:var(--accent-tint); padding:6px 13px; border-radius:20px; margin:14px 0 30px; }
+  .ce-chips { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; max-width:560px; }
+  .ce-chip { font-family:var(--read); font-size:15px; color:var(--ink-soft); background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-lg); padding:12px 16px; cursor:pointer; text-align:left; transition:border-color .15s, background .15s; }
+  .ce-chip:hover { border-color:var(--accent); background:var(--accent-tint); color:var(--accent-deep); }
+
+  /* conversation thread */
+  .thread { flex:1; overflow-y:auto; padding:30px 0; }
+  .msg-wrap { max-width:720px; margin:0 auto; padding:0 32px; }
+  .msg { margin-bottom:30px; }
+  .msg-user { display:flex; justify-content:flex-end; }
+  .msg-user .bubble { background:var(--accent-tint); color:var(--accent-deep); font-family:var(--sans); font-size:14.5px; line-height:1.5; padding:12px 16px; border-radius:14px 14px 4px 14px; max-width:78%; }
+  .msg-ai .ai-head { display:flex; align-items:center; gap:9px; margin-bottom:10px; }
+  .msg-ai .ai-mark { width:26px; height:26px; border-radius:7px; background:var(--accent); color:#fff; display:grid; place-items:center; font-size:14px; }
+  .msg-ai .ai-name { font-family:var(--sans); font-size:12.5px; font-weight:600; color:var(--ink-soft); }
+  .msg-ai .ai-body { font-family:var(--read); font-size:17px; line-height:1.66; color:#2E2B25; }
+  .msg-ai .ai-body p { margin:0 0 14px; }
+  .msg-ai .ai-body p:last-child { margin-bottom:0; }
+  .msg-ai .ai-body strong { font-weight:600; color:var(--ink); }
+  .msg-ai .ai-body .term { font-weight:500; color:var(--accent-deep); }
+  .msg-ai .ai-body ul { margin:0 0 14px; padding-left:22px; }
+  .msg-ai .ai-body li { margin-bottom:7px; }
+  .formula-inline { font-family:var(--read); font-style:italic; background:var(--sunk); padding:2px 7px; border-radius:5px; font-size:16px; }
+  /* source chips under an AI message */
+  .ai-sources { display:flex; flex-wrap:wrap; gap:7px; margin-top:14px; }
+  .ai-src { display:inline-flex; align-items:center; gap:6px; font-family:var(--sans); font-size:12px; color:var(--ink-soft); background:var(--sheet); border:1px solid var(--rule); padding:5px 11px; border-radius:20px; cursor:pointer; }
+  .ai-src:hover { border-color:var(--accent-tint2); background:var(--accent-tint); color:var(--accent-deep); }
+  .ai-src .s-ic { color:var(--accent); font-size:12px; }
+
+  /* pinned composer */
+  .composer { border-top:1px solid var(--rule); padding:16px 32px 20px; flex-shrink:0; }
+  .composer-inner { max-width:720px; margin:0 auto; }
+  .composer-box { display:flex; align-items:flex-end; gap:10px; background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-lg); padding:10px 10px 10px 16px; }
+  .composer-box:focus-within { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-tint); }
+  .composer-box textarea { flex:1; border:0; background:transparent; resize:none; font-family:var(--sans); font-size:14.5px; color:var(--ink); line-height:1.5; padding:6px 0; max-height:120px; }
+  .composer-box textarea:focus { outline:none; }
+  .composer-box textarea::placeholder { color:var(--ink-faint); }
+  .send-btn { width:38px; height:38px; border-radius:9px; background:var(--accent); color:#fff; border:0; display:grid; place-items:center; cursor:pointer; font-size:17px; flex-shrink:0; }
+  .send-btn:hover { background:var(--accent-hover); }
+  .composer-foot { display:flex; align-items:center; gap:8px; margin-top:10px; padding:0 2px; }
+  .composer-foot .cf-scope { display:inline-flex; align-items:center; gap:6px; font-size:12px; color:var(--accent-deep); background:var(--accent-tint); padding:4px 11px; border-radius:20px; cursor:pointer; }
+  .composer-foot .cf-hint { font-size:12px; color:var(--ink-faint); }
+  .composer-foot .spacer { flex:1; }
+
+  /* ===== MOBILE SHELL ===== */
+  .phone-row { max-width:1100px; margin:20px auto 0; display:flex; gap:40px; justify-content:center; align-items:flex-start; flex-wrap:wrap; }
+  .phone { width:330px; height:680px; background:var(--sheet); border-radius:34px; border:1px solid var(--rule); overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(35,33,28,.10); position:relative; }
+  .phone-cap { position:relative; }
+  .m-topbar { height:56px; border-bottom:1px solid var(--rule); display:flex; align-items:center; padding:0 14px; gap:10px; flex-shrink:0; }
+  .m-back { width:34px; height:34px; border-radius:8px; background:transparent; border:0; color:var(--ink-soft); display:grid; place-items:center; font-size:17px; cursor:pointer; }
+  .m-back:hover { background:var(--rule-soft); }
+  .m-course { flex:1; min-width:0; }
+  .m-course .mc-name { font-family:var(--display); font-weight:500; font-size:15px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .m-course .mc-meta { font-size:11.5px; color:var(--ink-faint); }
+  .m-avatar { width:32px; height:32px; border-radius:50%; background:var(--accent-tint); color:var(--accent-deep); display:grid; place-items:center; font-family:var(--sans); font-weight:600; font-size:13px; flex-shrink:0; }
+
+  .m-body { flex:1; overflow:hidden; display:flex; flex-direction:column; }
+  .m-chat-empty { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:0 22px; text-align:center; }
+  .m-chat-empty .mm { width:48px; height:48px; border-radius:13px; background:var(--accent-tint); color:var(--accent-deep); display:grid; place-items:center; font-size:22px; margin-bottom:16px; }
+  .m-chat-empty h3 { font-family:var(--display); font-weight:600; font-size:20px; margin:0 0 8px; }
+  .m-chat-empty p { font-family:var(--read); font-size:14px; color:var(--ink-soft); margin:0 0 18px; line-height:1.45; }
+  .m-chip { font-family:var(--read); font-size:13.5px; color:var(--ink-soft); background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-md); padding:10px 13px; margin-bottom:8px; width:100%; text-align:left; }
+
+  .m-composer { border-top:1px solid var(--rule); padding:10px 12px; flex-shrink:0; }
+  .m-composer-box { display:flex; align-items:center; gap:8px; background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-lg); padding:8px 8px 8px 14px; }
+  .m-composer-box input { flex:1; border:0; background:transparent; font-family:var(--sans); font-size:14px; color:var(--ink); }
+  .m-composer-box input:focus { outline:none; }
+  .m-send { width:34px; height:34px; border-radius:8px; background:var(--accent); color:#fff; border:0; display:grid; place-items:center; font-size:15px; flex-shrink:0; }
+
+  /* the ONE bottom bar — workspace views only */
+  .m-bottomnav { display:flex; border-top:1px solid var(--rule); background:var(--page); flex-shrink:0; }
+  .m-bottomnav button { flex:1; border:0; background:transparent; padding:9px 0 11px; display:flex; flex-direction:column; align-items:center; gap:4px; font-family:var(--sans); font-size:10.5px; color:var(--ink-faint); cursor:pointer; }
+  .m-bottomnav button .bi { font-size:19px; }
+  .m-bottomnav button.on { color:var(--accent-deep); }
+  .m-bottomnav button.on .bi { color:var(--accent); }
+
+  .phone-note { max-width:300px; font-family:var(--read); font-size:13.5px; color:var(--ink-soft); line-height:1.5; align-self:center; }
+  .phone-note b { font-family:var(--sans); font-size:12px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--accent-deep); display:block; margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<!-- ============ CHAT EMPTY STATE ============ -->
+<div class="lbl"><span class="tag">Chat · destination</span><span class="name">Empty state</span><span class="desc">— grounded in your materials, before the first question</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button>
+    <button class="active">&#9679;</button><button>&#9632;</button><button>&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> 24 materials</div></div></div>
+      <div class="spacer"></div>
+      <div class="scope"><span>Grounded in:</span> <b>Unit 3 — Metabolism</b> <span>&#9662;</span></div>
+    </div>
+    <div class="chat">
+      <div class="chat-empty">
+        <div class="ce-mark">&#9788;</div>
+        <h2>Ask your AI tutor anything</h2>
+        <p>Answers are drawn from your course materials — not the open internet — so they match exactly what you're studying.</p>
+        <div class="ce-scope">&#9635; Currently grounded in Unit 3 — Metabolism</div>
+        <div class="ce-chips">
+          <button class="ce-chip">Explain the difference between the prep and payoff phases</button>
+          <button class="ce-chip">Quiz me on glycolysis regulation</button>
+          <button class="ce-chip">Summarize Lecture 04 in five points</button>
+          <button class="ce-chip">Why is phosphofructokinase the committed step?</button>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="composer-inner">
+          <div class="composer-box">
+            <textarea rows="1" placeholder="Ask anything about Unit 3 — Metabolism..."></textarea>
+            <button class="send-btn">&#8593;</button>
+          </div>
+          <div class="composer-foot">
+            <span class="cf-scope">&#9635; Unit 3 — Metabolism &#9662;</span>
+            <span class="cf-hint">Change what the tutor draws from</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============ CHAT ACTIVE ============ -->
+<div class="lbl"><span class="tag">Chat · destination</span><span class="name">Active conversation</span><span class="desc">— the tutor speaks in the reading voice, and cites your materials</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button>
+    <button class="active">&#9679;</button><button>&#9632;</button><button>&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> 24 materials</div></div></div>
+      <div class="spacer"></div>
+      <div class="scope"><span>Grounded in:</span> <b>Unit 3 — Metabolism</b> <span>&#9662;</span></div>
+    </div>
+    <div class="chat">
+      <div class="thread">
+        <div class="msg-wrap">
+          <div class="msg msg-user"><div class="bubble">Why is phosphofructokinase the committed step of glycolysis?</div></div>
+          <div class="msg msg-ai">
+            <div class="ai-head"><div class="ai-mark">&#9788;</div><div class="ai-name">AI tutor</div></div>
+            <div class="ai-body">
+              <p>Great question — this comes up a lot in your Unit 3 material. <strong>Phosphofructokinase-1</strong> (PFK-1) is called the committed step because it's the first reaction that <span class="term">locks a molecule into glycolysis</span> with no easy way back.</p>
+              <p>Here's the logic. The very first reaction (catalyzed by hexokinase) produces glucose-6-phosphate — but that molecule can still branch off into other pathways, like the pentose phosphate pathway. So it isn't truly "committed" yet.</p>
+              <p>PFK-1 changes that. Once it converts fructose-6-phosphate into <span class="formula-inline">fructose-1,6-bisphosphate</span>, the molecule has only one real fate: to continue through glycolysis. That's why PFK-1 is also the pathway's <strong>main regulatory valve</strong> — the cell controls glycolysis mostly by controlling this one enzyme.</p>
+              <div class="ai-sources">
+                <span class="ai-src"><span class="s-ic">&#9635;</span> Lecture 04 — Metabolism, p.7</span>
+                <span class="ai-src"><span class="s-ic">&#9635;</span> Regulation notes.pdf</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="composer">
+        <div class="composer-inner">
+          <div class="composer-box">
+            <textarea rows="1" placeholder="Ask a follow-up..."></textarea>
+            <button class="send-btn">&#8593;</button>
+          </div>
+          <div class="composer-foot">
+            <span class="cf-scope">&#9635; Unit 3 — Metabolism &#9662;</span>
+            <span class="spacer"></span>
+            <span class="cf-hint">Enter to send · Shift+Enter for a new line</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ============ MOBILE ============ -->
+<div class="lbl"><span class="tag">Mobile · the shell</span><span class="name">One bottom bar, not two</span><span class="desc">— workspace views own the bar; global nav folds into the avatar</span></div>
+<div class="phone-row">
+
+  <div class="phone">
+    <div class="m-topbar">
+      <button class="m-back">&#8592;</button>
+      <div class="m-course"><div class="mc-name">Biochemistry 301</div><div class="mc-meta">Unit 3 — Metabolism</div></div>
+      <div class="m-avatar">JS</div>
+    </div>
+    <div class="m-body">
+      <div class="m-chat-empty">
+        <div class="mm">&#9788;</div>
+        <h3>Ask your AI tutor</h3>
+        <p>Grounded in your Unit 3 materials.</p>
+        <button class="m-chip">Explain the prep vs payoff phases</button>
+        <button class="m-chip">Why is PFK the committed step?</button>
+        <button class="m-chip">Summarize Lecture 04</button>
+      </div>
+      <div class="m-composer">
+        <div class="m-composer-box">
+          <input placeholder="Ask anything..." />
+          <button class="m-send">&#8593;</button>
+        </div>
+      </div>
+    </div>
+    <nav class="m-bottomnav">
+      <button class="on"><span class="bi">&#9679;</span> Chat</button>
+      <button><span class="bi">&#9632;</span> Guides</button>
+      <button><span class="bi">&#9633;</span> Quizzes</button>
+      <button><span class="bi">&#9635;</span> Materials</button>
+    </nav>
+  </div>
+
+  <div class="phone-note">
+    <b>The fix</b>
+    The current build stacks two bars on mobile — a global nav (Courses / Canvas / Billing) under the workspace views. Here, inside a course, the workspace views <em>are</em> the nav. "← Courses" in the top bar is the way out, and Billing / settings live in the avatar menu. One bar, more room for content, no redundancy.
+  </div>
+
+</div>
+
+<div style="height:70px"></div>
+</body>
+</html>

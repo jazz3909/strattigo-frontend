@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strattigo — Wizards</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page:#F4F1E9; --sheet:#FBFAF6; --raised:#FFFFFF; --sunk:#EFEBE1;
+    --ink:#23211C; --ink-soft:#4A4740; --ink-faint:#86827A;
+    --rule:#E3DED2; --rule-soft:#EDE9DF; --rule-strong:#D6D0C2;
+    --accent:#5E7185; --accent-hover:#4E6072; --accent-deep:#3B4A5A;
+    --accent-tint:#E5EAF0; --accent-tint2:#D9E1EA;
+    --ok:#4E7A57; --ok-tint:#E6EEE4;
+    --pdf:#B0503F; --doc:#3B6FA5; --ppt:#C67A2E;
+    --r-sm:8px; --r-md:10px; --r-lg:12px; --r-xl:16px; --r-2xl:20px;
+    --display:"Fraunces",Georgia,serif; --read:"Newsreader",Georgia,serif; --sans:"Outfit",system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans); }
+  .lbl { max-width:1100px; margin:0 auto; padding:44px 40px 0; display:flex; align-items:baseline; gap:14px; }
+  .lbl .tag { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .lbl .name { font-family:var(--display); font-size:20px; font-weight:500; }
+  .lbl .desc { font-size:13px; color:var(--ink-faint); font-family:var(--read); font-style:italic; }
+  .divider { max-width:1100px; margin:56px auto 0; border:0; border-top:1px dashed var(--rule); }
+
+  .btn { font-family:var(--sans); font-size:14px; font-weight:500; border-radius:var(--r-sm); padding:11px 20px; cursor:pointer; border:1px solid transparent; display:inline-flex; align-items:center; gap:8px; }
+  .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-hover); }
+  .btn-secondary { background:transparent; border-color:var(--rule-strong); color:var(--ink-soft); } .btn-secondary:hover { background:var(--rule-soft); }
+  .btn-ghost { background:transparent; color:var(--ink-faint); } .btn-ghost:hover { color:var(--ink-soft); }
+
+  /* ===== SHARED STEPPER MODAL SHELL ===== */
+  .stage { max-width:1100px; margin:20px auto 0; padding:40px 20px; background:rgba(35,33,28,.34); border-radius:16px; display:flex; align-items:center; justify-content:center; }
+  .wizard { width:100%; max-width:600px; background:var(--sheet); border-radius:var(--r-2xl); border:1px solid var(--rule); overflow:hidden; box-shadow:0 24px 60px rgba(35,33,28,.14); }
+
+  /* stepper header */
+  .wz-steps { display:flex; align-items:center; padding:20px 28px; border-bottom:1px solid var(--rule-soft); gap:0; }
+  .wz-step { display:flex; align-items:center; gap:9px; flex:0 0 auto; }
+  .wz-dot { width:26px; height:26px; border-radius:50%; display:grid; place-items:center; font-family:var(--sans); font-size:12px; font-weight:600; flex-shrink:0; }
+  .wz-step.done .wz-dot { background:var(--accent); color:#fff; }
+  .wz-step.current .wz-dot { background:var(--accent-tint); color:var(--accent-deep); box-shadow:0 0 0 3px var(--accent-tint2); }
+  .wz-step.todo .wz-dot { background:var(--sunk); color:var(--ink-faint); }
+  .wz-step .wz-name { font-size:12.5px; font-weight:500; white-space:nowrap; }
+  .wz-step.done .wz-name, .wz-step.current .wz-name { color:var(--ink); }
+  .wz-step.todo .wz-name { color:var(--ink-faint); }
+  .wz-line { flex:1; height:1.5px; background:var(--rule); margin:0 10px; min-width:14px; }
+  .wz-line.done { background:var(--accent); }
+  @media (max-width:600px){ .wz-step .wz-name { display:none; } }
+
+  /* body */
+  .wz-body { padding:32px 34px; }
+  .wz-eyebrow { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-deep); margin-bottom:10px; }
+  .wz-body h2 { font-family:var(--display); font-weight:600; font-size:26px; margin:0 0 8px; line-height:1.15; }
+  .wz-body .wz-lede { font-family:var(--read); font-size:16px; color:var(--ink-soft); margin:0 0 26px; line-height:1.5; }
+
+  .fg { margin-bottom:20px; }
+  .fl { display:flex; justify-content:space-between; font-size:12.5px; font-weight:500; color:var(--ink-soft); margin-bottom:8px; }
+  .fl .cc { color:var(--ink-faint); font-weight:400; }
+  .field { width:100%; font-family:var(--sans); font-size:14px; color:var(--ink); background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-sm); padding:11px 13px; }
+  .field:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-tint); }
+  textarea.field { resize:none; font-family:var(--read); line-height:1.5; }
+
+  /* footer */
+  .wz-foot { padding:18px 34px; border-top:1px solid var(--rule-soft); display:flex; align-items:center; }
+  .wz-foot .wz-progress { font-size:12.5px; color:var(--ink-faint); }
+  .wz-foot .spacer { flex:1; }
+  .wz-foot .wz-actions { display:flex; gap:10px; }
+
+  /* welcome art */
+  .wz-welcome { text-align:center; padding:8px 0 4px; }
+  .wz-welcome .ww-mark { width:64px; height:64px; border-radius:18px; background:var(--accent); color:#fff; display:inline-grid; place-items:center; font-family:var(--display); font-weight:600; font-size:30px; margin-bottom:22px; }
+  .wz-welcome h2 { font-size:28px; }
+  .wz-welcome .wz-lede { max-width:400px; margin:0 auto 8px; }
+  .ww-feats { display:flex; justify-content:center; gap:26px; margin-top:26px; }
+  .ww-feat { display:flex; flex-direction:column; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); }
+  .ww-feat .wf-ic { width:40px; height:40px; border-radius:11px; display:grid; place-items:center; font-size:19px; color:#fff; }
+
+  /* dropzone */
+  .dropzone { display:flex; flex-direction:column; align-items:center; gap:12px; padding:38px 20px; border:1.5px dashed var(--rule-strong); border-radius:var(--r-lg); background:var(--sheet); text-align:center; cursor:pointer; }
+  .dropzone:hover { border-color:var(--accent); background:var(--accent-tint); }
+  .dropzone .dz-ic { width:48px; height:48px; border-radius:13px; background:var(--sunk); color:var(--ink-soft); display:grid; place-items:center; font-size:22px; }
+  .dropzone b { font-size:15px; }
+  .dropzone span { font-size:13px; color:var(--ink-faint); }
+  .uploaded { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+  .up-row { display:flex; align-items:center; gap:11px; padding:10px 13px; background:var(--raised); border:1px solid var(--rule); border-radius:var(--r-sm); }
+  .up-ic { width:30px; height:30px; border-radius:7px; display:grid; place-items:center; color:#fff; font-size:9px; font-weight:600; flex-shrink:0; }
+  .up-name { font-size:13.5px; font-weight:500; flex:1; }
+  .up-check { color:var(--ok); font-size:16px; }
+
+  /* canvas connect */
+  .canvas-card { display:flex; align-items:center; gap:16px; padding:20px; background:var(--raised); border:1px solid var(--rule); border-radius:var(--r-lg); }
+  .canvas-logo { width:48px; height:48px; border-radius:12px; background:#E13223; color:#fff; display:grid; place-items:center; font-family:var(--display); font-weight:600; font-size:22px; flex-shrink:0; }
+  .canvas-card .cc-main b { font-size:15px; }
+  .canvas-card .cc-main p { font-size:13px; color:var(--ink-soft); margin:3px 0 0; font-family:var(--read); }
+  .canvas-card .spacer { flex:1; }
+  .skip-note { text-align:center; font-size:12.5px; color:var(--ink-faint); margin-top:16px; font-family:var(--read); font-style:italic; }
+
+  /* complete */
+  .wz-done { text-align:center; padding:8px 0; }
+  .wz-done .wd-mark { width:64px; height:64px; border-radius:50%; background:var(--ok-tint); color:var(--ok); display:inline-grid; place-items:center; font-size:32px; margin-bottom:20px; }
+  .wz-done h2 { font-size:27px; }
+
+  /* ===== CANVAS IMPORT — file selection ===== */
+  .ci-courses { display:flex; flex-direction:column; gap:10px; }
+  .ci-course { display:flex; align-items:center; gap:13px; padding:14px 16px; background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-lg); cursor:pointer; }
+  .ci-course:hover { border-color:var(--accent); }
+  .ci-course.sel { border-color:var(--accent); background:var(--accent-tint); }
+  .ci-radio { width:20px; height:20px; border-radius:50%; border:2px solid var(--rule-strong); flex-shrink:0; position:relative; }
+  .ci-course.sel .ci-radio { border-color:var(--accent); }
+  .ci-course.sel .ci-radio::after { content:""; position:absolute; inset:4px; border-radius:50%; background:var(--accent); }
+  .ci-cmain b { font-size:14.5px; font-weight:500; }
+  .ci-cmain p { font-size:12.5px; color:var(--ink-faint); margin:2px 0 0; }
+  .ci-course .spacer { flex:1; }
+  .ci-count { font-size:12.5px; color:var(--ink-faint); }
+
+  .ci-files { display:flex; flex-direction:column; gap:8px; max-height:280px; overflow:hidden; }
+  .ci-file { display:flex; align-items:center; gap:12px; padding:11px 14px; background:var(--raised); border:1px solid var(--rule); border-radius:var(--r-sm); cursor:pointer; }
+  .ci-file:hover { background:var(--sheet); }
+  .ci-check { width:20px; height:20px; border-radius:5px; border:1.5px solid var(--rule-strong); flex-shrink:0; display:grid; place-items:center; color:#fff; font-size:12px; }
+  .ci-file.on .ci-check { background:var(--accent); border-color:var(--accent); }
+  .ci-fname { font-size:14px; font-weight:500; flex:1; }
+  .ci-fmeta { font-size:12px; color:var(--ink-faint); }
+  .ci-selbar { display:flex; align-items:center; gap:12px; margin-bottom:14px; font-size:13px; color:var(--ink-soft); }
+  .ci-selbar a { color:var(--accent-deep); font-weight:500; cursor:pointer; }
+  .ci-selbar .spacer { flex:1; }
+</style>
+</head>
+<body>
+
+<!-- ================= ONBOARDING — STEP 1: WELCOME ================= -->
+<div class="lbl"><span class="tag">Onboarding · first run</span><span class="name">Step 1 — Welcome</span><span class="desc">— the shared stepper, auto-opens for new users</span></div>
+<div class="stage">
+  <div class="wizard">
+    <div class="wz-steps">
+      <div class="wz-step current"><div class="wz-dot">1</div><span class="wz-name">Welcome</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">2</div><span class="wz-name">Course</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">3</div><span class="wz-name">Materials</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">4</div><span class="wz-name">Canvas</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">5</div><span class="wz-name">Done</span></div>
+    </div>
+    <div class="wz-body">
+      <div class="wz-welcome">
+        <div class="ww-mark">S</div>
+        <h2>Welcome to Strattigo</h2>
+        <p class="wz-lede">Let's get your first course set up. In two minutes you'll have study guides, quizzes, and an AI tutor built from your own materials.</p>
+        <div class="ww-feats">
+          <div class="ww-feat"><div class="wf-ic" style="background:#5E7185">&#9632;</div>Study guides</div>
+          <div class="ww-feat"><div class="wf-ic" style="background:#6E7F5E">&#9633;</div>Quizzes</div>
+          <div class="ww-feat"><div class="wf-ic" style="background:#A07A34">&#9788;</div>AI tutor</div>
+        </div>
+      </div>
+    </div>
+    <div class="wz-foot">
+      <span class="wz-progress">Step 1 of 5</span>
+      <div class="spacer"></div>
+      <div class="wz-actions">
+        <button class="btn btn-ghost">Skip for now</button>
+        <button class="btn btn-primary">Let's go &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ================= ONBOARDING — STEP 3: UPLOAD ================= -->
+<div class="lbl"><span class="tag">Onboarding</span><span class="name">Step 3 — Add materials</span></div>
+<div class="stage">
+  <div class="wizard">
+    <div class="wz-steps">
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Welcome</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Course</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step current"><div class="wz-dot">3</div><span class="wz-name">Materials</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">4</div><span class="wz-name">Canvas</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">5</div><span class="wz-name">Done</span></div>
+    </div>
+    <div class="wz-body">
+      <div class="wz-eyebrow">Biochemistry 301</div>
+      <h2>Add your first materials</h2>
+      <p class="wz-lede">Upload a few lecture slides, PDFs, or notes. Strattigo builds everything from these — you can always add more later.</p>
+      <div class="dropzone">
+        <div class="dz-ic">&#8593;</div>
+        <b>Drop files here or click to browse</b>
+        <span>PDF, PPTX, DOCX, TXT · up to 25 MB each</span>
+      </div>
+      <div class="uploaded">
+        <div class="up-row"><div class="up-ic" style="background:var(--pdf)">PDF</div><span class="up-name">Lecture 04 — Metabolism.pdf</span><span class="up-check">&#10003;</span></div>
+        <div class="up-row"><div class="up-ic" style="background:var(--ppt)">PPT</div><span class="up-name">Enzyme kinetics slides.pptx</span><span class="up-check">&#10003;</span></div>
+      </div>
+    </div>
+    <div class="wz-foot">
+      <span class="wz-progress">Step 3 of 5</span>
+      <div class="spacer"></div>
+      <div class="wz-actions">
+        <button class="btn btn-secondary">&#8592; Back</button>
+        <button class="btn btn-primary">Continue &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ================= ONBOARDING — STEP 5: DONE ================= -->
+<div class="lbl"><span class="tag">Onboarding</span><span class="name">Step 5 — Ready</span></div>
+<div class="stage">
+  <div class="wizard">
+    <div class="wz-steps">
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Welcome</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Course</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Materials</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Canvas</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step current"><div class="wz-dot">5</div><span class="wz-name">Done</span></div>
+    </div>
+    <div class="wz-body">
+      <div class="wz-done">
+        <div class="wd-mark">&#10003;</div>
+        <h2>You're all set, Jordan</h2>
+        <p class="wz-lede">Biochemistry 301 is ready with 2 materials. Jump into chat, generate your first study guide, or make a quiz.</p>
+      </div>
+    </div>
+    <div class="wz-foot">
+      <span class="wz-progress">Step 5 of 5</span>
+      <div class="spacer"></div>
+      <div class="wz-actions">
+        <button class="btn btn-secondary">Generate a guide</button>
+        <button class="btn btn-primary">Open my course &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ================= CANVAS IMPORT — STAGE 2: CHOOSE FILES ================= -->
+<div class="lbl"><span class="tag">Canvas import · same stepper</span><span class="name">Choose files</span><span class="desc">— launched from Materials (dormant until Canvas is live)</span></div>
+<div class="stage">
+  <div class="wizard">
+    <div class="wz-steps">
+      <div class="wz-step done"><div class="wz-dot">&#10003;</div><span class="wz-name">Select course</span></div>
+      <div class="wz-line done"></div>
+      <div class="wz-step current"><div class="wz-dot">2</div><span class="wz-name">Choose files</span></div>
+      <div class="wz-line"></div>
+      <div class="wz-step todo"><div class="wz-dot">3</div><span class="wz-name">Import</span></div>
+    </div>
+    <div class="wz-body">
+      <div class="wz-eyebrow">From Canvas · BIOL 301</div>
+      <h2>Choose what to import</h2>
+      <p class="wz-lede">Pick the files to bring into Strattigo. They'll land in your All Files, ready to organize.</p>
+      <div class="ci-selbar">
+        <a>Select all</a><span>·</span><a>Clear</a>
+        <div class="spacer"></div>
+        <span>3 of 5 selected</span>
+      </div>
+      <div class="ci-files">
+        <div class="ci-file on"><div class="ci-check">&#10003;</div><div class="up-ic" style="background:var(--pdf)">PDF</div><span class="ci-fname">Syllabus.pdf</span><span class="ci-fmeta">1.2 MB</span></div>
+        <div class="ci-file on"><div class="ci-check">&#10003;</div><div class="up-ic" style="background:var(--ppt)">PPT</div><span class="ci-fname">Week 4 — Metabolism.pptx</span><span class="ci-fmeta">6.1 MB</span></div>
+        <div class="ci-file on"><div class="ci-check">&#10003;</div><div class="up-ic" style="background:var(--pdf)">PDF</div><span class="ci-fname">Problem set 3.pdf</span><span class="ci-fmeta">890 KB</span></div>
+        <div class="ci-file"><div class="ci-check"></div><div class="up-ic" style="background:var(--doc)">DOC</div><span class="ci-fname">Lab report template.docx</span><span class="ci-fmeta">142 KB</span></div>
+        <div class="ci-file"><div class="ci-check"></div><div class="up-ic" style="background:var(--pdf)">PDF</div><span class="ci-fname">Grading rubric.pdf</span><span class="ci-fmeta">320 KB</span></div>
+      </div>
+    </div>
+    <div class="wz-foot">
+      <span class="wz-progress">Step 2 of 3</span>
+      <div class="spacer"></div>
+      <div class="wz-actions">
+        <button class="btn btn-secondary">&#8592; Back</button>
+        <button class="btn btn-primary">Import 3 files &#8594;</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:60px"></div>
+</body>
+</html>
