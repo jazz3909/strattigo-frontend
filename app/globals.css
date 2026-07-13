@@ -184,6 +184,7 @@
   --color-success: #4E7A57;
   --color-success-tint: #E6EEE4;
   --color-caution: #9A7B2A;
+  --color-caution-deep: #7C5C1E;  /* text on caution tint (design-system.html .pill-warn) */
   --color-caution-tint: #F3EAD5;
   --color-error: #A6503F;
   --color-error-tint: #F2E1DA;
