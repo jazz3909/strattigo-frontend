@@ -1,19 +1,6 @@
-/*
-  ══════════════════════════════════════════════════════════════════════════
-  ⚠️  AI-GENERATED TEMPLATE — NOT LEGAL ADVICE
-  This Terms of Service page was drafted by an AI as a starting point. It
-  MUST be reviewed by the founder and, ideally, a qualified attorney before
-  it is relied upon. Search this file for "[PLACEHOLDER:" to find the values
-  that must be filled in before publishing:
-    - Effective date
-    - Company legal name (appears twice: §1 and §13)
-    - Governing law jurisdiction (state/country)
-    - Contact email
-  ══════════════════════════════════════════════════════════════════════════
-*/
 import type { Metadata } from "next";
 import Link from "next/link";
-import { LegalShell, LegalToc, LegalSection, Placeholder } from "../components/legal/LegalShell";
+import { LegalShell, LegalToc, LegalSection } from "../components/legal/LegalShell";
 
 export const metadata: Metadata = {
   title: "Terms of Service — Strattigo",
@@ -21,21 +8,24 @@ export const metadata: Metadata = {
 };
 
 const SECTIONS = [
-  { id: "acceptance", label: "Acceptance of Terms" },
-  { id: "service", label: "Description of the Service" },
-  { id: "accounts", label: "Accounts & Eligibility" },
+  { id: "eligibility", label: "Eligibility" },
+  { id: "account", label: "Your Account" },
+  { id: "your-content", label: "Your Content" },
   { id: "acceptable-use", label: "Acceptable Use" },
-  { id: "your-content", label: "Your Content & License to Us" },
-  { id: "our-ip", label: "Our Intellectual Property" },
-  { id: "ai-disclaimer", label: "AI-Generated Content" },
-  { id: "billing", label: "Subscriptions & Billing" },
-  { id: "termination", label: "Termination" },
-  { id: "warranty", label: "Disclaimer of Warranties" },
+  { id: "ai-disclaimer", label: "AI-Generated Content & Academic Disclaimer" },
+  { id: "billing", label: "Subscriptions & Payments" },
+  { id: "usage-limits", label: "Free Tier & Usage Limits" },
+  { id: "third-party", label: "Third-Party Services" },
+  { id: "termination", label: "Termination & Account Deletion" },
+  { id: "disclaimers", label: "Disclaimers" },
   { id: "liability", label: "Limitation of Liability" },
+  { id: "indemnification", label: "Indemnification" },
   { id: "changes", label: "Changes to These Terms" },
   { id: "governing-law", label: "Governing Law" },
   { id: "contact", label: "Contact" },
 ];
+
+const CONTACT_EMAIL = "zomirj2@gmail.com";
 
 export default function TermsPage() {
   return (
@@ -45,232 +35,263 @@ export default function TermsPage() {
       intro={
         <>
           <p>
-            <strong>Effective date:</strong> <Placeholder>Effective date</Placeholder>
+            <strong>Last updated: July 13, 2026</strong>
           </p>
           <p>
-            These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use of Strattigo — the
-            website, applications, and services that help you turn your course materials into study
-            guides, quizzes, and AI-assisted study sessions (together, the &ldquo;Service&rdquo;). Please read
-            them carefully. Our <Link href="/privacy">Privacy Policy</Link> explains how we handle your
-            data and forms part of these Terms.
+            Welcome to Strattigo. These Terms of Service (&ldquo;Terms&rdquo;) govern your access to and use
+            of Strattigo (the &ldquo;Service&rdquo;), a study platform that lets you upload course materials
+            and generate study guides, quizzes, and AI-assisted study help scoped to those materials.
+          </p>
+          <p>
+            Please read these Terms carefully. By creating an account or using the Service, you agree
+            to be bound by these Terms. If you do not agree, do not use the Service.
           </p>
         </>
       }
     >
       <LegalToc items={SECTIONS} />
 
-      <LegalSection id="acceptance" number={1} title="Acceptance of Terms">
+      <LegalSection id="eligibility" number={1} title="Eligibility">
         <p>
-          By creating an account, or by accessing or using the Service, you agree to be bound by
-          these Terms and our <Link href="/privacy">Privacy Policy</Link>. If you do not agree, do
-          not use the Service. The Service is operated by{" "}
-          <Placeholder>Company legal name</Placeholder> (&ldquo;Strattigo&rdquo;, &ldquo;we&rdquo;, &ldquo;us&rdquo;, or &ldquo;our&rdquo;).
+          You must be at least 18 years old to use Strattigo. By using the Service, you represent
+          and warrant that you are 18 or older and that you have the legal capacity to enter into
+          these Terms.
         </p>
+        <p>If we learn that a user is under 18, we may suspend or terminate that account.</p>
       </LegalSection>
 
-      <LegalSection id="service" number={2} title="Description of the Service">
-        <p>
-          Strattigo is an AI-powered study tool. You upload your course materials — such as PDFs,
-          lecture slides, and documents — and the Service processes and stores them so it can
-          generate study guides, practice quizzes, and study plans, and answer your questions
-          through an AI chat grounded in those materials. We may add, change, or remove features of
-          the Service over time.
-        </p>
-      </LegalSection>
-
-      <LegalSection id="accounts" number={3} title="Accounts & Eligibility">
-        <p>
-          You must be at least 13 years old to use the Service. If you are under the age of
-          majority where you live, you may use the Service only with the consent of a parent or
-          legal guardian who agrees to these Terms on your behalf.
-        </p>
-        <p>When you create an account, you agree to:</p>
+      <LegalSection id="account" number={2} title="Your Account">
+        <p>To use most features, you must create an account. You agree to:</p>
         <ul>
-          <li>provide accurate account information, including a valid email address;</li>
-          <li>keep your login credentials confidential and not share your account with others;</li>
-          <li>notify us promptly if you suspect unauthorized use of your account; and</li>
-          <li>accept responsibility for all activity that occurs under your account.</li>
+          <li>Provide accurate information (including a valid email address and name).</li>
+          <li>Keep your login credentials confidential and secure.</li>
+          <li>Be responsible for all activity that occurs under your account.</li>
+          <li>
+            Notify us promptly at <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a> if you
+            suspect unauthorized use of your account.
+          </li>
         </ul>
+        <p>
+          You are responsible for your account. We are not liable for any loss arising from
+          unauthorized use of your account that results from your failure to keep your credentials
+          secure.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="your-content" number={3} title="Your Content">
+        <p>
+          <strong>You own your content.</strong> When you upload course materials, notes, documents,
+          or other files (&ldquo;Your Content&rdquo;) to Strattigo, you retain all ownership rights to that
+          content. We do not claim ownership of Your Content.
+        </p>
+        <p>
+          <strong>License to operate the Service.</strong> To provide the Service, you grant
+          Strattigo a limited, non-exclusive license to store, process, and transmit Your Content
+          solely for the purpose of operating and providing the Service to you — for example,
+          extracting text, generating embeddings, and producing study guides, quizzes, and chat
+          responses scoped to your materials. This license exists only so that we can run the
+          Service for you, and it ends when you delete Your Content or your account (see{" "}
+          <a href="#termination">Section 9</a>).
+        </p>
+        <p>
+          <strong>We do not use Your Content to train AI models.</strong> Your uploaded materials
+          and the content you generate are used only to provide the Service to you. We do not use
+          Your Content to train, fine-tune, or improve any artificial intelligence or machine
+          learning models.
+        </p>
+        <p>
+          <strong>Your responsibilities regarding content.</strong> You represent that you have the
+          right to upload and use Your Content, and that doing so does not violate any law or
+          infringe anyone else&rsquo;s rights (including copyright). You are solely responsible for Your
+          Content and for ensuring you have permission to upload any materials you did not create.
+        </p>
       </LegalSection>
 
       <LegalSection id="acceptable-use" number={4} title="Acceptable Use">
-        <p>You agree not to misuse the Service. In particular, you will not:</p>
+        <p>You agree not to use the Service to:</p>
         <ul>
+          <li>Violate any law or regulation.</li>
+          <li>Infringe the intellectual property or other rights of any person or entity.</li>
           <li>
-            upload materials you do not have the right to use — for example, textbooks, test banks,
-            or other copyrighted works distributed in violation of the rights holder&rsquo;s terms;
+            Upload malicious code, or attempt to disrupt, damage, overload, or gain unauthorized
+            access to the Service or its infrastructure.
+          </li>
+          <li>Attempt to access other users&rsquo; accounts, data, or content.</li>
+          <li>
+            Reverse engineer, scrape, or attempt to extract the underlying source code or systems of
+            the Service, except as permitted by law.
           </li>
           <li>
-            use the Service to cheat on exams or otherwise violate your school&rsquo;s academic
-            integrity policies — Strattigo is a study aid, not a substitute for doing your own work;
+            Use the Service to cheat in violation of your school&rsquo;s academic integrity policies, or
+            in any manner that violates your institution&rsquo;s rules.
           </li>
-          <li>
-            reverse-engineer, decompile, scrape, or attempt to extract the source code, models, or
-            underlying data of the Service;
-          </li>
-          <li>
-            probe, disrupt, or circumvent the Service&rsquo;s security, rate limits, or usage
-            restrictions, or access it by automated means other than interfaces we provide;
-          </li>
-          <li>upload malware or content that is unlawful, harassing, or harmful to others; or</li>
-          <li>resell, sublicense, or provide the Service to third parties without our permission.</li>
+          <li>Resell, sublicense, or commercially exploit the Service without our permission.</li>
         </ul>
+        <p>We may suspend or terminate accounts that violate these rules.</p>
+      </LegalSection>
+
+      <LegalSection id="ai-disclaimer" number={5} title="AI-Generated Content and Academic Disclaimer">
         <p>
-          We may suspend or terminate accounts that violate this section (see{" "}
-          <a href="#termination">Termination</a>).
+          Strattigo uses artificial intelligence to generate study guides, quizzes, summaries, and
+          chat responses based on the materials you provide.
+        </p>
+        <p>
+          <strong>AI output can be inaccurate.</strong> AI-generated content may contain errors,
+          omissions, or misleading information, even when it appears confident and plausible. You
+          should not rely on Strattigo as your sole source of truth. Always verify important
+          information against your original course materials, instructors, and other authoritative
+          sources.
+        </p>
+        <p>
+          <strong>Not professional advice.</strong> Strattigo is a study aid. It does not provide
+          academic, legal, medical, financial, or professional advice, and its output should not be
+          treated as such.
+        </p>
+        <p>
+          <strong>Your academic responsibility.</strong> You are responsible for your own academic
+          work and for complying with your institution&rsquo;s academic integrity policies. Strattigo is
+          a tool to help you study; it is not a substitute for your own learning, and we make no
+          guarantees about grades, exam results, or academic outcomes.
         </p>
       </LegalSection>
 
-      <LegalSection id="your-content" number={5} title="Your Content & License to Us">
-        <p>
-          <strong>You own your materials.</strong> Course materials you upload and any other content
-          you submit to the Service (&ldquo;Your Content&rdquo;) remain yours. We claim no ownership over
-          them.
-        </p>
-        <p>
-          So that we can operate the Service, you grant us a limited, worldwide, non-exclusive,
-          royalty-free license to host, store, process, reproduce, and display Your Content — solely
-          to provide and maintain the Service for you. This includes sending Your Content to the
-          third-party processors described in our <Link href="/privacy">Privacy Policy</Link> (for
-          example, our AI provider) for the purpose of generating your study materials. This license
-          ends when you delete Your Content or your account, except where limited copies persist in
-          routine backups for a short period.
-        </p>
-        <p>
-          You are responsible for Your Content and must have the necessary rights to upload it. We
-          may remove content that we reasonably believe violates these Terms or the law.
-        </p>
-      </LegalSection>
-
-      <LegalSection id="our-ip" number={6} title="Our Intellectual Property">
-        <p>
-          The Service itself — including the software, design, branding, and everything other than
-          Your Content — is owned by Strattigo or its licensors and is protected by intellectual
-          property laws. We grant you a limited, non-exclusive, non-transferable, revocable license
-          to use the Service for your personal, non-commercial studying while these Terms are in
-          effect. No other rights are granted.
-        </p>
-        <p>
-          Study guides, quizzes, and other output generated for you from Your Content are yours to
-          use for your personal study purposes.
-        </p>
-      </LegalSection>
-
-      <LegalSection id="ai-disclaimer" number={7} title="AI-Generated Content">
-        <p>
-          Study guides, quizzes, chat answers, and other output are generated by artificial
-          intelligence. <strong>AI-generated content can be wrong.</strong> It may contain
-          inaccuracies, omissions, or statements that sound confident but are incorrect.
-        </p>
+      <LegalSection id="billing" number={6} title="Subscriptions and Payments">
+        <p>Strattigo offers a free tier and a paid subscription (&ldquo;Strattigo Pro&rdquo;).</p>
         <ul>
           <li>
-            Always verify generated material against your original course materials and your
-            instructor&rsquo;s guidance;
+            <strong>Billing.</strong> Paid subscriptions are billed on a recurring monthly basis
+            through our payment processor, Stripe. By subscribing, you authorize us (via Stripe) to
+            charge your payment method the applicable subscription fee (currently $7.99/month) until
+            you cancel.
           </li>
           <li>
-            generated content is a study aid only — it is not a substitute for attending class,
-            completing your coursework, or professional advice of any kind (academic, legal,
-            medical, financial, or otherwise); and
-          </li>
-          <li>you use AI-generated content at your own discretion and risk.</li>
-        </ul>
-      </LegalSection>
-
-      <LegalSection id="billing" number={8} title="Subscriptions & Billing">
-        <p>
-          Parts of the Service are free; others require a paid subscription. By subscribing, you
-          agree to the pricing and billing cycle shown at checkout.
-        </p>
-        <ul>
-          <li>
-            <strong>Payments.</strong> Payments are processed by our payment provider, Stripe. We do
-            not store your full card details; Stripe&rsquo;s own terms and privacy policy apply to the
-            payment process.
+            <strong>Renewal.</strong> Your subscription automatically renews each billing period
+            unless you cancel before the renewal date.
           </li>
           <li>
-            <strong>Renewal.</strong> Subscriptions renew automatically at the end of each billing
-            period until you cancel.
+            <strong>Cancellation.</strong> You may cancel at any time through your account&rsquo;s
+            billing settings. When you cancel, you will retain Pro access until the end of your
+            current billing period, after which your account reverts to the free tier. We do not
+            provide prorated refunds for partial billing periods unless required by law.
           </li>
           <li>
-            <strong>Cancellation.</strong> You can cancel at any time from your account settings.
-            Cancellation takes effect at the end of the current billing period, and you keep access
-            to paid features until then.
+            <strong>Price changes.</strong> We may change subscription prices. If we do, we will
+            provide notice, and any change will apply to your next billing period, not the current
+            one.
           </li>
           <li>
             <strong>Refunds.</strong> Except where required by law, payments are non-refundable. If
-            you believe you have been charged in error, contact us and we will review it in good
-            faith.
-          </li>
-          <li>
-            <strong>Price changes.</strong> We may change subscription prices with reasonable
-            advance notice; changes apply from your next billing period.
+            you believe you were charged in error, contact us at{" "}
+            <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>.
           </li>
         </ul>
       </LegalSection>
 
-      <LegalSection id="termination" number={9} title="Termination">
+      <LegalSection id="usage-limits" number={7} title="Free Tier and Usage Limits">
         <p>
-          You may stop using the Service and delete your account at any time. We may suspend or
-          terminate your access if you materially breach these Terms, if required by law, or if we
-          discontinue the Service. Where practical, we will give you notice and an opportunity to
-          export your data first. Sections of these Terms that by their nature should survive
-          termination — including ownership, disclaimers, and limitations of liability — survive.
+          The Service includes usage limits, which may differ between the free tier and Strattigo
+          Pro (for example, limits on the number of study guides, quizzes, chat messages, stored
+          materials, and file sizes). We may adjust these limits over time. We may also enforce
+          fair-use limits to protect the Service and its infrastructure.
         </p>
       </LegalSection>
 
-      <LegalSection id="warranty" number={10} title="Disclaimer of Warranties">
+      <LegalSection id="third-party" number={8} title="Third-Party Services">
         <p>
-          The Service is provided <strong>&ldquo;as is&rdquo; and &ldquo;as available&rdquo;</strong>, without
-          warranties of any kind, whether express, implied, or statutory — including implied
-          warranties of merchantability, fitness for a particular purpose, accuracy, and
-          non-infringement. We do not warrant that the Service will be uninterrupted, error-free,
-          or secure, or that generated content will be accurate or complete. Some jurisdictions do
-          not allow certain warranty disclaimers, so parts of this section may not apply to you.
+          Strattigo relies on third-party services to operate, including cloud hosting, storage, AI
+          processing, and payment processing (see our{" "}
+          <Link href="/privacy">Privacy Policy</Link> for details). Your use of the Service may be
+          subject to those providers&rsquo; terms where applicable. We are not responsible for the acts
+          or omissions of third-party providers.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="termination" number={9} title="Termination and Account Deletion">
+        <p>
+          <strong>You may delete your account at any time.</strong> When you delete your account, we
+          delete Your Content and associated personal data as described in our{" "}
+          <Link href="/privacy">Privacy Policy</Link>.
+        </p>
+        <p>
+          <strong>We may suspend or terminate your access</strong> if you violate these Terms, if
+          required by law, or to protect the Service or other users. Where reasonable, we will try
+          to notify you.
+        </p>
+        <p>
+          <strong>Effect of termination.</strong> Upon termination, your right to use the Service
+          ends. Sections that by their nature should survive termination (including ownership,
+          disclaimers, limitation of liability, and dispute provisions) will survive.
+        </p>
+      </LegalSection>
+
+      <LegalSection id="disclaimers" number={10} title="Disclaimers">
+        <p>
+          THE SERVICE IS PROVIDED &ldquo;AS IS&rdquo; AND &ldquo;AS AVAILABLE,&rdquo; WITHOUT WARRANTIES OF ANY KIND,
+          WHETHER EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO IMPLIED WARRANTIES OF
+          MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, ACCURACY, AND NON-INFRINGEMENT.
+        </p>
+        <p>
+          We do not warrant that the Service will be uninterrupted, error-free, secure, or that any
+          content (including AI-generated content) will be accurate or reliable. You use the Service
+          at your own risk.
         </p>
       </LegalSection>
 
       <LegalSection id="liability" number={11} title="Limitation of Liability">
         <p>
-          To the maximum extent permitted by law, Strattigo and its officers, employees, and
-          suppliers will not be liable for any indirect, incidental, special, consequential, or
-          punitive damages — including lost profits, lost data, or academic outcomes (such as
-          grades or exam results) — arising from or relating to your use of the Service, even if
-          advised of the possibility of such damages.
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, IN NO EVENT WILL STRATTIGO BE LIABLE FOR ANY
+          INDIRECT, INCIDENTAL, SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, OR ANY LOSS OF DATA,
+          PROFITS, OR GOODWILL, ARISING OUT OF OR RELATED TO YOUR USE OF (OR INABILITY TO USE) THE
+          SERVICE.
         </p>
         <p>
-          To the maximum extent permitted by law, our total aggregate liability for all claims
-          relating to the Service is limited to the greater of (a) the amount you paid us in the
-          twelve months before the claim arose, or (b) fifty US dollars (US$50). Some jurisdictions
-          do not allow certain limitations of liability, so parts of this section may not apply to
+          TO THE MAXIMUM EXTENT PERMITTED BY LAW, OUR TOTAL LIABILITY FOR ANY CLAIM ARISING OUT OF
+          OR RELATING TO THE SERVICE WILL NOT EXCEED THE GREATER OF (A) THE AMOUNT YOU PAID US IN
+          THE TWELVE MONTHS BEFORE THE CLAIM, OR (B) FIFTY U.S. DOLLARS ($50).
+        </p>
+        <p>
+          Some jurisdictions do not allow certain limitations, so some of the above may not apply to
           you.
         </p>
       </LegalSection>
 
-      <LegalSection id="changes" number={12} title="Changes to These Terms">
+      <LegalSection id="indemnification" number={12} title="Indemnification">
         <p>
-          We may update these Terms from time to time. If we make material changes, we will notify
-          you — for example by email or an in-app notice — before the changes take effect. Your
-          continued use of the Service after the effective date of updated Terms constitutes
-          acceptance of them. The &ldquo;Effective date&rdquo; at the top of this page shows when these Terms
-          were last revised.
+          You agree to indemnify and hold harmless Strattigo from any claims, damages, losses, or
+          expenses (including reasonable legal fees) arising out of your use of the Service, Your
+          Content, or your violation of these Terms or applicable law.
         </p>
       </LegalSection>
 
-      <LegalSection id="governing-law" number={13} title="Governing Law">
+      <LegalSection id="changes" number={13} title="Changes to These Terms">
         <p>
-          These Terms are governed by the laws of{" "}
-          <Placeholder>Governing law jurisdiction (state/country)</Placeholder>, without regard to
-          its conflict-of-laws rules. Any disputes arising from these Terms or the Service will be
-          brought in the courts of that jurisdiction, and both parties consent to their
-          jurisdiction, except where applicable law gives you the right to bring claims elsewhere.
+          We may update these Terms from time to time. If we make material changes, we will update
+          the &ldquo;Last updated&rdquo; date and, where appropriate, provide additional notice. Your
+          continued use of the Service after changes take effect constitutes acceptance of the
+          updated Terms.
         </p>
       </LegalSection>
 
-      <LegalSection id="contact" number={14} title="Contact">
+      <LegalSection id="governing-law" number={14} title="Governing Law">
         <p>
-          Questions about these Terms? Contact us at <Placeholder>Contact email</Placeholder>.
+          These Terms are governed by the laws of the State of Florida, United States, without
+          regard to its conflict-of-laws principles. You agree that any disputes will be subject to
+          the exclusive jurisdiction of the state and federal courts located in Florida, except
+          where prohibited by applicable law.
         </p>
       </LegalSection>
+
+      <LegalSection id="contact" number={15} title="Contact">
+        <p>If you have questions about these Terms, contact us at:</p>
+        <p>
+          <strong>Email:</strong> <a href={`mailto:${CONTACT_EMAIL}`}>{CONTACT_EMAIL}</a>
+        </p>
+      </LegalSection>
+
+      <p className="text-sm italic mt-2" style={{ color: "var(--text-tertiary)" }}>
+        By using Strattigo, you acknowledge that you have read, understood, and agree to these Terms
+        of Service.
+      </p>
     </LegalShell>
   );
 }
