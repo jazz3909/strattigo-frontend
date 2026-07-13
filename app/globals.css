@@ -21,10 +21,6 @@
   --border-hover: rgba(255, 255, 255, 0.12);
   --danger: #E57373;
   --success: #6BCEAA;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
   --gradient-hero: linear-gradient(135deg, #0D1018 0%, #111825 30%, #1A2D45 60%, #2A1F35 85%, #3D1E28 100%);
   --gradient-brand: linear-gradient(135deg, #E19485 0%, #C1726F 100%);
   --gradient-brand-soft: linear-gradient(135deg, rgba(225,148,133,0.15) 0%, rgba(193,114,111,0.05) 100%);
@@ -118,9 +114,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-sans);
+  /* Font roles — the three families of the design system (see token block below).
+     Inline so utilities resolve through the next/font variables on <html>. */
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-read: var(--font-newsreader), Georgia, serif;
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-fraunces), Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -138,8 +138,6 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -150,13 +148,129 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — single source of truth (ui-rebuild)
+   Reference: design-system.html (+ course-colors.html for subject hues).
+   Components read ONLY from these tokens — no hardcoded hexes downstream.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Surfaces (warm cream lineage) ── */
+  --color-page: #F4F1E9;      /* app canvas */
+  --color-sheet: #FBFAF6;     /* document / panel */
+  --color-raised: #FFFFFF;    /* cards, inputs */
+  --color-sunk: #EFEBE1;      /* tracks, wells, icon tiles */
+
+  /* ── Ink ── */
+  --color-ink: #23211C;       /* body text, headings */
+  --color-ink-soft: #4A4740;  /* secondary text */
+  --color-ink-faint: #86827A; /* metadata, captions */
+
+  /* ── Rules / separation ── */
+  --color-rule: #E3DED2;        /* default hairline */
+  --color-rule-soft: #EDE9DF;
+  --color-rule-strong: #D6D0C2;
+
+  /* ── Accent — Dusk Blue (THE functional accent: actions, active states, links) ── */
+  --color-accent: #5E7185;
+  --color-accent-hover: #4E6072;
+  --color-accent-deep: #3B4A5A;   /* text on tint, links, terms */
+  --color-accent-tint: #E5EAF0;
+  --color-accent-tint2: #D9E1EA;
+
+  /* ── Semantic — states ONLY, never brand/decoration ── */
+  --color-success: #4E7A57;
+  --color-success-tint: #E6EEE4;
+  --color-caution: #9A7B2A;
+  --color-caution-tint: #F3EAD5;
+  --color-error: #A6503F;
+  --color-error-tint: #F2E1DA;
+
+  /* ── Subject / course colors — COURSE IDENTITY ONLY ──
+     Shelf spines, course tiles, the picker in the Add Course modal.
+     Never for buttons, states, or links — that is accent's job.
+     Tints for dusk/sage/ochre/clay/plum come from dashboard.html;
+     the remaining five are derived at the same lightness/wash. */
+  --color-subject-dusk: #5E7185;
+  --color-subject-dusk-tint: #E5EAF0;
+  --color-subject-sage: #6E7F5E;
+  --color-subject-sage-tint: #E9EDE1;
+  --color-subject-ochre: #A07A34;
+  --color-subject-ochre-tint: #F1E9D6;
+  --color-subject-clay: #9E5847;
+  --color-subject-clay-tint: #F1E0DA;
+  --color-subject-plum: #6E5A7A;
+  --color-subject-plum-tint: #EAE4EE;
+  --color-subject-pine: #4E7A6E;
+  --color-subject-pine-tint: #E2EDE8;
+  --color-subject-slate: #38607A;
+  --color-subject-slate-tint: #DFE8EE;
+  --color-subject-terracotta: #B06A50;
+  --color-subject-terracotta-tint: #F3E3DA;
+  --color-subject-moss: #8A7B4A;
+  --color-subject-moss-tint: #EDE9D9;
+  --color-subject-cocoa: #7A5E5A;
+  --color-subject-cocoa-tint: #ECE4E2;
+
+  /* ── Radii ── */
+  --radius-sm: 8px;   /* controls, small elements */
+  --radius-md: 10px;
+  --radius-lg: 12px;  /* cards */
+  --radius-xl: 16px;  /* modals, large panels */
+  --radius-2xl: 20px; /* hero panels, feature cards */
+
+  /* ── Type scale — nine roles across the three families.
+       Pair each role with its family utility:
+       display-* → font-display · read-* → font-read · ui/eyebrow → font-sans.
+       eyebrow additionally pairs with `uppercase`. ── */
+  --text-display-xl: 46px;
+  --text-display-xl--line-height: 1.05;
+  --text-display-xl--font-weight: 600;
+  --text-display-xl--letter-spacing: -0.015em;
+  --text-display-l: 34px;
+  --text-display-l--line-height: 1.1;
+  --text-display-l--font-weight: 600;
+  --text-display-l--letter-spacing: -0.012em;
+  --text-display-m: 25px;
+  --text-display-m--line-height: 1.2;
+  --text-display-m--font-weight: 600;
+  --text-display-m--letter-spacing: -0.008em;
+  --text-display-s: 19px;
+  --text-display-s--line-height: 1.25;
+  --text-display-s--font-weight: 500;
+  --text-read: 18.5px;
+  --text-read--line-height: 1.72;
+  --text-read-s: 16px;
+  --text-read-s--line-height: 1.5;
+  --text-ui: 14px;
+  --text-ui--line-height: 1.5;
+  --text-ui-s: 13px;
+  --text-ui-s--line-height: 1.5;
+  --text-eyebrow: 12.5px;
+  --text-eyebrow--line-height: 1.3;
+  --text-eyebrow--font-weight: 600;
+  --text-eyebrow--letter-spacing: 0.09em;
+}
+
+/* ── The two densities — a mode set on a surface, not per element.
+     App density is the default (materials, chat, lists, dashboard).
+     Apply data-density="document" to reading surfaces only: the study-guide
+     reader article and the quiz review view. Document wrappers also constrain
+     reading width with max-w-(--density-measure). ── */
+:root,
+[data-density="app"] {
+  --density-body: 14px;
+  --density-leading: 1.5;
+  --density-space: 12px;   /* vertical rhythm between blocks */
+  --density-pad: 14px;     /* component internal padding */
+}
+[data-density="document"] {
+  --density-body: 18.5px;
+  --density-leading: 1.72;
+  --density-space: 22px;
+  --density-measure: 660px; /* max reading width */
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */
@@ -476,9 +590,8 @@ body {
 .animation-delay-700 { animation-delay: 700ms; }
 .animation-delay-800 { animation-delay: 800ms; }
 
-/* ─── Font Utilities ─────────────────────────────────────────────────────── */
-.font-display { font-family: var(--font-fraunces), serif; }
-.font-mono { font-family: var(--font-mono), monospace; }
+/* Font utilities (font-display / font-read / font-sans / font-mono) are
+   generated by Tailwind from the token block above. */
 
 /* ─── Gradient Text ──────────────────────────────────────────────────────── */
 .gradient-text {
