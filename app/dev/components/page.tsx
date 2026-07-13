@@ -1,17 +1,91 @@
+"use client"
+
+import * as React from "react"
 import Link from "next/link"
 
+import { WorkspaceRail, type RailView } from "@/components/shell/workspace-rail"
+import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar"
 import { Button } from "@/components/ui/button"
 import { Callout } from "@/components/ui/callout"
 import { Card } from "@/components/ui/card"
 import { Input, Textarea } from "@/components/ui/input"
 import { Pill } from "@/components/ui/pill"
+import { ProgressBar, SegmentedProgress } from "@/components/ui/progress"
+import { type ScopeNode } from "@/components/ui/scope-picker"
+import { SegmentedToggle } from "@/components/ui/segmented-toggle"
 
 /**
  * Primitive preview — /dev/components
  *
- * Every Tier-1 primitive in every variant, for eyeball comparison against
- * design-system.html §04. Dev reference only; sibling of /dev/tokens.
+ * Every Tier-1 primitive and Tier-2 shell component in every variant, for
+ * eyeball comparison against design-system.html / workspace-chat.html.
+ * Dev reference only; sibling of /dev/tokens.
  */
+
+/* Sample nested-collection tree matching the mocks (and the real
+   CollectionNode shape from buildCollectionTree). */
+const SAMPLE_TREE: ScopeNode[] = [
+  {
+    id: "u1",
+    name: "Unit 1 — Foundations",
+    children: [
+      { id: "u1a", name: "Amino acids & proteins", children: [] },
+      { id: "u1b", name: "Midterm review", children: [] },
+    ],
+  },
+  {
+    id: "u2",
+    name: "Unit 2 — Enzymes",
+    children: [
+      { id: "u2a", name: "Kinetics", children: [] },
+      { id: "u2b", name: "Inhibition", children: [] },
+    ],
+  },
+  {
+    id: "u3",
+    name: "Unit 3 — Metabolism",
+    children: [
+      { id: "u3a", name: "Glycolysis", children: [] },
+      { id: "u3b", name: "Citric acid cycle", children: [] },
+      { id: "u3c", name: "Regulation", children: [] },
+    ],
+  },
+  { id: "exam", name: "Exam prep", children: [] },
+]
+
+/* Interactive workspace-shell demo: rail + top bar over a placeholder body. */
+function ShellDemo() {
+  const [view, setView] = React.useState<RailView>("chat")
+  const [scope, setScope] = React.useState<string | null>("u3")
+  return (
+    <div className="flex h-[420px] overflow-hidden rounded-xl border border-rule bg-sheet">
+      <WorkspaceRail activeView={view} onNavigate={setView} />
+      <div className="flex min-w-0 flex-1 flex-col">
+        <WorkspaceTopBar
+          course={{ name: "Biochemistry 301", materialCount: 24 }}
+          tree={SAMPLE_TREE}
+          scopedNodeId={scope}
+          onScopeChange={setScope}
+          onUpload={() => {}}
+        />
+        <div className="grid flex-1 place-items-center p-6 text-center">
+          <div>
+            <div className="font-display text-display-s text-ink">
+              Active view: <span className="text-accent-deep">{view}</span>
+            </div>
+            <p className="mt-2 font-read text-read-s text-ink-soft">
+              Scoped to{" "}
+              <span className="font-medium text-accent-deep">
+                {scope === null ? "the entire course" : scope}
+              </span>{" "}
+              — open the picker and walk the tree with arrow keys.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 function SectionHead({ num, title, lead }: { num: string; title: string; lead: string }) {
   return (
@@ -181,7 +255,7 @@ export default function ComponentsPreviewPage() {
         </section>
 
         {/* 05 Callout */}
-        <section className="py-12">
+        <section className="border-b border-rule-soft py-12">
           <SectionHead
             num="05"
             title="Callout"
@@ -200,7 +274,68 @@ export default function ComponentsPreviewPage() {
             <Callout variant="accent">Label is optional — body-only callout.</Callout>
           </div>
         </section>
+
+        {/* 06 Workspace shell */}
+        <section className="border-b border-rule-soft py-12">
+          <SectionHead
+            num="06"
+            title="Workspace shell"
+            lead="Rail + top bar + the ScopePicker (the moat). Rail is config-driven; the picker is identical across chat, guides, quizzes, and generation modals — never forked, never relabeled."
+          />
+          <ShellDemo />
+        </section>
+
+        {/* 07 Segmented toggle + progress */}
+        <section className="py-12">
+          <SectionHead
+            num="07"
+            title="Segmented toggle · Progress"
+            lead="The 2–3 option toggle and both progress forms — continuous bar and the quiz-style discrete segments."
+          />
+          <div className="grid gap-5 sm:grid-cols-2">
+            <Cell label="Segmented toggle">
+              <ToggleDemo />
+            </Cell>
+            <Cell label="Progress">
+              <div className="mb-1.5 font-sans text-ui-s text-ink-faint">ProgressBar · 62%</div>
+              <ProgressBar value={62} />
+              <div className="mt-5 mb-1.5 font-sans text-ui-s text-ink-faint">
+                SegmentedProgress · question 3 of 10
+              </div>
+              <SegmentedProgress total={10} current={3} />
+            </Cell>
+          </div>
+        </section>
       </div>
     </div>
+  )
+}
+
+function ToggleDemo() {
+  const [style, setStyle] = React.useState<"detailed" | "bullet">("detailed")
+  const [count, setCount] = React.useState<"5" | "10" | "15">("10")
+  return (
+    <>
+      <SegmentedToggle
+        aria-label="Guide style"
+        options={[
+          { value: "detailed", label: "Detailed" },
+          { value: "bullet", label: "Bullet points" },
+        ]}
+        value={style}
+        onChange={setStyle}
+      />
+      <div className="h-4" />
+      <SegmentedToggle
+        aria-label="Question count"
+        options={[
+          { value: "5", label: "5" },
+          { value: "10", label: "10" },
+          { value: "15", label: "15" },
+        ]}
+        value={count}
+        onChange={setCount}
+      />
+    </>
   )
 }
