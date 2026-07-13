@@ -1097,14 +1097,37 @@ function GripIcon({ className = "" }: { className?: string }) {
 
 // Spread on interactive children INSIDE a draggable card/row (action buttons,
 // the remove-×, the rename input) so a press there never starts a card drag.
-// The active sensors are Mouse + Touch, which activate on mousedown/touchstart —
+// The pointer sensors are Mouse + Touch, which activate on mousedown/touchstart —
 // so those are the events to stop. (Stopping pointerdown would do nothing, since
 // neither sensor listens for it; the drag would still start on a press-and-move.)
 // stopPropagation, not preventDefault, so the child's own click/focus still works.
+// (The Keyboard sensor is guarded separately — see EditableAwareKeyboardSensor.)
 const STOP_CARD_DRAG = {
   onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
   onTouchStart: (e: React.TouchEvent) => e.stopPropagation(),
 };
+
+// dnd-kit's KeyboardSensor lifts a draggable on Space/Enter keydown. Its
+// listeners are spread on the WHOLE card/row (no activator-node ref), so key
+// events bubbling out of nested editable children also activate it: typing a
+// space (or Enter) in an inline rename input got preventDefault()ed and lifted
+// the card into the DragOverlay preview instead of typing the character. Ignore
+// key events that originate inside editable elements; a card/row focused
+// directly still lifts with Space/Enter as before (a11y path unchanged).
+class EditableAwareKeyboardSensor extends KeyboardSensor {
+  static activators: typeof KeyboardSensor.activators = [
+    {
+      eventName: "onKeyDown",
+      handler: (event, options, context) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest("input, textarea, select, [contenteditable]")) {
+          return false;
+        }
+        return KeyboardSensor.activators[0].handler(event, options, context);
+      },
+    },
+  ];
+}
 
 // Wrapper: makes its child file draggable by the WHOLE card/row (dragProps are
 // spread on the outer element, not a handle). The render prop gets the ref,
@@ -1263,11 +1286,12 @@ function MaterialsTab({
   //   Mouse — 8px movement starts a drag, so a click (no move) stays a click.
   //   Touch — a 200ms press-and-hold starts a drag, so a quick tap (open/select)
   //           and a vertical swipe (scroll the list) are NOT mistaken for drags.
-  //   Keyboard — focus a card, Space to lift, arrows to move, Space to drop (a11y).
+  //   Keyboard — focus a card, Space to lift, arrows to move, Space to drop (a11y),
+  //              but never from inside an editable child (inline rename inputs).
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
-    useSensor(KeyboardSensor),
+    useSensor(EditableAwareKeyboardSensor),
   );
 
   // Which folders may receive the dragged folder (Part 3). Invalid: the dragged
@@ -1765,7 +1789,7 @@ function MaterialsTab({
 
           {/* Name + counts, or inline rename */}
           {isRenaming ? (
-            <div className="flex-1 min-w-0 flex items-center gap-1.5 py-1.5">
+            <div className="flex-1 min-w-0 flex items-center gap-1.5 py-1.5" {...STOP_CARD_DRAG}>
               <input
                 autoFocus
                 value={collectionRenameValue}
