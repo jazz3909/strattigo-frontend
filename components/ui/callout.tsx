@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils"
  * Strattigo callout — the tinted key-info box used in study guides, quiz
  * explanations, and chat (reading-view-variants.html, quiz-view.html).
  * Separation by tint, never by border. Body reads in the serif.
+ * Body-length text on a tint uses the -deep color (short labels, as in Pill,
+ * use the plain role color).
  */
 const calloutVariants = cva(
   "rounded-lg px-[18px] py-4 font-read text-read-s leading-[1.55]",
@@ -13,8 +15,8 @@ const calloutVariants = cva(
     variants: {
       variant: {
         accent: "bg-accent-tint text-accent-deep",
-        success: "bg-success-tint text-success",
-        error: "bg-error-tint text-error",
+        success: "bg-success-tint text-success-deep",
+        error: "bg-error-tint text-error-deep",
       },
     },
     defaultVariants: {

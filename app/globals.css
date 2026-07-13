@@ -181,12 +181,15 @@
   --color-accent-tint2: #D9E1EA;
 
   /* ── Semantic — states ONLY, never brand/decoration ── */
+  /* Role color for short labels on a tint; -deep for body-length text on a tint. */
   --color-success: #4E7A57;
+  --color-success-deep: #2C4A33;  /* quiz-view.html .explain.ok body text */
   --color-success-tint: #E6EEE4;
   --color-caution: #9A7B2A;
-  --color-caution-deep: #7C5C1E;  /* text on caution tint (design-system.html .pill-warn) */
+  --color-caution-deep: #7C5C1E;  /* design-system.html .pill-warn */
   --color-caution-tint: #F3EAD5;
   --color-error: #A6503F;
+  --color-error-deep: #5E2C22;    /* quiz-view.html .explain.bad body text */
   --color-error-tint: #F2E1DA;
 
   /* ── Subject / course colors — COURSE IDENTITY ONLY ──
