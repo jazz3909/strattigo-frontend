@@ -302,6 +302,12 @@ export default function SignupPage() {
             <Button type="submit" variant="primary" size="lg" fullWidth loading={loading} style={{ color: "white", fontFamily: "var(--font-outfit)", fontWeight: 600, boxShadow: "var(--shadow-brand)" }}>
               Create account
             </Button>
+
+            <p className="text-center mt-4 text-xs" style={{ color: "var(--text-tertiary)" }}>
+              By creating an account, you agree to Strattigo&rsquo;s{" "}
+              <Link href="/terms" className="underline">Terms of Service</Link> and{" "}
+              <Link href="/privacy" className="underline">Privacy Policy</Link>.
+            </p>
           </form>
 
           <p className="text-center mt-6 text-sm" style={{ color: "var(--text-secondary)" }}>
@@ -309,12 +315,6 @@ export default function SignupPage() {
             <Link href="/login" className="font-semibold transition-colors" style={{ color: "var(--accent)" }}>
               Sign in
             </Link>
-          </p>
-
-          <p className="text-center mt-8 text-xs" style={{ color: "var(--text-tertiary)" }}>
-            By creating an account, you agree to our{" "}
-            <Link href="/terms" className="underline">Terms</Link> and{" "}
-            <Link href="/privacy" className="underline">Privacy Policy</Link>.
           </p>
         </div>
       </div>
