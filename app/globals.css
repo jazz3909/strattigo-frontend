@@ -24,9 +24,6 @@
   --gradient-hero: linear-gradient(135deg, #0D1018 0%, #111825 30%, #1A2D45 60%, #2A1F35 85%, #3D1E28 100%);
   --gradient-brand: linear-gradient(135deg, #E19485 0%, #C1726F 100%);
   --gradient-brand-soft: linear-gradient(135deg, rgba(225,148,133,0.15) 0%, rgba(193,114,111,0.05) 100%);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,0.4);
   --shadow-xl: 0 20px 50px rgba(0,0,0,0.5);
   --shadow-brand: 0 8px 32px rgba(225,148,133,0.2);
   --shadow-brand-lg: 0 20px 40px rgba(225,148,133,0.25);
@@ -217,6 +214,14 @@
   --color-subject-moss-tint: #EDE9D9;
   --color-subject-cocoa: #7A5E5A;
   --color-subject-cocoa-tint: #ECE4E2;
+
+  /* ── Elevation — warm ink-based shadows, restrained.
+       sm = subtle lift (toggle thumb, card hover) · popover = dropdowns,
+       menus · lg = modals/dialogs. Values follow the mock shadows
+       (rgba(35,33,28,…) = ink at low alpha). ── */
+  --shadow-sm: 0 1px 2px rgb(35 33 28 / 0.04), 0 2px 6px rgb(35 33 28 / 0.04);
+  --shadow-popover: 0 2px 8px rgb(35 33 28 / 0.06), 0 10px 26px rgb(35 33 28 / 0.10);
+  --shadow-lg: 0 4px 12px rgb(35 33 28 / 0.06), 0 20px 50px rgb(35 33 28 / 0.12);
 
   /* ── Radii ── */
   --radius-sm: 8px;   /* controls, small elements */

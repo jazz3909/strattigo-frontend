@@ -129,7 +129,7 @@ function ScopePicker({
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner align="end" sideOffset={6} className="z-50">
-          <Menu.Popup className="max-h-[min(420px,var(--available-height))] w-72 overflow-y-auto rounded-md border border-rule bg-raised p-1.5 shadow-lg outline-none">
+          <Menu.Popup className="max-h-[min(420px,var(--available-height))] w-72 overflow-y-auto rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
             <Menu.RadioGroup
               value={scopedNodeId ?? ROOT}
               onValueChange={(value) => onScopeChange(value === ROOT ? null : (value as string))}

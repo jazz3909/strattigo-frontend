@@ -50,7 +50,7 @@ function SegmentedToggle<T extends string>({
             className={cn(
               "cursor-pointer rounded-[6px] px-3.5 py-1.5 font-sans text-ui-s outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent",
               active
-                ? "bg-raised font-medium text-ink shadow-[0_1px_2px_rgba(0,0,0,0.04)]"
+                ? "bg-raised font-medium text-ink shadow-sm"
                 : "text-ink-faint hover:text-ink-soft"
             )}
           >
