@@ -1220,18 +1220,6 @@ export default function HomePage() {
           color: rgba(245,237,232,0.5);
         }
 
-        .pac-beta-badge {
-          display: inline-block;
-          background: rgba(225,148,133,0.1);
-          border: 1px solid #E19485;
-          border-radius: 4px;
-          padding: 6px 12px;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          color: #E19485;
-          margin-bottom: 24px;
-        }
-
         .pac-features {
           list-style: none;
           margin-bottom: 32px;
@@ -1799,7 +1787,6 @@ export default function HomePage() {
                 <span className="pac-dollar">$7.99</span>
                 <span className="pac-per">/ month</span>
               </div>
-              <div className="pac-beta-badge">Use BETA15 — 3 months free</div>
               <ul className="pac-features" aria-label="Pro plan features">
                 <li>Unlimited AI study guides</li>
                 <li>Unlimited quizzes — save &amp; organize sets</li>
@@ -1809,7 +1796,7 @@ export default function HomePage() {
                 <li>Priority AI processing</li>
                 <li>Early access to new features</li>
               </ul>
-              <a href={ctaHref} className="pac-cta">Start free with BETA15 →</a>
+              <a href={ctaHref} className="pac-cta">Start free →</a>
             </div>
 
           </div>
@@ -1822,7 +1809,7 @@ export default function HomePage() {
           <span className="cta-final-l1">Ready to study</span>
           <span className="cta-final-l2">smarter?</span>
           <a href={ctaHref} className="cta-final-btn">Begin for free →</a>
-          <p className="cta-final-note">No credit card required &nbsp;•&nbsp; Use code BETA15 for 3 months free</p>
+          <p className="cta-final-note">No credit card required</p>
         </div>
       </section>
 
