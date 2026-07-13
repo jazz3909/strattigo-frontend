@@ -1107,6 +1107,15 @@ const STOP_CARD_DRAG = {
   onTouchStart: (e: React.TouchEvent) => e.stopPropagation(),
 };
 
+// Split "notes v2.pdf" into ["notes v2", ".pdf"]. The extension describes the
+// stored object's format, so the rename UI edits only the base name and the
+// extension is re-appended on save (a dot at position 0 — ".env" — counts as
+// part of the base, not an extension).
+function splitExt(name: string): [base: string, ext: string] {
+  const i = name.lastIndexOf(".");
+  return i > 0 ? [name.slice(0, i), name.slice(i)] : [name, ""];
+}
+
 // dnd-kit's KeyboardSensor lifts a draggable on Space/Enter keydown. Its
 // listeners are spread on the WHOLE card/row (no activator-node ref), so key
 // events bubbling out of nested editable children also activate it: typing a
@@ -1455,7 +1464,19 @@ function MaterialsTab({
     setDownloadingId(materialId);
     try {
       const data = await getMaterialWithDownload(materialId);
-      window.open(data.download_url, "_blank", "noopener,noreferrer");
+      // The signed URL carries ?download=<file_name> (Content-Disposition:
+      // attachment), so this saves the file directly under its display name
+      // instead of opening a preview tab. _blank keeps the fallback safe: if
+      // signing failed server-side, download_url is a bare file URL with no
+      // attachment header, and it opens in a tab rather than navigating the
+      // dashboard away.
+      const a = document.createElement("a");
+      a.href = data.download_url;
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Failed to get download link.", "error");
     } finally {
@@ -1463,12 +1484,16 @@ function MaterialsTab({
     }
   }
 
-  async function handleRename(id: string) {
-    if (!renameValue.trim()) return;
+  async function handleRename(m: Material) {
+    const base = renameValue.trim();
+    if (!base) return;
+    // The input holds only the base name; the original extension is locked
+    // and re-appended here so a rename can never drop or change it.
+    const newName = base + splitExt(m.file_name)[1];
     setRenameSaving(true);
     try {
-      await renameMaterial(id, renameValue.trim());
-      onRenameSuccess(id, renameValue.trim());
+      await renameMaterial(m.id, newName);
+      onRenameSuccess(m.id, newName);
       setRenamingId(null);
       addToast("File renamed successfully.", "success");
     } catch (err: unknown) {
@@ -2045,14 +2070,19 @@ function MaterialsTab({
 
                     {isRenaming ? (
                       <div className="flex-1 min-w-0 flex items-center gap-2" {...STOP_CARD_DRAG}>
-                        <input
-                          autoFocus
-                          value={renameValue}
-                          onChange={(e) => setRenameValue(e.target.value)}
-                          onKeyDown={(e) => { if (e.key === "Enter") handleRename(m.id); if (e.key === "Escape") setRenamingId(null); }}
-                          className="flex-1 min-w-0 text-sm bg-transparent text-[var(--text-primary)] border border-[var(--border)] rounded-lg px-2.5 py-1.5 focus:outline-none focus:ring-2 focus:ring-[var(--accent-dim)] focus:border-[var(--accent)]"
-                        />
-                        <button onClick={() => handleRename(m.id)} disabled={renameSaving || !renameValue.trim()} className="px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] disabled:opacity-50 transition-colors flex-shrink-0">
+                        <div className="flex-1 min-w-0 flex items-center border border-[var(--border)] rounded-lg focus-within:ring-2 focus-within:ring-[var(--accent-dim)] focus-within:border-[var(--accent)]">
+                          <input
+                            autoFocus
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => { if (e.key === "Enter") handleRename(m); if (e.key === "Escape") setRenamingId(null); }}
+                            className="flex-1 min-w-0 text-sm bg-transparent text-[var(--text-primary)] px-2.5 py-1.5 focus:outline-none"
+                          />
+                          {splitExt(m.file_name)[1] && (
+                            <span className="pr-2.5 text-sm text-[var(--text-tertiary)] flex-shrink-0 select-none">{splitExt(m.file_name)[1]}</span>
+                          )}
+                        </div>
+                        <button onClick={() => handleRename(m)} disabled={renameSaving || !renameValue.trim()} className="px-2.5 py-1.5 text-xs font-semibold bg-[var(--accent)] text-white rounded-lg hover:bg-[var(--accent)] disabled:opacity-50 transition-colors flex-shrink-0">
                           {renameSaving ? "Saving…" : "Save"}
                         </button>
                         <button onClick={() => setRenamingId(null)} className="px-2.5 py-1.5 text-xs font-medium text-[var(--text-secondary)] border border-[var(--border)] rounded-lg hover:bg-[rgba(255,255,255,0.06)] transition-colors flex-shrink-0">Cancel</button>
@@ -2119,7 +2149,7 @@ function MaterialsTab({
 
                         {/* Rename button */}
                         <button
-                          onClick={() => { setRenamingId(m.id); setRenameValue(m.file_name); setConfirmDeleteId(null); setAddToCollectionPopoverId(null); }}
+                          onClick={() => { setRenamingId(m.id); setRenameValue(splitExt(m.file_name)[0]); setConfirmDeleteId(null); setAddToCollectionPopoverId(null); }}
                           className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[rgba(255,255,255,0.06)] transition-all"
                           aria-label="Rename"
                         >
