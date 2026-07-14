@@ -63,7 +63,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // own full-bleed cream workspace frames (rail + top bar); they replace the
   // dark global chrome rather than nesting under it. The subscription gate
   // below still runs for them.
-  const isWorkspaceReader = /^\/dashboard\/[^/]+\/(?:guide|quiz)\/[^/]+$/.test(pathname);
+  const isWorkspaceReader =
+    /^\/dashboard\/[^/]+\/(?:guide|quiz)\/[^/]+$/.test(pathname) ||
+    /^\/dashboard\/[^/]+\/materials$/.test(pathname);
   const [email, setEmail] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [subChecked, setSubChecked] = useState(false);

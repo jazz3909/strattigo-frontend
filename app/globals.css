@@ -215,6 +215,16 @@
   --color-subject-cocoa: #7A5E5A;
   --color-subject-cocoa-tint: #ECE4E2;
 
+  /* ── File-type badge colors — MATERIALS ONLY ──
+     The solid tile behind a file's PDF/DOC/PPT/TXT label (materials-tab.html).
+     Their OWN category, like subject colors: never for buttons, states, or
+     links — that is accent's job. Values from the reference mock; text on these
+     is always white. Anything unrecognized falls back to the sunk/ink tile. */
+  --color-filetype-pdf: #B0503F;
+  --color-filetype-doc: #3B6FA5;
+  --color-filetype-ppt: #C67A2E;
+  --color-filetype-txt: #6E7F5E;
+
   /* ── Elevation — warm ink-based shadows, restrained.
        sm = subtle lift (toggle thumb, card hover) · popover = dropdowns,
        menus · lg = modals/dialogs. Values follow the mock shadows

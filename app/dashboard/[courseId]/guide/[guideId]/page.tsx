@@ -177,7 +177,7 @@ export default function GuidePage({
         router.push(`/dashboard/${courseId}?tab=quiz`);
         break;
       case "materials":
-        router.push(`/dashboard/${courseId}?tab=materials`);
+        router.push(`/dashboard/${courseId}/materials`);
         break;
       case "settings":
         router.push("/settings/canvas");
@@ -277,7 +277,7 @@ export default function GuidePage({
           tree={tree}
           scopedNodeId={scopedId}
           onScopeChange={setScopedId}
-          onUpload={() => router.push(`/dashboard/${courseId}?tab=materials`)}
+          onUpload={() => router.push(`/dashboard/${courseId}/materials`)}
         />
 
         {/* Reading-progress bar under the top bar */}

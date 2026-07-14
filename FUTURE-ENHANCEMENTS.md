@@ -79,3 +79,27 @@ this directly:
 - Same grounding story as the guide surface; doing both is what makes the
   cited-answers claim real across the product, so weight this above the
   routine items above.
+
+## 6. Material preview / open
+
+The materials-tab.html mock implies an "Open" action on each file, but there
+is no in-app preview: the only way to see a material is Download (signed URL).
+So the rebuilt materials surface's ⋯ menu is Download / Rename / Add to
+collection / Delete — no "Open".
+
+A real preview (render the stored file — PDF/slide/doc/txt — inline or in a
+pane) would let "Open" join the menu. It needs a backend/UI viewer, not just a
+presentation change:
+
+- The `Material` object already carries `file_url` + a signed `download_url`;
+  an inline viewer could start from those.
+- Lowest-effort first step: an "Open in new tab" that points at the signed URL
+  (browser-native PDF/text preview) — but that's a browser behavior, not a
+  product preview, so it's parked here rather than shipped as "Open".
+
+## 7. File size on materials
+
+The mock shows a file size ("2.4 MB") in each row's metadata, but `Material`
+has no size field and the upload endpoint doesn't return one. The rebuilt rows
+show date only. Persisting `file_size` on upload (and adding it to
+`MaterialResponse`) would let the row meta read "2.4 MB · Jul 14" as designed.

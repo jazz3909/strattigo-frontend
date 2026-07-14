@@ -241,7 +241,7 @@ export default function QuizPage({
         router.push(`/dashboard/${courseId}?tab=quiz`);
         break;
       case "materials":
-        router.push(`/dashboard/${courseId}?tab=materials`);
+        router.push(`/dashboard/${courseId}/materials`);
         break;
       case "settings":
         router.push("/settings/canvas");
@@ -366,7 +366,7 @@ export default function QuizPage({
           tree={tree}
           scopedNodeId={scopedId}
           onScopeChange={setScopedId}
-          onUpload={() => router.push(`/dashboard/${courseId}?tab=materials`)}
+          onUpload={() => router.push(`/dashboard/${courseId}/materials`)}
         />
 
         {/* Top strip: breadcrumb + surface actions. Divider is full-bleed; its
