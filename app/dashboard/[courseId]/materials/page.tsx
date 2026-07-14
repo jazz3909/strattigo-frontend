@@ -38,6 +38,8 @@ import {
 } from "@/app/lib/api";
 import { buildCollectionTree, flattenTree } from "@/app/lib/collectionTree";
 import { FileTypeBadge, fileCategory } from "./fileType";
+import { CollectionsView } from "./CollectionsView";
+import { ConfirmScrim } from "./scrim";
 
 // ── Local helpers ──────────────────────────────────────────────────────────
 // Split "notes v2.pdf" → ["notes v2", ".pdf"]; the rename UI edits only the
@@ -360,6 +362,31 @@ export default function MaterialsPage({
     }
   }
 
+  // ── Collection helpers used by CollectionsView ──
+  // Re-fetch the flat list (create / cascade-delete change structure + counts);
+  // keyed membership effect rebuilds folder file lists off the new id set.
+  async function reloadCollections() {
+    try {
+      setCollections(await getCollections(courseId));
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to refresh collections.", "error");
+    }
+  }
+  // Rename leaves structure untouched → patch in place (no refetch, so the
+  // membership effect doesn't re-run).
+  function patchCollectionName(id: string, name: string) {
+    setCollections((prev) => prev.map((c) => (c.id === id ? { ...c, name } : c)));
+  }
+  async function handleRemoveFromCollection(collectionId: string, materialId: string) {
+    try {
+      await removeMaterialFromCollection(collectionId, materialId);
+      setCollectionMaterialIds((p) => ({ ...p, [collectionId]: (p[collectionId] ?? []).filter((id) => id !== materialId) }));
+      setMaterialCollectionMap((p) => ({ ...p, [materialId]: (p[materialId] ?? []).filter((c) => c !== collectionId) }));
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Failed to remove from collection.", "error");
+    }
+  }
+
   // ── Select mode / bulk add ──
   function toggleFileSelected(id: string) {
     setSelectedFileIds((prev) => {
@@ -437,6 +464,15 @@ export default function MaterialsPage({
   }, [materials, query, filterKey, sortKey, materialCollectionMap]);
 
   const materialCount = materials.length;
+  const unfiledCount = useMemo(
+    () => materials.filter((m) => (materialCollectionMap[m.id] ?? []).length === 0).length,
+    [materials, materialCollectionMap]
+  );
+
+  function reviewUnfiled() {
+    setFilterKey("unfiled");
+    setSubTab("all");
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-page text-ink">
@@ -523,9 +559,16 @@ export default function MaterialsPage({
                 onAddToCollection={setSingleAddFile}
               />
             ) : (
-              <CollectionsInterim
-                count={collections.length}
-                onGoAllFiles={() => setSubTab("all")}
+              <CollectionsView
+                courseId={courseId}
+                collections={collections}
+                reloadCollections={reloadCollections}
+                patchCollectionName={patchCollectionName}
+                materials={materials}
+                collectionMaterialIds={collectionMaterialIds}
+                onRemoveFile={handleRemoveFromCollection}
+                unfiledCount={unfiledCount}
+                onReviewUnfiled={reviewUnfiled}
               />
             )}
           </div>
@@ -1102,50 +1145,6 @@ function MenuAction({
     >
       {children}
     </Menu.Item>
-  );
-}
-
-// ── Collections interim (Stage 2 builds the real nested card-tree) ───────────
-function CollectionsInterim({ count, onGoAllFiles }: { count: number; onGoAllFiles: () => void }) {
-  return (
-    <div className="rounded-lg border border-dashed border-rule-strong bg-sheet px-6 py-14 text-center">
-      <p className="font-display text-display-s text-ink">
-        {count > 0 ? `${count} collection${count === 1 ? "" : "s"}` : "Collections"}
-      </p>
-      <p className="mx-auto mt-2 max-w-sm font-read text-read-s text-ink-soft">
-        The nested collections view — folder cards, sub-folder peeks, and drag-to-organize — lands in the
-        next stage. For now, manage and file your materials from{" "}
-        <button onClick={onGoAllFiles} className="cursor-pointer font-medium text-accent-deep hover:underline">
-          All files
-        </button>
-        .
-      </p>
-    </div>
-  );
-}
-
-// ── Centered confirm/scrim shell (reused by the modals) ──────────────────────
-function ConfirmScrim({
-  onClose,
-  label,
-  children,
-}: {
-  onClose: () => void;
-  label: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4" onClick={onClose} role="presentation">
-      <div
-        className="w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
-        onClick={(e) => e.stopPropagation()}
-        role="dialog"
-        aria-modal="true"
-        aria-label={label}
-      >
-        {children}
-      </div>
-    </div>
   );
 }
 
