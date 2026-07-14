@@ -365,7 +365,12 @@ export function CollectionsView({
               {...(isRenaming ? {} : dragProps)}
               className={cn(
                 "group/row flex items-center gap-3 transition-all",
-                isRoot ? "px-4 py-3.5" : "rounded-md px-3 py-2.5",
+                // Match the row's own corner radius to its container so the
+                // drop-target tint + inset ring follow the rounding (no square
+                // nubs). Root header = the card's radius (all corners when it
+                // IS the whole card / collapsed; top-only when expanded, since
+                // the body sits flush below). Nested rows are rounded-md.
+                isRoot ? cn("px-4 py-3.5", expanded ? "rounded-t-lg" : "rounded-lg") : "rounded-md px-3 py-2.5",
                 !isRenaming && "cursor-grab active:cursor-grabbing",
                 // Drag-state skin (accent = valid/drop; muted = invalid)
                 isDragging
