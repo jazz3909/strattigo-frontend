@@ -57,7 +57,7 @@ const GENERATING_MESSAGES = [
 // marooned in a big empty frame. Contained-and-centered is intended here (a
 // quiz is a focused activity), just wide enough that the side margins are a
 // comfortable result rather than dead voids.
-const TAKE_COLUMN = "mx-auto w-full max-w-[860px] px-5";
+const TAKE_COLUMN = "mx-auto w-full max-w-[1040px] px-5";
 
 // QuizRequest accepts 1–50; these are the offered presets (quiz-view.html).
 const COUNT_OPTIONS = ["5", "10", "15", "20"] as const;
