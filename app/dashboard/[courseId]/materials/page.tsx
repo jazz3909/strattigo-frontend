@@ -377,6 +377,33 @@ export default function MaterialsPage({
   function patchCollectionName(id: string, name: string) {
     setCollections((prev) => prev.map((c) => (c.id === id ? { ...c, name } : c)));
   }
+  // File → folder drop: ADDS membership (many-to-many — the file stays in any
+  // other collections it's in). Optimistic, reverted on API error.
+  async function handleDropFileIntoFolder(folderId: string, fileId: string) {
+    const folderName = collections.find((c) => c.id === folderId)?.name ?? "folder";
+    const current = materialCollectionMap[fileId] ?? [];
+    if (current.includes(folderId)) {
+      addToast(`Already in “${folderName}”`, "info");
+      return;
+    }
+    const otherCount = current.length;
+    setMaterialCollectionMap((p) => ({ ...p, [fileId]: [...(p[fileId] ?? []), folderId] }));
+    setCollectionMaterialIds((p) => ({ ...p, [folderId]: [...(p[folderId] ?? []), fileId] }));
+    try {
+      await addMaterialToCollection(folderId, fileId);
+      addToast(
+        otherCount > 0
+          ? `Added to “${folderName}” (also in ${otherCount} other${otherCount === 1 ? "" : "s"})`
+          : `Added to “${folderName}”`,
+        "success"
+      );
+    } catch (err: unknown) {
+      setMaterialCollectionMap((p) => ({ ...p, [fileId]: (p[fileId] ?? []).filter((c) => c !== folderId) }));
+      setCollectionMaterialIds((p) => ({ ...p, [folderId]: (p[folderId] ?? []).filter((id) => id !== fileId) }));
+      addToast(err instanceof Error ? err.message : "Failed to add to folder.", "error");
+    }
+  }
+
   async function handleRemoveFromCollection(collectionId: string, materialId: string) {
     try {
       await removeMaterialFromCollection(collectionId, materialId);
@@ -567,6 +594,7 @@ export default function MaterialsPage({
                 materials={materials}
                 collectionMaterialIds={collectionMaterialIds}
                 onRemoveFile={handleRemoveFromCollection}
+                onAddFileToCollection={handleDropFileIntoFolder}
                 unfiledCount={unfiledCount}
                 onReviewUnfiled={reviewUnfiled}
               />

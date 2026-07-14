@@ -1,6 +1,21 @@
 import { useMemo, useState } from "react";
 import {
+  DndContext,
+  DragOverlay,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  pointerWithin,
+  useDraggable,
+  useDroppable,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import {
   AlertTriangle,
+  ArrowUpToLine,
   ChevronRight,
   Folder,
   FolderPlus,
@@ -15,29 +30,68 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/app/components/ui/Spinner";
 import { useToast } from "@/app/providers/ToastProvider";
+import { cn } from "@/lib/utils";
 import {
   createCollection,
   renameCollection,
   deleteCollection,
   deleteCollectionPreview,
+  moveCollection,
   type Collection,
   type Material,
   type DeleteCollectionPreview,
 } from "@/app/lib/api";
-import { buildCollectionTree, MAX_COLLECTION_DEPTH, type CollectionNode } from "@/app/lib/collectionTree";
+import {
+  buildCollectionTree,
+  descendantIds,
+  findNode,
+  subtreeHeight,
+  MAX_COLLECTION_DEPTH,
+  type CollectionNode,
+} from "@/app/lib/collectionTree";
 
 import { FileTypeBadge } from "./fileType";
 import { ConfirmScrim } from "./scrim";
 
+// Spread on interactive children INSIDE a draggable row (chevron, action
+// buttons, remove-×, rename input) so a press there never starts a row drag.
+// The pointer sensors activate on mousedown/touchstart, so those are the events
+// to stop. stopPropagation (not preventDefault) keeps the child's own click.
+const STOP_CARD_DRAG = {
+  onMouseDown: (e: React.MouseEvent) => e.stopPropagation(),
+  onTouchStart: (e: React.TouchEvent) => e.stopPropagation(),
+};
+
+// dnd-kit's KeyboardSensor lifts on Space/Enter; its listeners sit on the whole
+// row, so a Space typed in an inline rename input would lift the row instead of
+// typing. Ignore key events originating inside editable elements; a row focused
+// directly still lifts as before (a11y path unchanged).
+class EditableAwareKeyboardSensor extends KeyboardSensor {
+  static activators: typeof KeyboardSensor.activators = [
+    {
+      eventName: "onKeyDown" as const,
+      handler: (event, options, context) => {
+        const target = event.target;
+        if (target instanceof Element && target.closest("input, textarea, select, [contenteditable]")) {
+          return false;
+        }
+        return KeyboardSensor.activators[0].handler(event, options, context);
+      },
+    },
+  ];
+}
+
 /**
- * CollectionsView — the calm, folder-first default landing (Stage 2).
+ * CollectionsView — the calm, folder-first default landing (Stages 2 + 3).
  *
- * A recursive nested TREE (not a card grid) rendered from the real
- * buildCollectionTree, wearing the warm cream card aesthetic: accent-tinted
- * folder tiles, generous rows, tree-connector guide lines so the nesting (the
- * moat) reads at a glance. Folder CRUD is wired to the real backend; a click
- * expands/collapses to reveal sub-folders + the folder's files. NO drag-and-drop
- * yet — Stage 3 layers that onto these rows.
+ * A recursive nested TREE from the real buildCollectionTree, wearing the warm
+ * cream card aesthetic, with the EXISTING dnd-kit drag-and-drop re-skinned onto
+ * its rows (Stage 3): drag a file into a folder to ADD it (membership; files
+ * are many-to-many, so it never leaves its other collections), drag a folder
+ * onto another to nest it (moveCollection), or onto the root strip to un-nest.
+ * Validity (no cycles/self/current-parent, ≤3 levels) is precomputed and
+ * invalid targets auto-disable. Logic preserved from the original app; only the
+ * appearance is new-system.
  */
 export function CollectionsView({
   courseId,
@@ -47,6 +101,7 @@ export function CollectionsView({
   materials,
   collectionMaterialIds,
   onRemoveFile,
+  onAddFileToCollection,
   unfiledCount,
   onReviewUnfiled,
 }: {
@@ -57,6 +112,8 @@ export function CollectionsView({
   materials: Material[];
   collectionMaterialIds: Record<string, string[]>;
   onRemoveFile: (collectionId: string, materialId: string) => void;
+  /** File → folder drop: adds membership (does not move the file). */
+  onAddFileToCollection: (folderId: string, fileId: string) => void;
   unfiledCount: number;
   onReviewUnfiled: () => void;
 }) {
@@ -82,6 +139,100 @@ export function CollectionsView({
   const [preview, setPreview] = useState<DeleteCollectionPreview | null>(null);
   const [previewLoading, setPreviewLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // ── Drag-and-drop (Stage 3) ──
+  const [activeDragFile, setActiveDragFile] = useState<Material | null>(null);
+  const [activeDragFolder, setActiveDragFolder] = useState<CollectionNode | null>(null);
+  // Valid folder targets for an in-flight FOLDER drag; null during a file drag
+  // (every folder is a valid target for a file).
+  const [validFolderTargets, setValidFolderTargets] = useState<Set<string> | null>(null);
+
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } }),
+    useSensor(EditableAwareKeyboardSensor)
+  );
+
+  // Which folders may receive the dragged folder: not itself, not a descendant
+  // (cycle), not its current parent (no-op), and target.depth + subtree height
+  // must stay within MAX_COLLECTION_DEPTH. Mirrors the backend.
+  function computeValidFolderTargets(dragged: CollectionNode): Set<string> {
+    const forbidden = descendantIds(dragged);
+    forbidden.add(dragged.id);
+    const height = subtreeHeight(dragged);
+    const valid = new Set<string>();
+    const walk = (nodes: CollectionNode[]) => {
+      for (const n of nodes) {
+        const isCurrentParent = dragged.parent_id === n.id;
+        const depthOk = n.depth + height <= MAX_COLLECTION_DEPTH;
+        if (!forbidden.has(n.id) && !isCurrentParent && depthOk) valid.add(n.id);
+        walk(n.children);
+      }
+    };
+    walk(tree);
+    return valid;
+  }
+
+  function handleDragStart(event: DragStartEvent) {
+    const data = event.active.data.current;
+    if (data?.type === "folder") {
+      const node = findNode(tree, data.folderId as string);
+      setActiveDragFolder(node);
+      setValidFolderTargets(node ? computeValidFolderTargets(node) : new Set());
+    } else {
+      setActiveDragFile((data?.material as Material | undefined) ?? null);
+    }
+  }
+  function resetDrag() {
+    setActiveDragFile(null);
+    setActiveDragFolder(null);
+    setValidFolderTargets(null);
+  }
+  function handleDragEnd(event: DragEndEvent) {
+    const data = event.active.data.current;
+    const over = event.over;
+    resetDrag();
+    if (!over) return;
+    if (data?.type === "folder") {
+      const draggedId = data.folderId as string;
+      if (over.data.current?.isRoot) handleUnnestFolder(draggedId);
+      else {
+        const targetId = over.data.current?.folderId as string | undefined;
+        if (targetId) handleDropFolderIntoFolder(draggedId, targetId);
+      }
+    } else {
+      const folderId = over.data.current?.folderId as string | undefined;
+      const material = data?.material as Material | undefined;
+      if (folderId && material) onAddFileToCollection(folderId, material.id);
+    }
+  }
+
+  async function handleDropFolderIntoFolder(draggedId: string, targetId: string) {
+    if (draggedId === targetId) return;
+    const dragged = collections.find((c) => c.id === draggedId);
+    const target = collections.find((c) => c.id === targetId);
+    if (!dragged || !target) return;
+    if (dragged.parent_id === targetId) return; // already there
+    try {
+      await moveCollection(draggedId, targetId);
+      setExpandedIds((prev) => new Set(prev).add(targetId));
+      await reloadCollections();
+      addToast(`Moved “${dragged.name}” into “${target.name}”`, "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Couldn’t move that folder.", "error");
+    }
+  }
+  async function handleUnnestFolder(draggedId: string) {
+    const dragged = collections.find((c) => c.id === draggedId);
+    if (!dragged || dragged.parent_id === null) return;
+    try {
+      await moveCollection(draggedId, null);
+      await reloadCollections();
+      addToast(`Moved “${dragged.name}” to the top level`, "success");
+    } catch (err: unknown) {
+      addToast(err instanceof Error ? err.message : "Couldn’t move that folder.", "error");
+    }
+  }
 
   function toggleExpand(id: string) {
     setExpandedIds((prev) => {
@@ -135,7 +286,7 @@ export function CollectionsView({
     setRenameSaving(true);
     try {
       await renameCollection(id, name);
-      patchCollectionName(id, name); // structure unchanged → patch in place, no refetch
+      patchCollectionName(id, name);
       setRenamingId(null);
       addToast("Collection renamed.", "success");
     } catch (err: unknown) {
@@ -197,104 +348,144 @@ export function CollectionsView({
     const hasContent = subCount > 0 || files.length > 0;
     const tile = isRoot ? "size-9" : "size-7";
 
+    // Drop-target state for THIS folder given what's dragging:
+    //  file drag → every folder valid; folder drag → only validFolderTargets.
+    const isFolderDrag = activeDragFolder !== null;
+    const isFileDrag = activeDragFile !== null;
+    const anyDrag = isFolderDrag || isFileDrag;
+    const isValidTarget = isFileDrag || (isFolderDrag && (validFolderTargets?.has(node.id) ?? false));
+    const dropDisabled = isFolderDrag && !isValidTarget;
+
     return (
       <div key={node.id}>
-        {/* Folder header row */}
-        <div
-          className={`group/row flex items-center gap-3 transition-colors ${
-            isRoot ? "px-4 py-3.5" : "rounded-md px-3 py-2.5 hover:bg-sheet"
-          } ${!isRoot && expanded ? "bg-sheet" : ""}`}
-        >
-          <button
-            onClick={() => toggleExpand(node.id)}
-            aria-label={expanded ? "Collapse" : "Expand"}
-            aria-expanded={expanded}
-            className="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-ink-faint transition-colors hover:text-ink-soft"
-          >
-            <ChevronRight className={`size-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} />
-          </button>
-
-          <span className={`grid ${tile} shrink-0 place-items-center rounded-lg bg-accent-tint text-accent`}>
-            <Folder className={isRoot ? "size-[18px]" : "size-4"} />
-          </span>
-
-          {isRenaming ? (
-            <div className="flex min-w-0 flex-1 items-center gap-2">
-              <input
-                autoFocus
-                value={renameValue}
-                maxLength={50}
-                onChange={(e) => setRenameValue(e.target.value.slice(0, 50))}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleRename(node.id);
-                  if (e.key === "Escape") setRenamingId(null);
-                }}
-                className="min-w-0 flex-1 rounded-sm border border-rule-strong bg-raised px-2.5 py-1.5 font-sans text-ui text-ink outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--color-accent-tint)]"
-              />
-              <Button variant="primary" onClick={() => handleRename(node.id)} disabled={renameSaving || !renameValue.trim()}>
-                {renameSaving ? "…" : "Save"}
-              </Button>
-              <Button variant="secondary" onClick={() => setRenamingId(null)}>
-                Cancel
-              </Button>
-            </div>
-          ) : (
-            <button
-              onClick={() => toggleExpand(node.id)}
-              className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
-            >
-              <span className={`truncate font-sans font-medium text-ink ${isRoot ? "text-[14.5px]" : "text-ui"}`}>
-                {node.name}
-              </span>
-              <span className="shrink-0 font-sans text-ui-s whitespace-nowrap text-ink-faint">
-                {fileCount} file{fileCount === 1 ? "" : "s"}
-                {subCount > 0 ? ` · ${subCount} sub-folder${subCount === 1 ? "" : "s"}` : ""}
-              </span>
-            </button>
-          )}
-
-          {!isRenaming && (
-            <div className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100">
-              {canAddSub ? (
-                <IconBtn label="Add sub-folder" onClick={() => openCreateSub(node.id, node.name)}>
-                  <FolderPlus className="size-4" />
-                </IconBtn>
-              ) : (
-                <span className="grid size-8 place-items-center text-ink-faint opacity-40" title="Maximum 3 levels">
-                  <FolderPlus className="size-4" />
-                </span>
+        <DraggableDroppableFolder node={node} dropDisabled={dropDisabled}>
+          {({ ref, dragProps, isDragging, isOver }) => (
+            <div
+              ref={ref}
+              {...(isRenaming ? {} : dragProps)}
+              className={cn(
+                "group/row flex items-center gap-3 transition-all",
+                isRoot ? "px-4 py-3.5" : "rounded-md px-3 py-2.5",
+                !isRenaming && "cursor-grab active:cursor-grabbing",
+                // Drag-state skin (accent = valid/drop; muted = invalid)
+                isDragging
+                  ? "opacity-40"
+                  : isOver && isValidTarget
+                    ? "bg-accent-tint ring-2 ring-inset ring-accent"
+                    : isFolderDrag && !isValidTarget
+                      ? "opacity-40"
+                      : anyDrag && isValidTarget
+                        ? "ring-1 ring-inset ring-accent-tint2"
+                        : !isRoot && expanded
+                          ? "bg-sheet"
+                          : !isRoot
+                            ? "hover:bg-sheet"
+                            : ""
               )}
-              <IconBtn label="Rename" onClick={() => startRename(node)}>
-                <Pencil className="size-4" />
-              </IconBtn>
-              <IconBtn label="Delete" onClick={() => openDelete(node.id, node.name)} disabled={isDeleting} danger>
-                {isDeleting ? <Spinner size="xs" /> : <Trash2 className="size-4" />}
-              </IconBtn>
+            >
+              <button
+                onClick={() => toggleExpand(node.id)}
+                {...STOP_CARD_DRAG}
+                aria-label={expanded ? "Collapse" : "Expand"}
+                aria-expanded={expanded}
+                className="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-ink-faint transition-colors hover:text-ink-soft"
+              >
+                <ChevronRight className={`size-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} />
+              </button>
+
+              <span className={`grid ${tile} shrink-0 place-items-center rounded-lg bg-accent-tint text-accent`}>
+                <Folder className={isRoot ? "size-[18px]" : "size-4"} />
+              </span>
+
+              {isRenaming ? (
+                <div className="flex min-w-0 flex-1 items-center gap-2" {...STOP_CARD_DRAG}>
+                  <input
+                    autoFocus
+                    value={renameValue}
+                    maxLength={50}
+                    onChange={(e) => setRenameValue(e.target.value.slice(0, 50))}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRename(node.id);
+                      if (e.key === "Escape") setRenamingId(null);
+                    }}
+                    className="min-w-0 flex-1 rounded-sm border border-rule-strong bg-raised px-2.5 py-1.5 font-sans text-ui text-ink outline-none focus:border-accent focus:shadow-[0_0_0_3px_var(--color-accent-tint)]"
+                  />
+                  <Button variant="primary" onClick={() => handleRename(node.id)} disabled={renameSaving || !renameValue.trim()}>
+                    {renameSaving ? "…" : "Save"}
+                  </Button>
+                  <Button variant="secondary" onClick={() => setRenamingId(null)}>
+                    Cancel
+                  </Button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => toggleExpand(node.id)}
+                  className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
+                >
+                  <span className={`truncate font-sans font-medium text-ink ${isRoot ? "text-[14.5px]" : "text-ui"}`}>
+                    {node.name}
+                  </span>
+                  <span className="shrink-0 font-sans text-ui-s whitespace-nowrap text-ink-faint">
+                    {fileCount} file{fileCount === 1 ? "" : "s"}
+                    {subCount > 0 ? ` · ${subCount} sub-folder${subCount === 1 ? "" : "s"}` : ""}
+                  </span>
+                </button>
+              )}
+
+              {!isRenaming && !anyDrag && (
+                <div
+                  {...STOP_CARD_DRAG}
+                  className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100"
+                >
+                  {canAddSub ? (
+                    <IconBtn label="Add sub-folder" onClick={() => openCreateSub(node.id, node.name)}>
+                      <FolderPlus className="size-4" />
+                    </IconBtn>
+                  ) : (
+                    <span className="grid size-8 place-items-center text-ink-faint opacity-40" title="Maximum 3 levels">
+                      <FolderPlus className="size-4" />
+                    </span>
+                  )}
+                  <IconBtn label="Rename" onClick={() => startRename(node)}>
+                    <Pencil className="size-4" />
+                  </IconBtn>
+                  <IconBtn label="Delete" onClick={() => openDelete(node.id, node.name)} disabled={isDeleting} danger>
+                    {isDeleting ? <Spinner size="xs" /> : <Trash2 className="size-4" />}
+                  </IconBtn>
+                </div>
+              )}
             </div>
           )}
-        </div>
+        </DraggableDroppableFolder>
 
-        {/* Expanded: nested sub-folders + this folder's files. The ml + left
-            border draws the tree-connector guide so nesting reads clearly. */}
         {expanded && (
           <div className={isRoot ? "border-t border-rule-soft px-3 py-1.5" : "ml-[26px] border-l border-rule-soft pl-1 pb-0.5"}>
             {node.children.map((c) => renderFolder(c, false))}
             {files.map((f) => (
-              <div
-                key={f.id}
-                className="group/file flex items-center gap-2 rounded-md px-3 py-2 transition-colors hover:bg-sheet"
-              >
-                <FileTypeBadge name={f.file_name} size={26} />
-                <span className="min-w-0 flex-1 truncate font-sans text-[13px] text-ink">{f.file_name}</span>
-                <button
-                  onClick={() => onRemoveFile(node.id, f.id)}
-                  aria-label="Remove from collection"
-                  title="Remove from this folder"
-                  className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md text-ink-faint opacity-0 transition-all hover:bg-error-tint hover:text-error group-hover/file:opacity-100"
-                >
-                  <X className="size-3.5" />
-                </button>
-              </div>
+              <DraggableFile key={f.id} dragId={`file-tree-${node.id}-${f.id}`} material={f}>
+                {({ ref, dragProps, isDragging }) => (
+                  <div
+                    ref={ref}
+                    {...dragProps}
+                    className={cn(
+                      "group/file flex items-center gap-2 rounded-md px-3 py-2 transition-colors",
+                      isDragging ? "opacity-40" : "cursor-grab hover:bg-sheet active:cursor-grabbing"
+                    )}
+                  >
+                    <FileTypeBadge name={f.file_name} size={26} />
+                    <span className="min-w-0 flex-1 truncate font-sans text-[13px] text-ink">{f.file_name}</span>
+                    <button
+                      onClick={() => onRemoveFile(node.id, f.id)}
+                      {...STOP_CARD_DRAG}
+                      aria-label="Remove from collection"
+                      title="Remove from this folder"
+                      className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md text-ink-faint opacity-0 transition-all hover:bg-error-tint hover:text-error group-hover/file:opacity-100"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                )}
+              </DraggableFile>
             ))}
             {!hasContent && (
               <p className="px-3 py-2 font-sans text-ui-s text-ink-faint italic">Empty — add files or a sub-folder</p>
@@ -340,8 +531,16 @@ export function CollectionsView({
     );
   }
 
+  const draggingNestedFolder = activeDragFolder !== null && activeDragFolder.parent_id !== null;
+
   return (
-    <>
+    <DndContext
+      sensors={sensors}
+      collisionDetection={pointerWithin}
+      onDragStart={handleDragStart}
+      onDragEnd={handleDragEnd}
+      onDragCancel={resetDrag}
+    >
       {/* Header */}
       <div className="mb-4 flex items-center gap-3">
         <span className="font-sans text-eyebrow font-semibold uppercase tracking-[0.06em] text-ink-faint">
@@ -353,7 +552,10 @@ export function CollectionsView({
         </Button>
       </div>
 
-      {/* Tree — top-level folders as warm cards, nesting revealed on expand */}
+      {/* Root drop strip — only while a NESTED folder is dragged (un-nest to top). */}
+      {draggingNestedFolder && <RootDropZone />}
+
+      {/* Tree */}
       <div className="space-y-2.5">
         {tree.map((node) => (
           <div key={node.id} className="overflow-hidden rounded-lg border border-rule bg-raised">
@@ -457,7 +659,89 @@ export function CollectionsView({
           </div>
         </ConfirmScrim>
       )}
-    </>
+
+      {/* Lifted cream ghost of the dragged file / folder (portal, no layout shift) */}
+      <DragOverlay dropAnimation={null}>
+        {activeDragFile ? (
+          <div className="flex max-w-[280px] items-center gap-2.5 rounded-lg border border-accent bg-raised px-3 py-2.5 shadow-lg">
+            <FileTypeBadge name={activeDragFile.file_name} size={28} />
+            <span className="truncate font-sans text-ui font-medium text-ink">{activeDragFile.file_name}</span>
+          </div>
+        ) : activeDragFolder ? (
+          <div className="flex max-w-[280px] items-center gap-2.5 rounded-lg border border-accent bg-raised px-3 py-2.5 shadow-lg">
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-tint text-accent">
+              <Folder className="size-4" />
+            </span>
+            <span className="truncate font-sans text-ui font-medium text-ink">{activeDragFolder.name}</span>
+          </div>
+        ) : null}
+      </DragOverlay>
+    </DndContext>
+  );
+}
+
+// Wrapper: a folder row is BOTH draggable (reparent) and droppable (receive a
+// file or another folder). Both dnd-kit refs share one DOM node; the payload
+// `type:"folder"` lets onDragEnd route folder-drops vs file-drops. dropDisabled
+// turns the droppable off for invalid folder→folder targets.
+function DraggableDroppableFolder({
+  node,
+  dropDisabled,
+  children,
+}: {
+  node: CollectionNode;
+  dropDisabled: boolean;
+  children: (d: {
+    ref: (el: HTMLElement | null) => void;
+    dragProps: Record<string, unknown>;
+    isDragging: boolean;
+    isOver: boolean;
+  }) => React.ReactElement;
+}) {
+  const drag = useDraggable({ id: `folder-drag-${node.id}`, data: { type: "folder", folderId: node.id, name: node.name } });
+  const drop = useDroppable({ id: `folder-${node.id}`, data: { type: "folder-target", folderId: node.id, name: node.name }, disabled: dropDisabled });
+  const setRef = (el: HTMLElement | null) => {
+    drag.setNodeRef(el);
+    drop.setNodeRef(el);
+  };
+  return children({ ref: setRef, dragProps: { ...drag.listeners, ...drag.attributes }, isDragging: drag.isDragging, isOver: drop.isOver });
+}
+
+// Wrapper: makes its child file row draggable by the WHOLE row (dragProps on the
+// outer element, not a handle). isDragging dims the source while the overlay
+// shows the lifted ghost.
+function DraggableFile({
+  dragId,
+  material,
+  children,
+}: {
+  dragId: string;
+  material: Material;
+  children: (d: {
+    ref: (el: HTMLElement | null) => void;
+    dragProps: Record<string, unknown>;
+    isDragging: boolean;
+  }) => React.ReactElement;
+}) {
+  const { setNodeRef, listeners, attributes, isDragging } = useDraggable({ id: dragId, data: { type: "file", material } });
+  return children({ ref: setNodeRef, dragProps: { ...listeners, ...attributes }, isDragging });
+}
+
+// Root drop strip — shown only while a nested folder is dragged, so it can be
+// promoted to the top level (parent_id = null).
+function RootDropZone() {
+  const { setNodeRef, isOver } = useDroppable({ id: "root-drop-zone", data: { isRoot: true } });
+  return (
+    <div
+      ref={setNodeRef}
+      className={cn(
+        "mb-2.5 flex items-center justify-center gap-2 rounded-lg border-2 border-dashed py-3 font-sans text-ui-s font-medium transition-colors",
+        isOver ? "border-accent bg-accent-tint text-accent-deep" : "border-rule-strong text-ink-faint"
+      )}
+    >
+      <ArrowUpToLine className="size-4" />
+      Drop here to move to the top level
+    </div>
   );
 }
 
