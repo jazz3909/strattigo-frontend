@@ -279,7 +279,7 @@
   --density-body: 18.5px;
   --density-leading: 1.72;
   --density-space: 22px;
-  --density-measure: 660px; /* max reading width */
+  --density-measure: 780px; /* max reading width (body prose; headings run wider) */
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */

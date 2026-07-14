@@ -289,7 +289,7 @@ export default function GuidePage({
         </div>
 
         {/* Top strip: breadcrumb + reading actions */}
-        <div className="flex items-center gap-3 border-b border-rule-soft px-10 py-4">
+        <div className="flex items-center gap-3 border-b border-rule-soft px-14 py-4">
           <nav className="flex min-w-0 items-center gap-2 font-sans text-ui-s text-ink-faint">
             <button
               onClick={() => router.push(guidesHref)}
@@ -332,7 +332,7 @@ export default function GuidePage({
           {loading ? (
             <DocumentSkeleton />
           ) : loadError ? (
-            <div className="mt-24 max-w-md px-10">
+            <div className="mt-24 max-w-md px-14">
               <p className="font-read text-read text-ink-soft">{loadError}</p>
               <div className="mt-6">
                 <Button variant="secondary" onClick={() => router.push(guidesHref)}>
@@ -341,7 +341,7 @@ export default function GuidePage({
               </div>
             </div>
           ) : genError ? (
-            <div className="mt-24 max-w-md px-10">
+            <div className="mt-24 max-w-md px-14">
               <p className="font-read text-read-s text-error-deep">{genError}</p>
               <div className="mt-6 flex gap-2">
                 <Button variant="secondary" onClick={() => router.push(guidesHref)}>
@@ -355,7 +355,7 @@ export default function GuidePage({
           ) : (
             <article
               data-density="document"
-              className="w-full max-w-[1000px] px-10 pt-14 pb-32"
+              className="w-full max-w-[1000px] px-14 pt-14 pb-32"
             >
               <div className="mb-[18px] font-sans text-eyebrow font-semibold uppercase tracking-[0.09em] text-accent-deep">
                 Study guide{scopeName ? ` · ${scopeName}` : ""}
@@ -522,7 +522,7 @@ function Dot({ delay }: { delay: string }) {
 
 function DocumentSkeleton() {
   return (
-    <div className="w-full max-w-[1000px] px-10 pt-14 pb-32">
+    <div className="w-full max-w-[1000px] px-14 pt-14 pb-32">
       <div className="mb-5 h-3 w-28 rounded bg-sunk" />
       <div className="mb-4 h-9 w-4/5 rounded bg-sunk" />
       <div className="mb-8 h-4 w-2/3 rounded bg-sunk" />
