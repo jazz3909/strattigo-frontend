@@ -598,9 +598,20 @@ async function* readSseStream(response: Response): AsyncGenerator<string> {
   }
 }
 
-export async function* streamQuiz(courseId: string, collectionId?: string): AsyncGenerator<string> {
+export type QuizDifficulty = "easy" | "medium" | "hard";
+
+export async function* streamQuiz(
+  courseId: string,
+  collectionId?: string,
+  numQuestions?: number,
+  difficulty?: QuizDifficulty,
+): AsyncGenerator<string> {
   const body: Record<string, unknown> = { course_id: courseId };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
+  // QuizRequest accepts num_questions (1–50, default 10) and difficulty
+  // (easy|medium|hard, default medium); omitting keeps the backend defaults.
+  if (numQuestions != null) body.num_questions = numQuestions;
+  if (difficulty != null) body.difficulty = difficulty;
   const response = await authFetch(`/ai/quiz/stream`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

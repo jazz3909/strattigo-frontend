@@ -1040,6 +1040,66 @@ body {
   color: var(--color-ink);
 }
 
+/* ─── App-density markdown (.app-md) ─────────────────────────────────────────
+   Styles AppMarkdown output — the same react-markdown pipeline as the reader,
+   at app density for compact working surfaces (quiz prompts/options/
+   explanations, chat). Typography (family, size, color) is deliberately
+   INHERITED from the surrounding component, so the same content reads as a
+   display-scale prompt inside a font-display heading and as body copy inside a
+   tinted callout. This class only supplies block rhythm and inline treatments;
+   never document typography — that stays in .reader-doc. */
+.app-md > :first-child {
+  margin-top: 0;
+}
+.app-md > :last-child {
+  margin-bottom: 0;
+}
+.app-md p {
+  margin: 0 0 var(--density-space);
+}
+.app-md ul,
+.app-md ol {
+  margin: 0 0 var(--density-space);
+  padding-left: 22px;
+}
+.app-md ul {
+  list-style: disc;
+}
+.app-md ol {
+  list-style: decimal;
+}
+.app-md li {
+  margin-bottom: 4px;
+}
+.app-md li::marker {
+  color: var(--color-accent);
+}
+.app-md strong {
+  font-weight: 600;
+  color: inherit; /* stays legible on success/error tints */
+}
+.app-md em {
+  font-style: italic;
+}
+.app-md a {
+  color: var(--color-accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.app-md code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.88em;
+}
+/* Math inherits the surrounding text color/size; display math gets rhythm
+   only — no formula-block chrome at app density. */
+.app-md .katex {
+  color: inherit;
+  font-size: 1.04em;
+}
+.app-md .katex-display {
+  margin: var(--density-space) 0;
+}
+
 /* ─── Legal Pages (/terms, /privacy) ─────────────────────────────────────── */
 .legal-prose p {
   color: var(--text-secondary);

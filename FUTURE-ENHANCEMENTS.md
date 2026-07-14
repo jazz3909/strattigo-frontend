@@ -34,3 +34,35 @@ key ideas and a dedicated recall/summary section — would unlock those callouts
   to study from, and the UI is already built to render it (drop the structured
   fields into `KeyIdeaCallout` / `RecallBox`, math already flows to
   `FormulaBlock` via `.reader-doc`).
+
+## 3. Persist quiz attempts (answers + score)
+
+Saved quizzes (`QuizSaveRequest` → `generated_content`) store only
+`id / title / content / created_at`, where `content` is the raw question
+markdown — **not** the student's picks or score. So the results screen
+(just-finished, answers in memory) and reopening a saved quiz are necessarily
+different views: a reopened quiz starts a fresh take instead of replaying
+"you chose A · correct: B".
+
+Persisting an attempt record (per-question picked letter + score + taken-at)
+would let the quiz view replay results/review for past attempts and let the
+Quizzes list show "8/10 · Jul 14" instead of just title/date/question count.
+
+- The quiz surface is already built for it: `QuizResults` takes
+  `questions + answers` — feed it a stored attempt and the review view is done.
+- Same note as guides: there's also no single-quiz GET; the view lists
+  `getSavedQuizzes(courseId)` and finds by id.
+
+## 4. Quiz focus-topics parameter
+
+`StudyGuideRequest` accepts `focus_topics`; `QuizRequest` does not (only
+`num_questions`, `difficulty`, `collection_id`). The quiz generation modal
+therefore omits the focus-topics field the reference mock shows — add the
+param to the backend and the modal can grow the input.
+
+## 5. Per-question source references (the moat, quiz edition)
+
+The quiz generation format carries no source refs, so explanations can't show
+the "From: Lecture 04, p.7" citation chip the reference design includes.
+Emitting a source line per question in the generation prompt/format would let
+the explanation callout cite the material it came from, like guides aspire to.
