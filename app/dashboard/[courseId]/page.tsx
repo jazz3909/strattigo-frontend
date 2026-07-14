@@ -172,8 +172,21 @@ export default function CoursePage({
   const [selectedCollectionId, setSelectedCollectionId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  // Default view is the AI Chat (chat-first layout). This is the only state default changed in the rebuild.
-  const [activeTab, setActiveTab] = useState<ActiveTab>("chat");
+  // Default view is the AI Chat (chat-first layout), unless a ?tab= param asks
+  // for a specific tab — used by the study-guide reading view's breadcrumb to
+  // return straight to the guides list.
+  const [activeTab, setActiveTab] = useState<ActiveTab>(() => {
+    if (typeof window !== "undefined") {
+      const t = new URLSearchParams(window.location.search).get("tab");
+      if (
+        t === "materials" || t === "study-guide" || t === "quiz" ||
+        t === "flashcards" || t === "study-plan" || t === "chat"
+      ) {
+        return t as ActiveTab;
+      }
+    }
+    return "chat";
+  });
   // Presentational-only: controls the hover-expand collapsed sidebar. Not wired to any data logic.
   const [sidebarExpanded, setSidebarExpanded] = useState(false);
 
@@ -2770,19 +2783,11 @@ function CollectionScopePicker({
 // STUDY GUIDE TAB
 // ─────────────────────────────────────────────────────────────────────────────
 
-type GuideStreamState = {
-  title: string;
-  content: string;
-  done: boolean;
-  saving: boolean;
-} | null;
-
 function StudyGuideTab({
   courseId,
   canGenerate,
   collections,
   selectedCollectionId,
-  onCollectionChange,
 }: {
   courseId: string;
   canGenerate: boolean;
@@ -2791,20 +2796,11 @@ function StudyGuideTab({
   onCollectionChange: (id: string | null) => void;
 }) {
   const { addToast } = useToast();
+  const router = useRouter();
   const [guides, setGuides] = useState<StudyGuideSaved[]>([]);
   const [loadingGuides, setLoadingGuides] = useState(true);
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [titleModalOpen, setTitleModalOpen] = useState(false);
-  const [titleInput, setTitleInput] = useState("");
-  const [studyGuideStyle, setStudyGuideStyle] = useState<"detailed" | "bullet">("detailed");
-  const [focusTopics, setFocusTopics] = useState("");
-  const [guideError, setGuideError] = useState("");
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-  const [streamState, setStreamState] = useState<GuideStreamState>(null);
-
-  const isGenerating = streamState !== null && !streamState.done;
-  const showStreamPreview = streamState !== null;
 
   useEffect(() => {
     fetchGuides();
@@ -2823,68 +2819,12 @@ function StudyGuideTab({
     }
   }
 
-  function openTitleModal() {
-    setTitleInput("");
-    setStudyGuideStyle("detailed");
-    setFocusTopics("");
-    setTitleModalOpen(true);
-  }
-
-  async function handleGenerate() {
-    const title = titleInput.trim();
-    if (!title) return;
-    setTitleModalOpen(false);
-    setGuideError("");
-    setStreamState({ title, content: "", done: false, saving: false });
-
-    try {
-      let acc = "";
-      for await (const chunk of streamStudyGuide(courseId, title, selectedCollectionId ?? undefined, focusTopics, studyGuideStyle)) {
-        acc += chunk;
-        setStreamState((prev) => prev ? { ...prev, content: prev.content + chunk } : prev);
-      }
-      if (!acc.trim()) {
-        // Generation produced no usable study guide (e.g. strict-mode over a
-        // garbled/limited collection). Surface honestly instead of an empty guide.
-        setStreamState(null);
-        setGuideError(NO_USABLE_MATERIALS_MESSAGE);
-        return;
-      }
-      setStreamState((prev) => prev ? { ...prev, done: true } : prev);
-      setStudyGuideStyle("detailed");
-      setFocusTopics("");
-    } catch (err: unknown) {
-      setStreamState(null);
-      setGuideError(err instanceof Error ? err.message : "Failed to generate study guide.");
-    }
-  }
-
-  async function handleSave() {
-    if (!streamState || !streamState.done) return;
-    setStreamState((prev) => prev ? { ...prev, saving: true } : prev);
-    try {
-      const saved = await saveStudyGuide(courseId, streamState.title, streamState.content);
-      setGuides((prev) => [saved, ...prev]);
-      setExpandedId(saved.id);
-      setStreamState(null);
-      addToast("Study guide saved!", "success");
-    } catch (err: unknown) {
-      setStreamState((prev) => prev ? { ...prev, saving: false } : prev);
-      addToast(err instanceof Error ? err.message : "Failed to save study guide.", "error");
-    }
-  }
-
-  function handleDiscard() {
-    setStreamState(null);
-  }
-
   async function handleDelete(id: string) {
     setDeletingId(id);
     setConfirmDeleteId(null);
     try {
       await deleteStudyGuide(id);
       setGuides((prev) => prev.filter((g) => g.id !== id));
-      if (expandedId === id) setExpandedId(null);
       addToast("Study guide deleted.", "info");
     } catch (err: unknown) {
       addToast(err instanceof Error ? err.message : "Delete failed.", "error");
@@ -2894,6 +2834,21 @@ function StudyGuideTab({
   }
 
   const atLimit = guides.length >= 5;
+  // Generation + reading now live at their own route. The list navigates instead
+  // of expanding in place; the current scope rides along as ?scope= so the
+  // reader's ScopePicker opens on the real selected collection.
+  const scopeQuery = selectedCollectionId
+    ? `?scope=${encodeURIComponent(selectedCollectionId)}`
+    : "";
+
+  function goGenerate() {
+    if (!canGenerate || atLimit) return;
+    router.push(`/dashboard/${courseId}/guide/new${scopeQuery}`);
+  }
+
+  function openGuide(id: string) {
+    router.push(`/dashboard/${courseId}/guide/${id}`);
+  }
 
   return (
     <div>
@@ -2909,8 +2864,8 @@ function StudyGuideTab({
           <Button
             variant="primary"
             size="sm"
-            onClick={openTitleModal}
-            disabled={isGenerating || !canGenerate || atLimit || showStreamPreview}
+            onClick={goGenerate}
+            disabled={!canGenerate || atLimit}
             title={atLimit ? "Delete a guide to generate a new one" : undefined}
             leftIcon={
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -2923,74 +2878,8 @@ function StudyGuideTab({
         </div>
       </div>
 
-      {/* Error */}
-      {guideError && (
-        <div className="mb-5">
-          <AiErrorBlock error={guideError} onRetry={() => setGuideError("")} />
-        </div>
-      )}
-
-      {/* Streaming preview */}
-      {showStreamPreview && streamState && (
-        <div className="mb-5 overflow-hidden" style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.08)", borderRadius: "18px" }}>
-          <div className="flex items-center gap-3 px-5 py-3.5 border-b" style={{ borderColor: "rgba(255,255,255,0.08)" }}>
-            <div className="w-8 h-8 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
-              <svg className="w-4 h-4 text-[var(--accent)]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
-              </svg>
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-[var(--text-primary)] truncate">{streamState.title}</p>
-              <p className="text-xs text-[var(--accent)] font-medium">
-                {isGenerating ? "Generating…" : "Ready to save"}
-              </p>
-            </div>
-            {streamState.done && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleDiscard}
-                  disabled={streamState.saving}
-                  className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-                  style={{ background: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.1)", color: "var(--text-secondary)" }}
-                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'var(--text-primary)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; e.currentTarget.style.color = 'var(--text-secondary)'; }}
-                >
-                  Discard
-                </button>
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={streamState.saving}
-                  leftIcon={streamState.saving ? <Spinner size="sm" className="border-white/30 border-t-white" /> : undefined}
-                >
-                  {streamState.saving ? "Saving…" : "Save Guide"}
-                </Button>
-              </div>
-            )}
-          </div>
-          <div className="px-6 py-5 max-h-96 overflow-y-auto">
-            {streamState.content ? (
-              <div className="max-w-none">
-                <MarkdownWithMath content={streamState.content} className="study-guide-content text-sm text-[var(--text-primary)] leading-relaxed" />
-                {isGenerating && <span className="streaming-cursor" />}
-              </div>
-            ) : (
-              <div className="flex items-center gap-2 text-[var(--text-tertiary)] text-sm py-2">
-                <div className="flex gap-1">
-                  <div className="typing-dot" style={{ animationDelay: "0ms" }} />
-                  <div className="typing-dot" style={{ animationDelay: "160ms" }} />
-                  <div className="typing-dot" style={{ animationDelay: "320ms" }} />
-                </div>
-                <span>Generating your study guide…</span>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
       {/* Skeleton loader */}
-      {!showStreamPreview && loadingGuides && (
+      {loadingGuides && (
         <div className="space-y-3">
           {[...Array(2)].map((_, i) => (
             <Skeleton key={i} className="h-16 w-full rounded-2xl" />
@@ -2999,7 +2888,7 @@ function StudyGuideTab({
       )}
 
       {/* Guide list */}
-      {!showStreamPreview && !loadingGuides && (
+      {!loadingGuides && (
         guides.length === 0 ? (
           <div
             className="flex flex-col items-center text-center animate-fade-in-up"
@@ -3018,7 +2907,7 @@ function StudyGuideTab({
             </p>
 
             <button
-              onClick={openTitleModal}
+              onClick={goGenerate}
               disabled={!canGenerate}
               className="inline-flex items-center gap-2 btn-press transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style={{ background: 'var(--accent)', color: '#fff', fontFamily: 'var(--font-outfit)', fontWeight: 600, padding: '13px 30px', borderRadius: '14px', fontSize: '0.95rem' }}
@@ -3034,13 +2923,12 @@ function StudyGuideTab({
         ) : (
           <div className="space-y-3">
             {guides.map((guide) => (
-              <GuideAccordionItem
+              <GuideListItem
                 key={guide.id}
                 guide={guide}
-                isExpanded={expandedId === guide.id}
-                onToggle={() => setExpandedId(expandedId === guide.id ? null : guide.id)}
                 isDeleting={deletingId === guide.id}
                 confirmDelete={confirmDeleteId === guide.id}
+                onOpen={() => openGuide(guide.id)}
                 onConfirmDelete={() => setConfirmDeleteId(guide.id)}
                 onCancelDelete={() => setConfirmDeleteId(null)}
                 onDelete={() => handleDelete(guide.id)}
@@ -3049,249 +2937,34 @@ function StudyGuideTab({
           </div>
         )
       )}
-
-      {/* Title input modal */}
-      <Modal
-        open={titleModalOpen}
-        onClose={() => setTitleModalOpen(false)}
-        title="Generate Study Guide"
-        description="Customize your study guide before generating."
-        size="sm"
-        glass
-      >
-        <div className="space-y-5">
-          {/* Style selector */}
-          <div>
-            <p className="text-xs font-medium mb-2" style={{ color: "var(--text-secondary)", fontSize: "13px" }}>Study Guide Style</p>
-            <div className="flex gap-3">
-              {([
-                {
-                  id: "detailed" as const,
-                  title: "In-Depth",
-                  subtitle: "Detailed explanations with examples",
-                  icon: (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
-                    </svg>
-                  ),
-                },
-                {
-                  id: "bullet" as const,
-                  title: "Quick Reference",
-                  subtitle: "Scannable bullet points & key facts",
-                  icon: (
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 6.75h12M8.25 12h12m-12 5.25h12M3.75 6.75h.007v.008H3.75V6.75zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zM3.75 12h.007v.008H3.75V12zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm-.375 5.25h.007v.008H3.75v-.008zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
-                    </svg>
-                  ),
-                },
-              ] as { id: "detailed" | "bullet"; title: string; subtitle: string; icon: React.ReactNode }[]).map((opt) => {
-                const selected = studyGuideStyle === opt.id;
-                return (
-                  <div
-                    key={opt.id}
-                    onClick={() => setStudyGuideStyle(opt.id)}
-                    className="flex-1 flex items-center gap-3 cursor-pointer transition-all duration-150"
-                    style={{
-                      padding: "16px 18px",
-                      borderRadius: "14px",
-                      border: selected ? "1px solid var(--accent)" : "1px solid rgba(255,255,255,0.08)",
-                      background: selected ? "var(--accent-dim)" : "rgba(255,255,255,0.03)",
-                    }}
-                    onMouseEnter={(e) => {
-                      if (!selected) {
-                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(225,148,133,0.3)";
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.05)";
-                      }
-                    }}
-                    onMouseLeave={(e) => {
-                      if (!selected) {
-                        (e.currentTarget as HTMLDivElement).style.borderColor = "rgba(255,255,255,0.08)";
-                        (e.currentTarget as HTMLDivElement).style.background = "rgba(255,255,255,0.03)";
-                      }
-                    }}
-                  >
-                    <div
-                      className="w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{ background: selected ? "var(--accent-dim)" : "rgba(255,255,255,0.06)", color: selected ? "var(--accent)" : "var(--text-secondary)" }}
-                    >
-                      {opt.icon}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-semibold leading-tight" style={{ color: selected ? "var(--accent)" : "var(--text-primary)" }}>{opt.title}</p>
-                      <p className="text-xs mt-0.5 leading-tight" style={{ color: "var(--text-secondary)" }}>{opt.subtitle}</p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Title */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Study guide name</label>
-            <input
-              autoFocus
-              value={titleInput}
-              onChange={(e) => setTitleInput(e.target.value.slice(0, 60))}
-              onKeyDown={(e) => { if (e.key === "Enter" && titleInput.trim()) handleGenerate(); }}
-              placeholder="e.g. Chapter 5 — Organic Chemistry"
-              className="w-full text-sm focus:outline-none placeholder:text-[var(--text-tertiary)]"
-              maxLength={60}
-              style={{
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                borderRadius: "12px",
-                color: "var(--text-primary)",
-                padding: "10px 14px",
-                outline: "none",
-                boxSizing: "border-box",
-                transition: "border-color 150ms ease, box-shadow 150ms ease",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "var(--accent)";
-                e.target.style.boxShadow = "0 0 0 3px var(--accent-dim)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgba(255,255,255,0.08)";
-                e.target.style.boxShadow = "none";
-              }}
-            />
-            <p className="text-xs text-[var(--text-tertiary)] mt-1.5">{titleInput.length}/60 characters</p>
-          </div>
-
-          {/* Focus topics */}
-          <div>
-            <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Anything specific to focus on? <span className="font-normal text-[var(--text-tertiary)]">(optional)</span></label>
-            <textarea
-              value={focusTopics}
-              onChange={(e) => setFocusTopics(e.target.value.slice(0, 500))}
-              placeholder="e.g. Integration by parts, L'Hôpital's rule, Chapter 5 only..."
-              rows={3}
-              maxLength={500}
-              className="placeholder:text-[var(--text-tertiary)]"
-              style={{
-                width: "100%",
-                background: "rgba(255,255,255,0.03)",
-                border: "1px solid rgba(255,255,255,0.08)",
-                color: "var(--text-primary)",
-                borderRadius: "12px",
-                padding: "12px 16px",
-                font: "inherit",
-                resize: "vertical",
-                minHeight: "80px",
-                fontSize: "14px",
-                transition: "border-color 150ms ease, box-shadow 150ms ease",
-                outline: "none",
-                boxSizing: "border-box",
-              }}
-              onFocus={(e) => {
-                e.target.style.borderColor = "var(--accent)";
-                e.target.style.boxShadow = "0 0 0 3px var(--accent-dim)";
-              }}
-              onBlur={(e) => {
-                e.target.style.borderColor = "rgba(255,255,255,0.08)";
-                e.target.style.boxShadow = "none";
-              }}
-            />
-            {focusTopics.length > 400 && (
-              <p className="text-xs text-[var(--text-tertiary)] mt-1 text-right">{focusTopics.length}/500</p>
-            )}
-          </div>
-
-          {/* Scope picker (if collections exist) — same hierarchical picker as the
-              top bar; usable here because the top bar is unreachable behind the modal. */}
-          {collections.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-[var(--text-primary)] mb-1.5">Source materials</label>
-              <CollectionScopePicker
-                collections={collections}
-                selectedCollectionId={selectedCollectionId}
-                onChange={onCollectionChange}
-                variant="modal"
-              />
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="flex gap-2">
-            <Button
-              variant="secondary"
-              size="sm"
-              onClick={() => setTitleModalOpen(false)}
-              style={{
-                background: "rgba(255,255,255,0.05)",
-                border: "1px solid rgba(255,255,255,0.1)",
-                borderColor: "rgba(255,255,255,0.1)",
-                color: "var(--text-secondary)",
-                borderRadius: "12px",
-              }}
-              onMouseEnter={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.08)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-primary)";
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "rgba(255,255,255,0.05)";
-                (e.currentTarget as HTMLButtonElement).style.color = "var(--text-secondary)";
-              }}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              size="sm"
-              onClick={handleGenerate}
-              disabled={!titleInput.trim()}
-              className="flex-1"
-              style={{
-                background: "var(--accent)",
-                color: "white",
-                fontWeight: 600,
-                borderRadius: "12px",
-                boxShadow: "0 4px 16px rgba(225,148,133,0.3)",
-              }}
-              onMouseEnter={(e) => {
-                if (!(e.currentTarget as HTMLButtonElement).disabled) {
-                  (e.currentTarget as HTMLButtonElement).style.background = "var(--accent-hover)";
-                }
-              }}
-              onMouseLeave={(e) => {
-                (e.currentTarget as HTMLButtonElement).style.background = "var(--accent)";
-              }}
-            >
-              Generate
-            </Button>
-          </div>
-        </div>
-      </Modal>
     </div>
   );
 }
 
-function GuideAccordionItem({
+// A saved-guide row that NAVIGATES to the guide's own route (the reading view)
+// instead of expanding an accordion in place. Delete stays inline.
+function GuideListItem({
   guide,
-  isExpanded,
-  onToggle,
   isDeleting,
   confirmDelete,
+  onOpen,
   onConfirmDelete,
   onCancelDelete,
   onDelete,
 }: {
   guide: StudyGuideSaved;
-  isExpanded: boolean;
-  onToggle: () => void;
   isDeleting: boolean;
   confirmDelete: boolean;
+  onOpen: () => void;
   onConfirmDelete: () => void;
   onCancelDelete: () => void;
   onDelete: () => void;
 }) {
   return (
-    <div className={`group rounded-[14px] border transition-all ${isExpanded ? "bg-[rgba(255,255,255,0.03)] border-[rgba(225,148,133,0.3)]" : "bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.08)] hover:border-[rgba(225,148,133,0.2)]"}`}>
+    <div className="group rounded-[14px] border transition-all bg-[rgba(255,255,255,0.03)] hover:bg-[rgba(255,255,255,0.05)] border-[rgba(255,255,255,0.08)] hover:border-[rgba(225,148,133,0.2)]">
       <div className="flex items-center">
         <button
-          onClick={onToggle}
+          onClick={onOpen}
           className="flex-1 flex items-center gap-3 px-5 py-4 text-left min-w-0"
         >
           <div className="w-9 h-9 rounded-xl bg-[var(--accent-dim)] flex items-center justify-center flex-shrink-0">
@@ -3306,10 +2979,10 @@ function GuideAccordionItem({
             </p>
           </div>
           <svg
-            className={`w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] flex-shrink-0 transition-all duration-200 ${isExpanded ? "rotate-180" : ""}`}
+            className="w-4 h-4 text-[var(--text-secondary)] group-hover:text-[var(--text-primary)] flex-shrink-0 transition-colors"
             fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M19.5 8.25l-7.5 7.5-7.5-7.5" />
+            <path strokeLinecap="round" strokeLinejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5" />
           </svg>
         </button>
 
@@ -3348,15 +3021,6 @@ function GuideAccordionItem({
           )}
         </div>
       </div>
-
-      {isExpanded && (
-        <div className="border-t border-[var(--border)] px-5 py-5">
-          <MarkdownWithMath
-            content={guide.content}
-            className="study-guide-content text-sm text-[var(--text-primary)] leading-relaxed"
-          />
-        </div>
-      )}
     </div>
   );
 }

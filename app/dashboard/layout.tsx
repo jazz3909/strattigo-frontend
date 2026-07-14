@@ -59,6 +59,10 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // the centered max-w-7xl treatment. Matches a single non-empty segment after /dashboard/ only —
   // so /dashboard itself and any deeper/reserved routes are unaffected.
   const isCourseDetail = /^\/dashboard\/[^/]+$/.test(pathname);
+  // The study-guide reading view (ui-rebuild) is its own full-bleed cream
+  // workspace frame (rail + top bar); it replaces the dark global chrome rather
+  // than nesting under it. The subscription gate below still runs for it.
+  const isWorkspaceReader = /^\/dashboard\/[^/]+\/guide\/[^/]+$/.test(pathname);
   const [email, setEmail] = useState("");
   const [scrolled, setScrolled] = useState(false);
   const [subChecked, setSubChecked] = useState(false);
@@ -240,6 +244,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         )}
       </div>
     );
+  }
+
+  // The reading view brings its own full-bleed cream frame — render it without
+  // the dark global header / mobile nav (the gate above has already run).
+  if (isWorkspaceReader) {
+    return <>{children}</>;
   }
 
   return (
