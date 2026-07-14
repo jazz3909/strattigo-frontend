@@ -60,9 +60,22 @@ Quizzes list show "8/10 · Jul 14" instead of just title/date/question count.
 therefore omits the focus-topics field the reference mock shows — add the
 param to the backend and the modal can grow the input.
 
-## 5. Per-question source references (the moat, quiz edition)
+## 5. Per-question source references — MOAT REINFORCEMENT (high value)
 
-The quiz generation format carries no source refs, so explanations can't show
-the "From: Lecture 04, p.7" citation chip the reference design includes.
-Emitting a source line per question in the generation prompt/format would let
-the explanation callout cite the material it came from, like guides aspire to.
+**This is a moat item, not a routine nice-to-have.** The product's edge is
+grounded, cited answers — quiz explanations that point back to the exact
+material they came from. The generation format currently carries no source
+refs, so explanations can't show the "From: Lecture 04, p.7" citation chip the
+reference design includes, and the surface can't yet make its strongest claim
+(this answer is backed by *your* materials, here's where).
+
+Emitting a source line per question in the generation prompt/format (the RAG
+context already knows which chunks/materials each question draws from) unlocks
+this directly:
+
+- **The UI is already wired for it.** `QuizQuestionCard`'s explanation
+  `Callout` just needs the ref to render the citation chip — the moment quiz
+  generation returns source refs, the chips light up with no further UI work.
+- Same grounding story as the guide surface; doing both is what makes the
+  cited-answers claim real across the product, so weight this above the
+  routine items above.
