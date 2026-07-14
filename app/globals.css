@@ -863,25 +863,30 @@ body {
 }
 
 /* ─── Reader Document (study-guide reading view) ─────────────────────────────
-   Styles the MarkdownWithMath output inside the document-density reader
+   Styles the GuideMarkdown output (react-markdown + remark-gfm/-math +
+   rehype-katex) inside the document-density reader
    (app/dashboard/[courseId]/guide/[guideId]). Cream-and-ink + Dusk Blue accent,
-   matching reading-view-variants.html Variant B. This REUSES the existing
-   renderer — only the wrapper class differs from .study-guide-content (which
-   stays for the dark app-density surfaces). The renderer emits no <p> wrappers,
-   so paragraph breaks come from the source newlines via white-space: pre-line;
-   block elements reset to normal so their own margins govern spacing. */
+   matching reading-view-variants.html Variant B. The renderer emits real block
+   elements (<p>, <ul>, <h2>, …), so their own margins govern the reading rhythm.
+   A separate class from .study-guide-content, which backs the dark app-density
+   surfaces. */
 .reader-doc {
   font-family: var(--font-newsreader), Georgia, serif;
   font-size: var(--text-read);
   line-height: 1.72;
   color: #2E2B25;
   letter-spacing: 0.003em;
-  white-space: pre-line;
+}
+.reader-doc > :first-child {
+  margin-top: 0;
+}
+.reader-doc p {
+  margin: 0 0 22px;
 }
 .reader-doc h1,
 .reader-doc h2,
-.reader-doc h3 {
-  white-space: normal;
+.reader-doc h3,
+.reader-doc h4 {
   font-family: var(--font-fraunces), Georgia, serif;
   color: var(--color-ink);
 }
@@ -913,6 +918,11 @@ body {
   font-weight: 500;
   margin: 36px 0 12px;
 }
+.reader-doc h4 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 28px 0 10px;
+}
 .reader-doc strong {
   color: var(--color-accent-deep);
   font-weight: 500;
@@ -934,20 +944,47 @@ body {
   color: var(--color-accent-deep);
   padding: 0.12em 0.4em;
   border-radius: 6px;
-  white-space: normal;
 }
+.reader-doc pre {
+  margin: 26px 0;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--color-sunk);
+  border: 1px solid var(--color-rule);
+  overflow-x: auto;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.reader-doc pre code {
+  background: transparent;
+  color: var(--color-ink);
+  padding: 0;
+  font-size: inherit;
+}
+/* Tailwind's preflight strips list markers/padding — restore them for prose. */
 .reader-doc ul,
 .reader-doc ol {
-  white-space: normal;
-  padding-left: 26px;
-  margin: 4px 0 10px;
+  margin: 0 0 22px;
+  padding-left: 28px;
+}
+.reader-doc ul {
+  list-style: disc;
+}
+.reader-doc ol {
+  list-style: decimal;
 }
 .reader-doc li {
   margin-bottom: 8px;
   padding-left: 4px;
 }
+.reader-doc li::marker {
+  color: var(--color-accent);
+}
+.reader-doc li > ul,
+.reader-doc li > ol {
+  margin: 8px 0 0;
+}
 .reader-doc blockquote {
-  white-space: normal;
   border-radius: var(--radius-lg);
   background: var(--color-accent-tint);
   color: var(--color-accent-deep);
@@ -956,9 +993,18 @@ body {
   font-size: 17.5px;
   line-height: 1.6;
 }
+.reader-doc blockquote p:last-child {
+  margin-bottom: 0;
+}
+.reader-doc hr {
+  border: 0;
+  border-top: 1px solid var(--color-rule);
+  margin: 40px 0;
+}
 .reader-doc table {
-  white-space: normal;
+  display: block;
   width: 100%;
+  overflow-x: auto;
   border-collapse: collapse;
   margin: 28px 0;
   font-size: 16px;

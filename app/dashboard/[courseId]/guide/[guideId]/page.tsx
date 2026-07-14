@@ -11,7 +11,7 @@ import { Input, Textarea } from "@/components/ui/input";
 import { ScopePicker } from "@/components/ui/scope-picker";
 import { SegmentedToggle } from "@/components/ui/segmented-toggle";
 
-import { MarkdownWithMath } from "@/app/components/ui/MarkdownWithMath";
+import { GuideMarkdown } from "@/app/components/ui/GuideMarkdown";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
   getCourse,
@@ -325,12 +325,14 @@ export default function GuidePage({
           ) : null}
         </div>
 
-        {/* Scroll region → the document */}
-        <div ref={scrollRef} onScroll={onScroll} className="flex flex-1 justify-center overflow-y-auto">
+        {/* Scroll region → the document. The article is left-anchored (a document
+            reads anchored-left, not floating centered): the ~660px measure sits
+            at the breadcrumb's left margin, whitespace falling to the right. */}
+        <div ref={scrollRef} onScroll={onScroll} className="flex-1 overflow-y-auto">
           {loading ? (
             <DocumentSkeleton />
           ) : loadError ? (
-            <div className="mx-auto mt-24 max-w-md px-6 text-center">
+            <div className="mt-24 max-w-md px-10">
               <p className="font-read text-read text-ink-soft">{loadError}</p>
               <div className="mt-6">
                 <Button variant="secondary" onClick={() => router.push(guidesHref)}>
@@ -339,9 +341,9 @@ export default function GuidePage({
               </div>
             </div>
           ) : genError ? (
-            <div className="mx-auto mt-24 max-w-md px-6 text-center">
+            <div className="mt-24 max-w-md px-10">
               <p className="font-read text-read-s text-error-deep">{genError}</p>
-              <div className="mt-6 flex justify-center gap-2">
+              <div className="mt-6 flex gap-2">
                 <Button variant="secondary" onClick={() => router.push(guidesHref)}>
                   Back
                 </Button>
@@ -353,8 +355,8 @@ export default function GuidePage({
           ) : (
             <article
               data-density="document"
-              className="w-full px-5 pt-14 pb-32"
-              style={{ maxWidth: "var(--density-measure)" }}
+              className="w-full px-10 pt-14 pb-32"
+              style={{ maxWidth: "calc(var(--density-measure) + 80px)" }}
             >
               <div className="mb-[18px] font-sans text-eyebrow font-semibold uppercase tracking-[0.09em] text-accent-deep">
                 Study guide{scopeName ? ` · ${scopeName}` : ""}
@@ -397,7 +399,7 @@ export default function GuidePage({
 
               {content ? (
                 <>
-                  <MarkdownWithMath content={content} className="reader-doc" />
+                  <GuideMarkdown content={content} />
                   {streaming && <span className="streaming-cursor text-accent" />}
                 </>
               ) : streaming ? (
@@ -521,7 +523,7 @@ function Dot({ delay }: { delay: string }) {
 
 function DocumentSkeleton() {
   return (
-    <div className="w-full px-5 pt-14 pb-32" style={{ maxWidth: "var(--density-measure)" }}>
+    <div className="w-full px-10 pt-14 pb-32" style={{ maxWidth: "calc(var(--density-measure) + 80px)" }}>
       <div className="mb-5 h-3 w-28 rounded bg-sunk" />
       <div className="mb-4 h-9 w-4/5 rounded bg-sunk" />
       <div className="mb-8 h-4 w-2/3 rounded bg-sunk" />
