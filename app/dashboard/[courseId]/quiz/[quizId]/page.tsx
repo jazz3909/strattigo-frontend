@@ -51,6 +51,14 @@ const GENERATING_MESSAGES = [
   "Checking the answer key…",
 ];
 
+// Centered taking column. The question, its option cards, and both top strips
+// (breadcrumb + progress) share this width and gutter so they read as one
+// composed, contained unit — a confident centered column, not a narrow strip
+// marooned in a big empty frame. Contained-and-centered is intended here (a
+// quiz is a focused activity), just wide enough that the side margins are a
+// comfortable result rather than dead voids.
+const TAKE_COLUMN = "mx-auto w-full max-w-[860px] px-5";
+
 // QuizRequest accepts 1–50; these are the offered presets (quiz-view.html).
 const COUNT_OPTIONS = ["5", "10", "15", "20"] as const;
 const DIFFICULTY_OPTIONS = [
@@ -361,43 +369,51 @@ export default function QuizPage({
           onUpload={() => router.push(`/dashboard/${courseId}?tab=materials`)}
         />
 
-        {/* Top strip: breadcrumb + surface actions */}
-        <div className="flex items-center gap-3 border-b border-rule-soft px-10 py-4">
-          <nav className="flex min-w-0 items-center gap-2 font-sans text-ui-s text-ink-faint">
-            <button
-              onClick={() => router.push(quizzesHref)}
-              className="cursor-pointer whitespace-nowrap hover:text-ink-soft"
-            >
-              Quizzes
-            </button>
-            <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
-            <span className="min-w-0 truncate font-medium text-ink-soft">{title}</span>
-          </nav>
-          <div className="flex-1" />
-          {isNew && genState === "done" && !savedId && phase === "take" && (
-            <Button variant="ghost" onClick={() => openSaveModal(true)}>
-              Save &amp; exit
-            </Button>
-          )}
+        {/* Top strip: breadcrumb + surface actions. Divider is full-bleed; its
+            content is centered to the shared column so its edges line up with
+            the question and option cards below. */}
+        <div className="border-b border-rule-soft">
+          <div className={`${TAKE_COLUMN} flex items-center gap-3 py-4`}>
+            <nav className="flex min-w-0 items-center gap-2 font-sans text-ui-s text-ink-faint">
+              <button
+                onClick={() => router.push(quizzesHref)}
+                className="cursor-pointer whitespace-nowrap hover:text-ink-soft"
+              >
+                Quizzes
+              </button>
+              <ChevronRight className="size-3.5 shrink-0" aria-hidden="true" />
+              <span className="min-w-0 truncate font-medium text-ink-soft">{title}</span>
+            </nav>
+            <div className="flex-1" />
+            {isNew && genState === "done" && !savedId && phase === "take" && (
+              <Button variant="ghost" onClick={() => openSaveModal(true)}>
+                Save &amp; exit
+              </Button>
+            )}
+          </div>
         </div>
 
-        {/* Quiz progress strip — done / current / remaining segments + scope */}
+        {/* Quiz progress strip — done / current / remaining segments + scope.
+            Same centered column as the question below, so the strip and the
+            option cards share left/right edges (one composition). */}
         {taking && (
-          <div className="flex shrink-0 items-center gap-4 border-b border-rule-soft px-10 py-4">
-            <span className="font-sans text-ui-s font-medium whitespace-nowrap text-ink-faint">
-              <b className="font-semibold text-ink">{Math.min(currentIdx + 1, totalForStrip)}</b> /{" "}
-              {totalForStrip}
-            </span>
-            <SegmentedProgress
-              total={totalForStrip}
-              current={Math.min(currentIdx + 1, totalForStrip)}
-              className="flex-1"
-            />
-            {isNew && scopeName && (
-              <span className="hidden font-sans text-ui-s whitespace-nowrap text-ink-faint sm:inline">
-                from <b className="font-medium text-accent-deep">{scopeName}</b>
+          <div className="shrink-0 border-b border-rule-soft">
+            <div className={`${TAKE_COLUMN} flex items-center gap-4 py-4`}>
+              <span className="font-sans text-ui-s font-medium whitespace-nowrap text-ink-faint">
+                <b className="font-semibold text-ink">{Math.min(currentIdx + 1, totalForStrip)}</b> /{" "}
+                {totalForStrip}
               </span>
-            )}
+              <SegmentedProgress
+                total={totalForStrip}
+                current={Math.min(currentIdx + 1, totalForStrip)}
+                className="flex-1"
+              />
+              {isNew && scopeName && (
+                <span className="hidden font-sans text-ui-s whitespace-nowrap text-ink-faint sm:inline">
+                  from <b className="font-medium text-accent-deep">{scopeName}</b>
+                </span>
+              )}
+            </div>
           </div>
         )}
 
@@ -440,7 +456,7 @@ export default function QuizPage({
                 </div>
               </div>
             ) : streaming && questions.length === 0 ? (
-              <div className="mx-auto w-full max-w-[680px] px-5 pt-16">
+              <div className={`${TAKE_COLUMN} pt-16`}>
                 <div className="flex items-center gap-3 py-4 font-sans text-ui text-ink-faint">
                   <span className="flex gap-1">
                     <Dot delay="0ms" />
@@ -462,7 +478,7 @@ export default function QuizPage({
                 onSave={() => openSaveModal(false)}
               />
             ) : current ? (
-              <div className="mx-auto w-full max-w-[680px] px-5 pt-11 pb-20">
+              <div className={`${TAKE_COLUMN} pt-11 pb-20`}>
                 <QuizQuestionCard
                   question={current}
                   number={currentIdx + 1}
@@ -642,7 +658,7 @@ export default function QuizPage({
 
 function QuizSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-[680px] px-5 pt-11 pb-20">
+    <div className={`${TAKE_COLUMN} pt-11 pb-20`}>
       <div className="mb-5 h-3 w-24 rounded bg-sunk" />
       <div className="mb-3 h-7 w-11/12 rounded bg-sunk" />
       <div className="mb-8 h-7 w-2/3 rounded bg-sunk" />
