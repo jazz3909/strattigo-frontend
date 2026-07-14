@@ -2,7 +2,7 @@
 
 import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowDownToLine, ChevronRight, List } from "lucide-react";
+import { ArrowDownToLine, ChevronRight } from "lucide-react";
 
 import { WorkspaceRail, type RailView } from "@/components/shell/workspace-rail";
 import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar";
@@ -10,7 +10,6 @@ import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { ScopePicker } from "@/components/ui/scope-picker";
 import { SegmentedToggle } from "@/components/ui/segmented-toggle";
-import { cn } from "@/lib/utils";
 
 import { MarkdownWithMath } from "@/app/components/ui/MarkdownWithMath";
 import { useToast } from "@/app/providers/ToastProvider";
@@ -84,7 +83,6 @@ export default function GuidePage({
 
   // ── Reading affordances ──
   const [progress, setProgress] = useState(0);
-  const [bulletView, setBulletView] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const autoOpenedRef = useRef(false);
 
@@ -320,13 +318,6 @@ export default function GuidePage({
               <span className="hidden font-sans text-ui-s text-ink-faint sm:inline">
                 {readingTime(content)} min read
               </span>
-              <Button
-                variant="ghost"
-                onClick={() => setBulletView((v) => !v)}
-                aria-pressed={bulletView}
-              >
-                <List /> {bulletView ? "Full view" : "Bullet view"}
-              </Button>
               <Button variant="ghost" onClick={handleExport}>
                 <ArrowDownToLine /> Export
               </Button>
@@ -406,10 +397,7 @@ export default function GuidePage({
 
               {content ? (
                 <>
-                  <MarkdownWithMath
-                    content={content}
-                    className={cn("reader-doc", bulletView && "reader-doc--bullet")}
-                  />
+                  <MarkdownWithMath content={content} className="reader-doc" />
                   {streaming && <span className="streaming-cursor text-accent" />}
                 </>
               ) : streaming ? (

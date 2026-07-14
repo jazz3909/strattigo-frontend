@@ -991,19 +991,6 @@ body {
 .reader-doc .katex {
   color: var(--color-ink);
 }
-/* Bullet (condensed) reading mode — a presentation-only toggle that tightens the
-   type for skimming. It does NOT re-generate: saved guides don't persist their
-   detailed/bullet generation style, so this is a reading affordance, not a redo. */
-.reader-doc--bullet {
-  font-size: var(--text-read-s);
-  line-height: 1.55;
-}
-.reader-doc--bullet h2 {
-  margin: 34px 0 12px;
-}
-.reader-doc--bullet h3 {
-  margin: 22px 0 8px;
-}
 
 /* ─── Legal Pages (/terms, /privacy) ─────────────────────────────────────── */
 .legal-prose p {
