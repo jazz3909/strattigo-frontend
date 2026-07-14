@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { Avatar } from "../components/ui/Avatar";
 import { ThemeToggle } from "../components/ui/ThemeToggle";
 import { OnboardingModal } from "../components/OnboardingModal";
+import { GlobalNav } from "@/components/shell/global-nav";
 
 const NAV_LINKS = [
   {
@@ -186,28 +187,12 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (confirmTimedOut) {
     return (
-      <div className="min-h-screen flex items-center justify-center px-6" style={{ background: "transparent" }}>
-        <div
-          className="max-w-md w-full px-7 py-8 text-center"
-          style={{
-            background: "rgba(255,255,255,0.03)",
-            border: "1px solid rgba(255,255,255,0.08)",
-            borderRadius: 18,
-            backdropFilter: "blur(20px)",
-            WebkitBackdropFilter: "blur(20px)",
-          }}
-        >
-          <span
-            style={{
-              fontSize: "20px",
-              fontWeight: 800,
-              letterSpacing: "0.12em",
-              color: "var(--accent)",
-            }}
-          >
+      <div className="min-h-screen flex items-center justify-center px-6 bg-page text-ink">
+        <div className="max-w-md w-full px-7 py-8 text-center rounded-xl border border-rule bg-sheet shadow-lg">
+          <span className="font-display font-semibold text-xl tracking-[0.1em] text-accent-deep">
             STRATTIGO
           </span>
-          <p className="mt-5 text-sm leading-relaxed" style={{ color: "var(--text-secondary)" }}>
+          <p className="mt-5 text-ui leading-relaxed text-ink-soft font-read">
             We&apos;re confirming your payment — this can take a minute. Refresh shortly or contact support.
           </p>
         </div>
@@ -217,31 +202,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   if (!subChecked) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-6" style={{ background: "transparent" }}>
+      <div className="min-h-screen flex flex-col items-center justify-center gap-6 bg-page text-ink">
         <span
-          style={{
-            fontSize: "24px",
-            fontWeight: 800,
-            letterSpacing: "0.12em",
-            color: "var(--accent)",
-            animation: "fadeIn 0.5s ease-out both",
-          }}
+          className="font-display font-semibold text-2xl tracking-[0.1em] text-accent-deep"
+          style={{ animation: "fadeIn 0.5s ease-out both" }}
         >
           STRATTIGO
         </span>
         {/* Loading bar */}
-        <div style={{ width: "120px", height: "2px", background: "var(--surface-3)", borderRadius: "1px", overflow: "hidden" }}>
-          <div
-            className="animate-shimmer"
-            style={{
-              height: "100%",
-              background: "var(--accent)",
-              borderRadius: "1px",
-            }}
-          />
+        <div className="w-[120px] h-[2px] rounded-[1px] overflow-hidden bg-sunk">
+          <div className="animate-shimmer h-full rounded-[1px] bg-accent" />
         </div>
         {confirmingCheckout && (
-          <p className="text-sm" style={{ color: "var(--text-secondary)", animation: "fadeIn 0.5s ease-out both" }}>
+          <p className="text-ui text-ink-soft" style={{ animation: "fadeIn 0.5s ease-out both" }}>
             Confirming your subscription…
           </p>
         )}
@@ -253,6 +226,25 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   // the dark global header / mobile nav (the gate above has already run).
   if (isWorkspaceReader) {
     return <>{children}</>;
+  }
+
+  // Everything except the (still-dark) course workspace gets the shared cream
+  // GlobalNav shell. The dark header below survives ONLY for
+  // /dashboard/<courseId> until that workspace is rebuilt — remove it (and its
+  // NAV_LINKS/scrolled/ThemeToggle plumbing) at the workspace cutover.
+  if (!isCourseDetail) {
+    return (
+      <div className="min-h-screen flex flex-col bg-page text-ink">
+        <OnboardingModal
+          isOpen={showOnboarding}
+          onComplete={handleOnboardingComplete}
+        />
+        <GlobalNav />
+        <main className="flex-1 w-full max-w-[1100px] mx-auto px-4 sm:px-6 py-10 pb-20">
+          {children}
+        </main>
+      </div>
+    );
   }
 
   return (
@@ -392,13 +384,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </div>
       </div>
 
-      <main
-        className={
-          isCourseDetail
-            ? "flex-1 w-full"
-            : "flex-1 px-4 sm:px-6 py-8 pb-24 sm:pb-8 max-w-7xl w-full mx-auto page-enter"
-        }
-      >
+      <main className="flex-1 w-full">
         {children}
       </main>
     </div>
