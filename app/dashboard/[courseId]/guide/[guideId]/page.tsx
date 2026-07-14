@@ -355,7 +355,7 @@ export default function GuidePage({
           ) : (
             <article
               data-density="document"
-              className="w-full max-w-[1000px] px-14 pt-14 pb-32"
+              className="w-full px-14 pt-14 pb-32"
             >
               <div className="mb-[18px] font-sans text-eyebrow font-semibold uppercase tracking-[0.09em] text-accent-deep">
                 Study guide{scopeName ? ` · ${scopeName}` : ""}
@@ -522,7 +522,7 @@ function Dot({ delay }: { delay: string }) {
 
 function DocumentSkeleton() {
   return (
-    <div className="w-full max-w-[1000px] px-14 pt-14 pb-32">
+    <div className="w-full px-14 pt-14 pb-32">
       <div className="mb-5 h-3 w-28 rounded bg-sunk" />
       <div className="mb-4 h-9 w-4/5 rounded bg-sunk" />
       <div className="mb-8 h-4 w-2/3 rounded bg-sunk" />

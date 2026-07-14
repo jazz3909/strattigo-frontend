@@ -880,18 +880,8 @@ body {
 .reader-doc > :first-child {
   margin-top: 0;
 }
-/* The ~660px reading measure constrains long-form BODY copy only — paragraphs,
-   lists, callouts, code and formula blocks — so line length stays comfortable.
-   Headings/eyebrow/title/byline are NOT clamped (they live wider, on the
-   article's content width) so the title wraps on fewer lines. */
-.reader-doc p,
-.reader-doc ul,
-.reader-doc ol,
-.reader-doc blockquote,
-.reader-doc pre,
-.reader-doc .katex-display {
-  max-width: var(--density-measure);
-}
+/* No reading-measure cap: body copy, headings and title all span the full
+   content width between the symmetric page gutters (set on the article). */
 .reader-doc p {
   margin: 0 0 22px;
 }
