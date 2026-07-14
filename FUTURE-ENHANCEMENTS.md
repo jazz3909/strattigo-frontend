@@ -103,3 +103,45 @@ The mock shows a file size ("2.4 MB") in each row's metadata, but `Material`
 has no size field and the upload endpoint doesn't return one. The rebuilt rows
 show date only. Persisting `file_size` on upload (and adding it to
 `MaterialResponse`) would let the row meta read "2.4 MB · Jul 14" as designed.
+
+## 8. Persist user-chosen course color server-side
+
+The dashboard shelf's 10-hue color picker (course-colors.html) stores the
+choice in localStorage (`strattigo_course_colors`, courseId → palette key)
+because `courses` has no color column (`id/user_id/name/created_at` only) and
+`PUT /courses/{id}` accepts only `name`. Hash-of-id assigns a stable default
+for unpicked courses.
+
+- Backend: add a nullable `color` column (one of the ten palette keys), accept
+  it in `CourseCreate`/`CourseUpdate`, return it in `CourseResponse`.
+- Frontend: `components/shell/course-color.ts` already resolves
+  stored-choice → hash-default; swap the localStorage read for the field and
+  migrate existing local choices opportunistically.
+- Until then the choice is per-browser (doesn't follow the user across
+  devices) — deliberate, flagged at build time rather than faked.
+- An edit-course flow (rename + recolor after creation) doesn't exist in the
+  UI at all; add it when the column lands.
+
+## 9. Course description is silently dropped by the backend
+
+The Add-course modal has always sent `description` (`POST /courses
+{name, description}`), but `CourseCreate` only defines `name`, the insert
+stores only `{user_id, name}`, and `courses` has no description column — the
+field is a silent no-op end to end (a B5-class silent failure). The rebuilt
+modal keeps the field (with the "helps the AI tutor" hint) so nothing regresses
+when the backend starts persisting it; the shelf card already renders
+`course.description` if it ever arrives.
+
+## 10. Shelf meta: per-course counts and "last studied"
+
+dashboard.html's cards show "24 materials · 5 collections" and a
+"Jump back in" card sorted by recency. Neither is buildable honestly today:
+
+- No counts endpoint: `GET /materials/course/{id}` returns full rows including
+  the extracted `content` text — N of those per dashboard load is not viable.
+  A light `GET /courses/stats` (id → material_count, collection_count) unlocks
+  both the card meta and the header's "N materials" context line.
+- No recency: courses have only `created_at`; nothing records when a course
+  was last opened/studied. A `last_studied_at` touch (or deriving max
+  created_at across a course's guides/quizzes/chats) unlocks the
+  "Jump back in" feature card and the "Recently studied" sort.

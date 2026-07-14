@@ -14,7 +14,13 @@ import { useToast } from "../providers/ToastProvider";
 import { Button } from "@/components/ui/button";
 import { Input, Textarea } from "@/components/ui/input";
 import { Callout } from "@/components/ui/callout";
-import { courseColor } from "@/components/shell/course-color";
+import {
+  SUBJECT_COLORS,
+  type SubjectColor,
+  resolveCourseColor,
+  setStoredCourseColor,
+} from "@/components/shell/course-color";
+import { cn } from "@/lib/utils";
 
 /**
  * Dashboard home — dashboard.html "The shelf".
@@ -72,7 +78,7 @@ function ButtonSpinner() {
 }
 
 function CourseCard({ course }: { course: Course }) {
-  const hue = courseColor(course.id);
+  const hue = resolveCourseColor(course.id);
   return (
     <Link
       href={`/dashboard/${course.id}`}
@@ -153,6 +159,7 @@ export default function DashboardPage() {
   const [email, setEmail] = useState("");
   const [greeting, setGreeting] = useState("");
   const [dateline, setDateline] = useState("");
+  const [newColor, setNewColor] = useState<SubjectColor>(SUBJECT_COLORS[0]);
 
   useEffect(() => {
     if (!getToken()) {
@@ -186,6 +193,9 @@ export default function DashboardPage() {
     setCreateError("");
     try {
       const course = await createCourse(newName.trim(), newDesc.trim() || undefined);
+      // The chosen shelf color is a client-side presentation preference —
+      // no backend column exists (FUTURE-ENHANCEMENTS.md).
+      setStoredCourseColor(course.id, newColor.key);
       setCourses((prev) => [course, ...prev]);
       setShowModal(false);
       setNewName("");
@@ -202,6 +212,9 @@ export default function DashboardPage() {
     setNewName("");
     setNewDesc("");
     setCreateError("");
+    // Default swatch: cycle the palette by shelf size so consecutive new
+    // courses land on different hues.
+    setNewColor(SUBJECT_COLORS[courses.length % SUBJECT_COLORS.length]);
     setShowModal(true);
   }
 
@@ -323,13 +336,33 @@ export default function DashboardPage() {
                   Add a course
                 </h3>
                 <p className="font-read text-[14.5px] leading-normal text-ink-soft">
-                  Give it a name now — you can upload materials and organize
-                  collections once it&apos;s created.
+                  Name it, then pick a color for its place on your shelf.
                 </p>
               </div>
 
               <div className="space-y-5 px-7 py-5">
                 {createError && <Callout variant="error">{createError}</Callout>}
+
+                {/* Live shelf preview — updates as the name and color change */}
+                <div className="flex overflow-hidden rounded-lg border border-rule bg-raised">
+                  <span className="w-[5px] shrink-0" style={{ background: newColor.color }} />
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    <span
+                      className="grid size-[38px] shrink-0 place-items-center rounded-[9px] font-display text-lg font-semibold text-white"
+                      style={{ background: newColor.color }}
+                    >
+                      {newName.trim()[0]?.toUpperCase() ?? "?"}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-display text-[16px] font-medium text-ink">
+                        {newName.trim() || "Your course"}
+                      </span>
+                      <span className="block font-sans text-xs text-ink-faint">
+                        New course · pick a color below
+                      </span>
+                    </span>
+                  </div>
+                </div>
 
                 <Input
                   label="Course name"
@@ -341,6 +374,37 @@ export default function DashboardPage() {
                   maxLength={100}
                   autoFocus
                 />
+
+                {/* Shelf color — the ten curated subject hues, identity only */}
+                <div>
+                  <div className="mb-2 font-sans text-ui-s font-medium text-ink-soft">Shelf color</div>
+                  <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Shelf color">
+                    {SUBJECT_COLORS.map((c) => {
+                      const selected = c.key === newColor.key;
+                      return (
+                        <button
+                          key={c.key}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          title={c.name}
+                          onClick={() => setNewColor(c)}
+                          className={cn(
+                            "grid size-[34px] cursor-pointer place-items-center rounded-full border-2 border-transparent text-white transition-transform hover:scale-[1.08]",
+                            selected && "border-sheet shadow-[0_0_0_2px_var(--color-ink)]"
+                          )}
+                          style={{ background: c.color }}
+                        >
+                          {selected && (
+                            <svg className="size-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
 
                 <div>
                   <Textarea

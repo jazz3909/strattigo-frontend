@@ -45,3 +45,34 @@ function hashIndex(courseId: string): number {
 export function courseColor(courseId: string): SubjectColor {
   return SUBJECT_COLORS[hashIndex(courseId)]
 }
+
+/* ── User-chosen colors ──────────────────────────────────────────────────────
+   There is no backend column to store a choice (see FUTURE-ENHANCEMENTS.md),
+   so a picked color is persisted as a presentation preference in
+   localStorage — honest about its scope: it survives reloads on this
+   browser, not across devices. Falls back to the id-hash default. */
+
+const STORAGE_KEY = "strattigo_course_colors"
+
+function readMap(): Record<string, string> {
+  if (typeof window === "undefined") return {}
+  try {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}")
+  } catch {
+    return {}
+  }
+}
+
+/** Persist a user-chosen palette key for a course. */
+export function setStoredCourseColor(courseId: string, key: string): void {
+  if (typeof window === "undefined") return
+  const map = readMap()
+  map[courseId] = key
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
+}
+
+/** User-chosen color if one was picked on this browser, else the stable default. */
+export function resolveCourseColor(courseId: string): SubjectColor {
+  const stored = readMap()[courseId]
+  return SUBJECT_COLORS.find((c) => c.key === stored) ?? courseColor(courseId)
+}
