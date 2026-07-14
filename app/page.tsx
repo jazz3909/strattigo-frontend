@@ -1,7 +1,98 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
+
+import { Brand } from "@/components/public/brand";
+import { PublicFooter } from "@/components/public/public-footer";
+import {
+  FREE_FEATURES,
+  PRO_FEATURES,
+  PRICE_MONTHLY,
+} from "@/components/public/plans";
+import { buttonVariants } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import { getToken } from "./lib/api";
+
+/**
+ * Landing page — ported from landing.html ("energetic version").
+ *
+ * Landing-only palette: the landing page deliberately uses fuller, livelier
+ * fields than the committed subject-* tokens (mock comment: "landing gets
+ * fuller, livelier fields (still in-family)"). Scoped here as CSS vars on the
+ * page root on purpose — do NOT promote these to globals.css.
+ */
+const landingVars = {
+  "--dusk": "#5E7185",
+  "--dusk-d": "#42536A",
+  "--dusk-f": "#DDE4EC",
+  "--sage": "#6E7F5E",
+  "--sage-d": "#54634A",
+  "--sage-f": "#E4EAD8",
+  "--ochre": "#B5842F",
+  "--ochre-d": "#8A6320",
+  "--ochre-f": "#F4E7CB",
+  "--clay": "#A85A45",
+  "--clay-d": "#864636",
+  "--clay-f": "#F3DDD4",
+  "--plum": "#715C7E",
+  "--plum-f": "#E9E2EE",
+  "--ok": "#4E7A57",
+} as React.CSSProperties;
+
+/* Mock .btn-primary carries a dusk-tinted glow on top of the shared button. */
+const primaryShadow =
+  "shadow-[0_6px_16px_rgba(94,113,133,.28)] hover:shadow-[0_8px_22px_rgba(94,113,133,.34)]";
+
+const container = "mx-auto w-full max-w-[1080px] px-6 sm:px-8";
+
+const STEPS = [
+  {
+    card: "bg-[var(--sage-f)]",
+    num: "bg-[var(--sage)]",
+    title: "text-[var(--sage-d)]",
+    heading: "Upload your materials",
+    body: "Drop in lecture slides, PDFs, and notes — then organize them into collections by unit or topic, as deep as you like.",
+  },
+  {
+    card: "bg-[var(--dusk-f)]",
+    num: "bg-[var(--dusk)]",
+    title: "text-[var(--dusk-d)]",
+    heading: "Choose what to study",
+    body: "Point Strattigo at a whole course or one specific folder. Everything it makes is scoped to exactly that material.",
+  },
+  {
+    card: "bg-[var(--ochre-f)]",
+    num: "bg-[var(--ochre)]",
+    title: "text-[var(--ochre-d)]",
+    heading: "Study what you'll be tested on",
+    body: "Get guides, quizzes, and a tutor that only know what your class covers — so studying feels like recognition, not guesswork.",
+  },
+];
+
+const FEATURES = [
+  {
+    bg: "bg-[var(--dusk)]",
+    icon: "■",
+    heading: "Study guides",
+    body: "Clear, well-set guides generated from your materials — written to read like a good textbook, not a cramped app panel.",
+    tag: "Grounded in your materials →",
+  },
+  {
+    bg: "bg-[var(--sage)]",
+    icon: "□",
+    heading: "Quizzes",
+    body: "Practice questions that explain every answer — and cite the exact page it came from, so you learn as you go.",
+    tag: "Scoped to your topic →",
+  },
+  {
+    bg: "bg-[var(--ochre)]",
+    icon: "☼",
+    heading: "AI tutor",
+    body: "Ask anything and get answers drawn only from your course — a tutor that never wanders off your syllabus.",
+    tag: "Cites its sources →",
+  },
+];
 
 export default function HomePage() {
   const [authed, setAuthed] = useState(false);
@@ -12,1813 +103,592 @@ export default function HomePage() {
     setAuthed(!!getToken());
   }, []);
 
-  useEffect(() => {
-    // Navbar scroll effect
-    const navbar = document.getElementById('navbar');
-    const handleScroll = () => {
-      if (navbar) navbar.classList.toggle('scrolled', window.scrollY > 20);
-    };
-    window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // Intersection Observer — reveal on scroll with stagger
-    const revealObserver = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-
-        const el = entry.target as HTMLElement;
-        const parent = el.parentElement;
-        if (!parent) return;
-        const siblings = Array.from(parent.children).filter(c => c.classList.contains(el.classList[0]));
-        const idx = siblings.indexOf(el);
-        const delay = Math.max(0, idx) * 80;
-
-        setTimeout(() => el.classList.add('visible'), delay);
-        revealObserver.unobserve(el);
-      });
-    }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
-
-    document.querySelectorAll(
-      '.hiw-label, .hiw-title-row, .hiw-step, ' +
-      '.feat-label, .feat-title-wrap, .feat-card, ' +
-      '.canvas-right, ' +
-      '.testi-main-q, .testi-card, ' +
-      '.pricing-atm-label, .pricing-atm-title-row, .pricing-atm-card, ' +
-      '.cta-final-content'
-    ).forEach(el => {
-      (el as HTMLElement).classList.add('reveal');
-      revealObserver.observe(el);
-    });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      revealObserver.disconnect();
-    };
-  }, []);
-
   return (
-    <div className="page-wrap">
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-      <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,700;1,9..144,300;1,9..144,700&family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
-
+    <div
+      className="min-h-screen overflow-x-clip bg-page font-sans text-ink"
+      style={landingVars}
+    >
       <style>{`
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        :root {
-          --navy: #2A5F8D;
-          --mauve: #A880A0;
-          --salmon: #E19485;
-          --rose: #C1726F;
-          --terracotta: #B05857;
-          --dark: #0D1420;
-          --text: #F5EDE8;
-          --text-2: rgba(245,237,232,0.6);
-          --text-3: rgba(245,237,232,0.3);
-        }
-
         html { scroll-behavior: smooth; }
-
-        body {
-          font-family: 'Outfit', sans-serif;
-          background: #0D1420;
-          color: var(--text);
-          overflow-x: hidden;
-        }
-
-        /* Noise overlay */
-        body::before {
-          content: '';
-          position: fixed;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
-          opacity: 0.03;
-          pointer-events: none;
-          z-index: 9999;
-        }
-
-        /* ── NAVBAR ── */
-        nav {
-          position: fixed;
-          top: 0; left: 0; right: 0;
-          height: 64px;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-          padding: 0 48px;
-          z-index: 9999;
-          background: rgba(10, 16, 28, 0.9);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          transition: background 0.3s ease, backdrop-filter 0.3s ease;
-        }
-
-        nav.scrolled {
-          background: rgba(13,20,32,0.85);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-        }
-
-        .nav-logo {
-          font-family: 'Outfit', sans-serif;
-          font-size: 13px;
-          font-weight: 700;
-          letter-spacing: 0.2em;
-          color: var(--text);
-          text-decoration: none;
-        }
-
-        .nav-right {
-          display: flex;
-          align-items: center;
-          gap: 24px;
-        }
-
-        .nav-signin {
-          font-size: 14px;
-          color: var(--text-2);
-          text-decoration: none;
-          transition: color 0.2s;
-          cursor: pointer;
-        }
-        .nav-signin:hover { color: var(--text); }
-
-        .nav-cta {
-          background: rgba(225,148,133,0.15);
-          border: 1px solid rgba(225,148,133,0.4);
-          color: var(--salmon);
-          font-family: 'Outfit', sans-serif;
-          font-size: 14px;
-          font-weight: 500;
-          padding: 8px 20px;
-          border-radius: 100px;
-          cursor: pointer;
-          text-decoration: none;
-          display: inline-block;
-          transition: background 0.2s, border-color 0.2s;
-        }
-        .nav-cta:hover {
-          background: rgba(225,148,133,0.25);
-        }
-
-        /* ── HERO ── */
-        #hero {
-          position: relative;
-          width: 100%;
-          height: 110vh;
-          min-height: 700px;
-          padding-top: 80px;
-          overflow: hidden;
-          background: linear-gradient(135deg, #0D1420 0%, #111825 15%, #1A2D45 35%, #2A5F8D 55%, #7B4A6B 75%, #B05857 90%, #0D1018 100%);
-        }
-
-        .hero-left {
-          position: absolute;
-          left: 5%;
-          top: 184px;   /* below navbar */
-          bottom: 80px; /* above stats bar */
-          width: 52%;
-          z-index: 2;
-          display: flex;
-          flex-direction: column;
-          justify-content: center;
-          padding-bottom: 0;
-        }
-
-        .hero-label {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 28px;
-          opacity: 0;
-          transform: translateY(24px);
-          animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) 0ms forwards;
-        }
-
-        .hero-label-line {
-          width: 32px;
-          height: 1px;
-          background: var(--salmon);
-          flex-shrink: 0;
-        }
-
-        .hero-label-text {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          letter-spacing: 0.25em;
-          color: var(--salmon);
-          text-transform: uppercase;
-        }
-
-        .hero-headline {
-          line-height: 1.0;
-          letter-spacing: -0.02em;
-        }
-
-        .hero-line {
-          display: block;
-          font-family: 'Fraunces', serif;
-          font-size: clamp(72px, 9vw, 130px);
-          opacity: 0;
-          transform: translateY(24px);
-        }
-
-        .hero-line-1 {
-          font-style: italic;
-          font-weight: 400;
-          color: var(--text);
-          animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 150ms forwards;
-        }
-        .hero-line-2 {
-          font-style: normal;
-          font-weight: 700;
-          color: var(--text);
-          animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 250ms forwards;
-        }
-        .hero-line-3 {
-          font-style: italic;
-          font-weight: 400;
-          color: var(--text-2);
-          animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 350ms forwards;
-        }
-        .hero-line-4 {
-          font-style: normal;
-          font-weight: 700;
-          color: var(--salmon);
-          animation: fadeUp 0.7s cubic-bezier(0.16,1,0.3,1) 450ms forwards;
-        }
-
-        .hero-body {
-          margin-top: 40px;
-          max-width: 420px;
-          font-size: 17px;
-          color: var(--text-2);
-          line-height: 1.75;
-          opacity: 0;
-          transform: translateY(24px);
-          animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) 650ms forwards;
-        }
-
-        .hero-ctas {
-          margin-top: 12px;
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          flex-wrap: wrap;
-          opacity: 0;
-          transform: translateY(24px);
-          animation: fadeUp 0.5s cubic-bezier(0.16,1,0.3,1) 650ms forwards;
-        }
-
-        .btn-primary {
-          background: var(--salmon);
-          color: #fff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 15px;
-          font-weight: 600;
-          padding: 14px 32px;
-          border-radius: 4px;
-          border: none;
-          cursor: pointer;
-          text-decoration: none;
-          display: inline-block;
-          transition: background 0.2s, box-shadow 0.2s;
-        }
-        .btn-primary:hover {
-          background: var(--rose);
-          box-shadow: 0 8px 32px rgba(225,148,133,0.3);
-        }
-
-        .btn-secondary {
-          border: 1px solid rgba(245,237,232,0.2);
-          color: var(--text-2);
-          font-family: 'Outfit', sans-serif;
-          font-size: 15px;
-          font-weight: 500;
-          padding: 14px 32px;
-          border-radius: 4px;
-          background: transparent;
-          cursor: pointer;
-          text-decoration: none;
-          display: inline-block;
-          transition: border-color 0.2s, color 0.2s;
-        }
-        .btn-secondary:hover {
-          border-color: rgba(245,237,232,0.4);
-          color: var(--text);
-        }
-
-        /* ── DASHBOARD CARD ── */
-        .hero-right {
-          position: absolute;
-          right: 60px;
-          top: 50%;
-          z-index: 2;
-          opacity: 0;
-          animation: cardIn 0.9s cubic-bezier(0.16,1,0.3,1) 800ms forwards;
-        }
-
-        .dashboard-card {
-          width: 380px;
-          background: rgba(13,20,32,0.7);
-          backdrop-filter: blur(20px);
-          -webkit-backdrop-filter: blur(20px);
-          border: 1px solid rgba(225,148,133,0.2);
-          border-radius: 12px;
-          box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(225,148,133,0.1);
-          padding: 20px;
-          transform: translateY(-50%) rotate(2deg);
-          animation: float 7s ease-in-out 1.7s infinite;
-        }
-
-        .card-topbar {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          margin-bottom: 14px;
-        }
-
-        .dot {
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-        }
-        .dot-1 { background: var(--salmon); }
-        .dot-2 { background: var(--rose); }
-        .dot-3 { background: var(--terracotta); }
-
-        .card-course-label {
-          font-family: 'Outfit', sans-serif;
-          font-size: 12px;
-          color: var(--text-2);
-          margin-bottom: 12px;
-        }
-
-        .card-sep {
-          height: 1px;
-          background: rgba(245,237,232,0.06);
-          margin-bottom: 16px;
-        }
-
-        .card-header-line {
-          height: 3px;
-          background: var(--salmon);
-          opacity: 0.6;
-          border-radius: 2px;
-          margin-bottom: 12px;
-        }
-
-        .card-lines {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-        }
-
-        .card-line {
-          height: 8px;
-          border-radius: 4px;
-          background: rgba(245,237,232,0.08);
-        }
-
-        .card-line-highlight {
-          height: 28px;
-          border-radius: 4px;
-          background: rgba(225,148,133,0.1);
-          border-left: 2px solid var(--salmon);
-          display: flex;
-          align-items: center;
-          padding-left: 10px;
-          position: relative;
-        }
-
-        .cursor-blink {
-          width: 2px;
-          height: 16px;
-          background: var(--salmon);
-          animation: blink 1s step-end infinite;
-        }
-
-        .card-footer {
-          margin-top: 14px;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          color: var(--text-3);
-        }
-
-        /* ── STATS BAR ── */
-        .stats-bar {
-          background: rgba(13,16,24,0.8);
-          backdrop-filter: blur(10px);
-          border-top: 1px solid rgba(255,255,255,0.06);
-          border-bottom: 1px solid rgba(255,255,255,0.06);
-          padding: 24px 0;
-          display: flex;
-          justify-content: center;
-          gap: 80px;
-          opacity: 0;
-          animation: fadeIn 0.4s ease 900ms forwards;
-        }
-
-        .stat-item {
-          text-align: center;
-          padding: 0 60px;
-          position: relative;
-        }
-
-        .stat-item + .stat-item::before {
-          content: '';
-          position: absolute;
-          left: 0; top: 10%; bottom: 10%;
-          width: 1px;
-          background: rgba(245,237,232,0.08);
-        }
-
-        .stat-number {
-          font-family: 'Outfit', sans-serif;
-          font-size: 28px;
-          font-weight: 800;
-          color: var(--salmon);
-          display: block;
-        }
-
-        .stat-label {
-          font-family: 'Outfit', sans-serif;
-          font-size: 12px;
-          color: var(--text-3);
-          display: block;
-          margin-top: 2px;
-        }
-
-        /* ── PAGE GRADIENT WRAP ── */
-        .page-wrap {
-          background: linear-gradient(
-            180deg,
-            #0D1420 0%,
-            #112040 8%,
-            #1A2D50 15%,
-            #2A5F8D 28%,
-            #3D4570 40%,
-            #4A3060 52%,
-            #3D2040 62%,
-            #2A1830 72%,
-            #1E1428 80%,
-            #150F20 88%,
-            #0D1018 100%
-          );
-          min-height: 100vh;
-        }
-
-        /* ── ATM PALETTE VARS ── */
-        :root {
-          --atm-dark: #0D1018;
-          --text-warm: #F5EDE8;
-          --text-warm-2: rgba(245,237,232,0.6);
-          --text-warm-3: rgba(245,237,232,0.25);
-        }
-
-        /* ── SECTION 2: HOW IT WORKS ── */
-        #how-it-works {
-          padding: 100px 5%;
-        }
-
-        .hiw-inner {
-          max-width: 1100px;
-          margin: 0 auto;
-        }
-
-        .hiw-label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 0.2em;
-          color: #E19485;
-          text-transform: uppercase;
-          margin-bottom: 24px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .hiw-label.visible { opacity: 1; transform: translateY(0); }
-
-        .hiw-title-row {
-          display: flex;
-          align-items: baseline;
-          gap: 24px;
-          flex-wrap: wrap;
-          margin-bottom: 80px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
-        }
-
-        .hiw-title-row.visible { opacity: 1; transform: translateY(0); }
-
-        .hiw-t1 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(48px, 6vw, 72px);
-          font-style: italic;
-          font-weight: 400;
-          color: #F5EDE8;
-          line-height: 1;
-        }
-
-        .hiw-t2 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(48px, 6vw, 72px);
-          font-style: italic;
-          font-weight: 400;
-          color: rgba(245,237,232,0.2);
-          line-height: 1;
-        }
-
-        .hiw-steps {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 48px;
-          position: relative;
-        }
-
-        .hiw-connector {
-          position: absolute;
-          top: 5px;
-          left: calc(100% / 6);
-          right: calc(100% / 6);
-          border-top: 2px dashed rgba(225,148,133,0.3);
-          pointer-events: none;
-          z-index: 0;
-        }
-
-        .hiw-step {
-          position: relative;
-          z-index: 1;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .hiw-step.visible { opacity: 1; transform: translateY(0); }
-
-        .hiw-dot-row {
-          display: flex;
-          align-items: center;
-          gap: 12px;
-          margin-bottom: 20px;
-        }
-
-        .hiw-dot {
-          width: 12px;
-          height: 12px;
-          border-radius: 50%;
-          background: #E19485;
-          flex-shrink: 0;
-        }
-
-        .hiw-num {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          color: #E19485;
-          letter-spacing: 0.1em;
-        }
-
-        .hiw-step-title {
-          font-family: 'Fraunces', serif;
-          font-size: 32px;
-          font-weight: 400;
-          color: #F5EDE8;
-          margin-bottom: 12px;
-          line-height: 1.2;
-        }
-
-        .hiw-step-body {
-          font-size: 15px;
-          color: rgba(245,237,232,0.6);
-          line-height: 1.7;
-          max-width: 260px;
-          margin-bottom: 24px;
-        }
-
-        .hiw-mockup {
-          width: 220px;
-          background: rgba(13,16,24,0.8);
-          border: 1px solid rgba(245,237,232,0.08);
-          border-radius: 8px;
-          padding: 14px;
-        }
-
-        .hiw-file-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 6px 8px;
-          background: rgba(245,237,232,0.04);
-          border: 1px solid rgba(245,237,232,0.08);
-          border-radius: 4px;
-          margin-bottom: 6px;
-        }
-
-        .hiw-file-badge {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 9px;
-          color: #E19485;
-          border: 1px solid #E19485;
-          border-radius: 2px;
-          padding: 2px 6px;
-          flex-shrink: 0;
-        }
-
-        .hiw-file-name {
-          height: 6px;
-          background: rgba(245,237,232,0.15);
-          border-radius: 3px;
-          flex: 1;
-        }
-
-        .hiw-progress-label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          color: rgba(245,237,232,0.5);
-          margin-bottom: 10px;
-        }
-
-        .hiw-progress-track {
-          height: 4px;
-          background: rgba(245,237,232,0.08);
-          border-radius: 2px;
-          margin-bottom: 8px;
-          overflow: hidden;
-        }
-
-        .hiw-progress-fill {
-          height: 100%;
-          width: 73%;
-          background: #E19485;
-          border-radius: 2px;
-          animation: progressPulse 2s ease-in-out infinite;
-        }
-
-        @keyframes progressPulse {
-          0%,100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-
-        .hiw-out-line {
-          height: 7px;
-          background: rgba(245,237,232,0.06);
-          border-radius: 3px;
-          margin-bottom: 6px;
-        }
-
-        .hiw-out-highlight {
-          height: 22px;
-          background: rgba(225,148,133,0.15);
-          border-left: 2px solid #E19485;
-          border-radius: 0 3px 3px 0;
-          margin-bottom: 6px;
-          display: flex;
-          align-items: center;
-          padding-left: 8px;
-        }
-
-        .hiw-cursor {
-          width: 2px;
-          height: 14px;
-          background: #E19485;
-          animation: blink 1s step-end infinite;
-        }
-
-        /* ── SECTION 3: FEATURES ── */
-        #features-atm {
-          padding: 100px 5%;
-        }
-
-        .feat-inner {
-          max-width: 1100px;
-          margin: 0 auto;
-        }
-
-        .feat-label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 0.2em;
-          color: #E19485;
-          text-transform: uppercase;
-          margin-bottom: 20px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .feat-label.visible { opacity: 1; transform: translateY(0); }
-
-        .feat-title-wrap {
-          margin-bottom: 72px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
-        }
-
-        .feat-title-wrap.visible { opacity: 1; transform: translateY(0); }
-
-        .feat-t1 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(40px, 5vw, 64px);
-          font-style: italic;
-          font-weight: 400;
-          color: #F5EDE8;
-          display: block;
-          line-height: 1.1;
-        }
-
-        .feat-t2 {
-          font-family: 'Outfit', sans-serif;
-          font-size: clamp(40px, 5vw, 64px);
-          font-weight: 800;
-          color: #E19485;
-          display: block;
-          line-height: 1.1;
-        }
-
-        .feat-grid {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-        }
-
-        .feat-card {
-          background: rgba(245,237,232,0.02);
-          border: 1px solid rgba(245,237,232,0.06);
-          border-radius: 4px;
-          padding: 40px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1), border-color 250ms ease, background 250ms ease, box-shadow 250ms ease;
-          cursor: default;
-        }
-
-        .feat-card.visible { opacity: 1; transform: translateY(0); }
-
-        .feat-card:hover {
-          border-color: rgba(225,148,133,0.25);
-          background: rgba(225,148,133,0.03);
-          transform: translateY(-4px) !important;
-          box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-        }
-
-        .feat-accent-bar {
-          width: 40px;
-          height: 2px;
-          background: #E19485;
-          margin-bottom: 24px;
-        }
-
-        .feat-accent-bar.mauve { background: #A880A0; }
-
-        .feat-name {
-          font-family: 'Outfit', sans-serif;
-          font-size: 20px;
-          font-weight: 600;
-          color: #F5EDE8;
-          margin-bottom: 12px;
-        }
-
-        .feat-desc {
-          font-size: 15px;
-          color: rgba(245,237,232,0.55);
-          line-height: 1.7;
-          margin-bottom: 20px;
-        }
-
-        .feat-tag {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          color: rgba(225,148,133,0.6);
-        }
-
-        /* ── SECTION 4: CANVAS SPOTLIGHT ── */
-        #canvas-spotlight {
-          padding: 100px 5%;
-        }
-
-        .canvas-inner {
-          max-width: 1100px;
-          margin: 0 auto;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 80px;
-          align-items: start;
-        }
-
-        .canvas-left {
-          position: sticky;
-          top: 120px;
-        }
-
-        .canvas-label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 0.2em;
-          color: #E19485;
-          text-transform: uppercase;
-          margin-bottom: 20px;
-        }
-
-        .canvas-t1 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(36px, 4.5vw, 56px);
-          font-style: italic;
-          font-weight: 400;
-          color: #F5EDE8;
-          display: block;
-          line-height: 1.1;
-          margin-bottom: 4px;
-        }
-
-        .canvas-t2 {
-          font-family: 'Outfit', sans-serif;
-          font-size: clamp(36px, 4.5vw, 56px);
-          font-weight: 700;
-          color: #E19485;
-          display: block;
-          line-height: 1.1;
-          margin-bottom: 28px;
-        }
-
-        .canvas-body {
-          font-size: 16px;
-          color: rgba(245,237,232,0.6);
-          line-height: 1.75;
-          margin-bottom: 36px;
-        }
-
-        .canvas-bullets {
-          list-style: none;
-          display: flex;
-          flex-direction: column;
-          gap: 14px;
-        }
-
-        .canvas-bullets li {
-          font-size: 15px;
-          color: rgba(245,237,232,0.7);
-          display: flex;
-          gap: 10px;
-          align-items: flex-start;
-        }
-
-        .canvas-arrow { color: #E19485; font-weight: 700; flex-shrink: 0; }
-
-        .canvas-right {
-          display: flex;
-          justify-content: center;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .canvas-right.visible { opacity: 1; transform: translateY(0); }
-
-        .canvas-modal {
-          width: 380px;
-          background: rgba(13,16,24,0.8);
-          border: 1px solid rgba(225,148,133,0.2);
-          border-radius: 8px;
-          padding: 28px;
-        }
-
-        .canvas-modal-title {
-          font-family: 'Outfit', sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          color: #F5EDE8;
-          margin-bottom: 16px;
-        }
-
-        .canvas-step-dots {
-          display: flex;
-          gap: 8px;
-          margin-bottom: 20px;
-        }
-
-        .canvas-sdot {
-          width: 24px;
-          height: 24px;
-          border-radius: 50%;
-          background: rgba(225,148,133,0.2);
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          color: rgba(245,237,232,0.4);
-        }
-
-        .canvas-sdot.active { background: #E19485; color: #fff; }
-
-        .canvas-module-list {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          margin-bottom: 14px;
-        }
-
-        .canvas-mod-item {
-          display: flex;
-          align-items: center;
-          gap: 10px;
-          padding: 8px 10px;
-          border-radius: 4px;
-        }
-
-        .canvas-cb {
-          width: 16px;
-          height: 16px;
-          border-radius: 3px;
-          border: 1.5px solid rgba(225,148,133,0.4);
-          flex-shrink: 0;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-
-        .canvas-cb.checked { background: #E19485; border-color: #E19485; }
-        .canvas-cb.partial { background: rgba(225,148,133,0.3); border-color: rgba(225,148,133,0.5); }
-
-        .canvas-check {
-          width: 8px;
-          height: 5px;
-          border-left: 2px solid #fff;
-          border-bottom: 2px solid #fff;
-          transform: rotate(-45deg) translateY(-1px);
-        }
-
-        .canvas-mod-name {
-          font-family: 'Outfit', sans-serif;
-          font-size: 13px;
-          color: #F5EDE8;
-          flex: 1;
-        }
-
-        .canvas-file-badge {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 10px;
-          color: rgba(245,237,232,0.4);
-          background: rgba(245,237,232,0.06);
-          padding: 2px 6px;
-          border-radius: 3px;
-        }
-
-        .canvas-prog-note {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          color: rgba(225,148,133,0.6);
-          margin-bottom: 16px;
-        }
-
-        .canvas-import-btn {
-          width: 100%;
-          background: #E19485;
-          color: #fff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          padding: 12px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          text-align: center;
-          transition: background 0.2s;
-        }
-
-        .canvas-import-btn:hover { background: #C1726F; }
-
-        /* ── SECTION 5: TESTIMONIALS ── */
-        #testimonials-atm {
-          padding: 100px 5%;
-          text-align: center;
-        }
-
-        .testi-inner {
-          max-width: 1000px;
-          margin: 0 auto;
-        }
-
-        .testi-pull-wrap {
-          position: relative;
-          padding: 40px 20px 0;
-          margin-bottom: 48px;
-        }
-
-        .testi-open-quote {
-          font-family: 'Fraunces', serif;
-          font-size: 120px;
-          color: #E19485;
-          opacity: 0.3;
-          position: absolute;
-          top: -20px;
-          left: 0;
-          line-height: 1;
-          pointer-events: none;
-          user-select: none;
-        }
-
-        .testi-main-q {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(24px, 3.5vw, 42px);
-          font-style: italic;
-          font-weight: 400;
-          color: #F5EDE8;
-          max-width: 800px;
-          margin: 0 auto 20px;
-          line-height: 1.4;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .testi-main-q.visible { opacity: 1; transform: translateY(0); }
-
-        .testi-attr {
-          font-family: 'Outfit', sans-serif;
-          font-size: 14px;
-          color: rgba(245,237,232,0.5);
-        }
-
-        .testi-cards {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 20px;
-          margin-top: 60px;
-        }
-
-        .testi-card {
-          background: rgba(245,237,232,0.02);
-          border: 1px solid rgba(245,237,232,0.06);
-          border-radius: 4px;
-          padding: 28px;
-          text-align: left;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .testi-card.visible { opacity: 1; transform: translateY(0); }
-
-        .testi-card:nth-child(1) { border-left: 2px solid #2A5F8D; }
-        .testi-card:nth-child(2) { border-left: 2px solid #A880A0; }
-        .testi-card:nth-child(3) { border-left: 2px solid #E19485; }
-
-        .testi-stars {
-          color: #E19485;
-          font-size: 14px;
-          letter-spacing: 2px;
-          margin-bottom: 12px;
-        }
-
-        .testi-text {
-          font-family: 'Outfit', sans-serif;
-          font-size: 15px;
-          color: #F5EDE8;
-          line-height: 1.6;
-          margin-bottom: 16px;
-        }
-
-        .testi-name {
-          font-family: 'Outfit', sans-serif;
-          font-size: 13px;
-          color: rgba(245,237,232,0.5);
-        }
-
-        /* ── SECTION 6: PRICING ── */
-        #pricing-atm {
-          padding: 100px 5%;
-        }
-
-        .pricing-atm-inner {
-          max-width: 900px;
-          margin: 0 auto;
-        }
-
-        .pricing-atm-label {
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 0.2em;
-          color: #E19485;
-          text-transform: uppercase;
-          margin-bottom: 20px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .pricing-atm-label.visible { opacity: 1; transform: translateY(0); }
-
-        .pricing-atm-title-row {
-          display: flex;
-          align-items: baseline;
-          gap: 24px;
-          flex-wrap: wrap;
-          margin-bottom: 72px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s, transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1) 0.1s;
-        }
-
-        .pricing-atm-title-row.visible { opacity: 1; transform: translateY(0); }
-
-        .pricing-t1 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(48px, 6vw, 72px);
-          font-style: italic;
-          font-weight: 400;
-          color: #F5EDE8;
-          line-height: 1;
-        }
-
-        .pricing-t2 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(48px, 6vw, 72px);
-          font-style: italic;
-          font-weight: 400;
-          color: rgba(245,237,232,0.2);
-          line-height: 1;
-        }
-
-        .pricing-atm-cards {
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 24px;
-          align-items: start;
-        }
-
-        .pricing-atm-card {
-          border-radius: 8px;
-          padding: 40px;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .pricing-atm-card.visible { opacity: 1; transform: translateY(0); }
-
-        .pac-free {
-          background: rgba(245,237,232,0.02);
-          border: 1px solid rgba(245,237,232,0.06);
-        }
-
-        .pac-pro {
-          background: linear-gradient(135deg, rgba(42,95,141,0.15) 0%, rgba(176,88,87,0.15) 100%);
-          border: 1px solid rgba(225,148,133,0.35);
-          box-shadow: 0 0 80px rgba(225,148,133,0.06), inset 0 1px 0 rgba(225,148,133,0.1);
-        }
-
-        .pac-plan-free {
-          font-family: 'Fraunces', serif;
-          font-size: 56px;
-          font-style: italic;
-          font-weight: 400;
-          color: rgba(245,237,232,0.4);
-          display: block;
-          line-height: 1;
-          margin-bottom: 8px;
-        }
-
-        .pac-plan-pro {
-          font-family: 'Fraunces', serif;
-          font-size: 56px;
-          font-style: italic;
-          font-weight: 400;
-          color: #E19485;
-          display: block;
-          line-height: 1;
-          margin-bottom: 8px;
-        }
-
-        .pac-price-free {
-          font-family: 'Outfit', sans-serif;
-          font-size: 24px;
-          color: rgba(245,237,232,0.3);
-          margin-bottom: 24px;
-        }
-
-        .pac-price-pro {
-          display: flex;
-          align-items: baseline;
-          gap: 4px;
-          margin-bottom: 16px;
-        }
-
-        .pac-dollar {
-          font-family: 'Outfit', sans-serif;
-          font-size: 72px;
-          font-weight: 800;
-          color: #F5EDE8;
-          line-height: 1;
-        }
-
-        .pac-per {
-          font-family: 'Outfit', sans-serif;
-          font-size: 20px;
-          color: rgba(245,237,232,0.5);
-        }
-
-        .pac-features {
-          list-style: none;
-          margin-bottom: 32px;
-        }
-
-        .pac-features li {
-          font-size: 15px;
-          padding: 10px 0;
-          border-bottom: 1px solid rgba(245,237,232,0.05);
-          display: flex;
-          align-items: flex-start;
-          gap: 10px;
-        }
-
-        .pac-free .pac-features li {
-          color: rgba(245,237,232,0.35);
-        }
-
-        .pac-free .pac-features li::before {
-          content: '✗';
-          color: rgba(245,237,232,0.2);
-          flex-shrink: 0;
-        }
-
-        .pac-pro .pac-features li {
-          color: rgba(245,237,232,0.75);
-        }
-
-        .pac-pro .pac-features li::before {
-          content: '→';
-          color: #E19485;
-          font-weight: 600;
-          flex-shrink: 0;
-        }
-
-        .pac-cta {
-          width: 100%;
-          background: #E19485;
-          color: #fff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 15px;
-          font-weight: 600;
-          padding: 14px;
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          text-align: center;
-          text-decoration: none;
-          display: block;
-          transition: background 0.2s, box-shadow 0.2s;
-        }
-
-        .pac-cta:hover {
-          background: #C1726F;
-          box-shadow: 0 8px 32px rgba(225,148,133,0.3);
-        }
-
-        /* ── SECTION 7: FINAL CTA ── */
-        #cta-final {
-          position: relative;
-          min-height: 100vh;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          overflow: hidden;
-        }
-
-        #cta-final::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n3'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n3)' opacity='1'/%3E%3C/svg%3E");
-          opacity: 0.03;
-          pointer-events: none;
-        }
-
-        .cta-final-content {
-          text-align: center;
-          position: relative;
-          z-index: 1;
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1), transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-
-        .cta-final-content.visible { opacity: 1; transform: translateY(0); }
-
-        .cta-final-l1 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(52px, 8vw, 96px);
-          font-style: italic;
-          font-weight: 400;
-          color: #F5EDE8;
-          display: block;
-          line-height: 1.05;
-        }
-
-        .cta-final-l2 {
-          font-family: 'Fraunces', serif;
-          font-size: clamp(52px, 8vw, 96px);
-          font-style: normal;
-          font-weight: 700;
-          color: #fff;
-          display: block;
-          line-height: 1.05;
-          margin-bottom: 48px;
-        }
-
-        .cta-final-btn {
-          background: #E19485;
-          color: #fff;
-          font-family: 'Outfit', sans-serif;
-          font-size: 16px;
-          font-weight: 600;
-          padding: 16px 40px;
-          border-radius: 4px;
-          border: none;
-          cursor: pointer;
-          text-decoration: none;
-          display: inline-block;
-          transition: background 0.2s, box-shadow 0.2s;
-        }
-
-        .cta-final-btn:hover {
-          background: #C1726F;
-          box-shadow: 0 12px 40px rgba(225,148,133,0.35);
-        }
-
-        .cta-final-note {
-          margin-top: 24px;
-          font-family: 'JetBrains Mono', monospace;
-          font-size: 11px;
-          letter-spacing: 0.1em;
-          color: rgba(245,237,232,0.35);
-        }
-
-        /* ── FOOTER ── */
-        footer {
-          border-top: 1px solid rgba(245,237,232,0.06);
-          padding: 40px 5%;
-          display: flex;
-          align-items: center;
-          justify-content: space-between;
-        }
-
-        .footer-logo {
-          font-family: 'Outfit', sans-serif;
-          font-size: 13px;
-          font-weight: 700;
-          color: #F5EDE8;
-        }
-
-        .footer-center {
-          font-family: 'Outfit', sans-serif;
-          font-size: 13px;
-          color: rgba(245,237,232,0.4);
-        }
-
-        .footer-right {
-          font-family: 'Outfit', sans-serif;
-          font-size: 13px;
-          color: rgba(245,237,232,0.4);
-        }
-
-        /* ── ANIMATIONS ── */
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(24px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes fadeIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-
-        @keyframes cardIn {
-          from { opacity: 0; }
-          to   { opacity: 1; }
-        }
-
-        @keyframes float {
-          0%,100% { transform: translateY(-50%) rotate(2deg); }
-          50%      { transform: translateY(calc(-50% - 12px)) rotate(2deg); }
-        }
-
-        @keyframes blink {
-          0%, 100% { opacity: 1; }
-          50%       { opacity: 0; }
-        }
-
-        /* ── SCROLL REVEAL ── */
-        .reveal {
-          opacity: 0;
-          transform: translateY(16px);
-          transition: opacity 800ms cubic-bezier(0.25, 0.1, 0.25, 1),
-                      transform 800ms cubic-bezier(0.25, 0.1, 0.25, 1);
-        }
-        .reveal.visible {
-          opacity: 1;
-          transform: translateY(0);
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          *, *::before, *::after {
-            animation-duration: 0.01ms !important;
-            transition-duration: 0.01ms !important;
-          }
-        }
-
-        /* ── RESPONSIVE ── */
-        @media (max-width: 1100px) {
-          .hero-right { display: none; }
-          .hero-left { width: 88%; }
-          .hiw-steps { grid-template-columns: 1fr; gap: 48px; }
-          .hiw-connector { display: none; }
-          .canvas-inner { grid-template-columns: 1fr; }
-          .canvas-left { position: static; }
-          .canvas-modal { width: 100%; }
-        }
-
-        @media (max-width: 1024px) {
-          .feat-grid { grid-template-columns: 1fr; }
-          .pricing-atm-cards { grid-template-columns: 1fr; }
-          .testi-cards { grid-template-columns: 1fr; }
-          nav { padding: 0 24px; }
-          .stat-item { padding: 0 32px; }
-        }
-
-        @media (max-width: 768px) {
-          .hero-line { font-size: clamp(52px, 14vw, 80px); }
-          .hero-left { width: 92%; bottom: 160px; }
-          .stats-bar { flex-wrap: wrap; gap: 0; }
-          .stat-item { width: 50%; padding: 12px 0; }
-          .stat-item + .stat-item::before { display: none; }
-          footer { flex-direction: column; gap: 12px; text-align: center; }
-          #how-it-works, #features-atm, #canvas-spotlight,
-          #testimonials-atm, #pricing-atm { padding: 80px 5%; }
-        }
+        @media (prefers-reduced-motion: no-preference) {
+          .landing-float1 { animation: landing-floaty 5s ease-in-out infinite; }
+          .landing-float2 { animation: landing-floaty 5.7s ease-in-out infinite .5s; }
+          .landing-float3 { animation: landing-floaty 6.4s ease-in-out infinite .9s; }
+          .landing-pulse  { animation: landing-pulse 3s ease-in-out infinite; }
+        }
+        @keyframes landing-floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        @keyframes landing-pulse  { 0%,100% { opacity: .5; } 50% { opacity: 1; } }
       `}</style>
 
-      {/* NAVBAR */}
-      <nav id="navbar">
-        <a href={authed ? "/dashboard" : "/"} className="nav-logo" aria-label="Strattigo home">STRATTIGO</a>
-        <div className="nav-right">
-          <a href="/login" className="nav-signin">Sign in</a>
-          <a href={ctaHref} className="nav-cta">Get started</a>
+      {/* ── NAV ── */}
+      <nav className="sticky top-0 z-30 border-b border-rule bg-[rgba(244,241,233,.85)] backdrop-blur-[10px]">
+        <div className={cn(container, "flex h-[66px] items-center gap-[30px]")}>
+          <Brand href={authed ? "/dashboard" : "/"} />
+          <div className="hidden gap-[26px] min-[861px]:flex">
+            <a
+              href="#how"
+              className="text-[14.5px] font-medium text-ink-soft hover:text-ink"
+            >
+              How it works
+            </a>
+            <a
+              href="#features"
+              className="text-[14.5px] font-medium text-ink-soft hover:text-ink"
+            >
+              Features
+            </a>
+            <a
+              href="#pricing"
+              className="text-[14.5px] font-medium text-ink-soft hover:text-ink"
+            >
+              Pricing
+            </a>
+          </div>
+          <div className="flex-1" />
+          <div className="flex items-center gap-3.5">
+            <Link
+              href="/login"
+              className="text-[14.5px] font-medium text-ink-soft hover:text-ink"
+            >
+              Log in
+            </Link>
+            <Link
+              href={ctaHref}
+              className={cn(
+                buttonVariants({ variant: "primary" }),
+                primaryShadow
+              )}
+            >
+              Start free
+            </Link>
+          </div>
         </div>
       </nav>
 
-      {/* SECTION 1: HERO */}
-      <section id="hero" aria-label="Hero">
+      {/* ── HERO ── */}
+      <header className="relative overflow-hidden pt-[70px] pb-16">
+        {/* floating playful shapes */}
+        <span className="absolute top-20 right-[44%] z-0 hidden size-[26px] rounded-full bg-[var(--ochre)] min-[861px]:block" />
+        <span className="absolute top-[220px] left-[2%] z-0 hidden size-14 rotate-12 rounded-xl bg-[var(--sage-f)] min-[861px]:block" />
+        <span className="absolute bottom-[60px] left-[44%] z-0 hidden size-5 rounded-full bg-[var(--clay)] min-[861px]:block" />
+        <span className="absolute top-[30px] left-[8%] z-0 hidden size-3.5 rounded-full bg-[var(--dusk)] min-[861px]:block" />
 
-        {/* Left content */}
-        <div className="hero-left">
-          <h1 className="hero-headline">
-            <span className="hero-line hero-line-1">Study</span>
-            <span className="hero-line hero-line-2">like you</span>
-            <span className="hero-line hero-line-3">have the</span>
-            <span className="hero-line hero-line-4">answers.</span>
-          </h1>
+        <div
+          className={cn(
+            container,
+            "relative z-[2] grid items-center gap-9 min-[861px]:grid-cols-[1.02fr_1fr]"
+          )}
+        >
+          <div>
+            <div className="mb-[22px] inline-flex items-center gap-2 rounded-full bg-[var(--clay-f)] px-[15px] py-[7px] text-[13px] font-semibold text-[var(--clay-d)]">
+              ▣ Built from your own course materials
+            </div>
+            <h1 className="mb-[22px] font-display text-[40px] leading-[1.03] font-semibold tracking-[-0.02em] min-[861px]:text-[53px]">
+              Study like you already{" "}
+              <span className="relative whitespace-nowrap text-accent-deep after:absolute after:-inset-x-0.5 after:bottom-1.5 after:-z-10 after:h-3.5 after:-rotate-1 after:rounded after:bg-[var(--ochre-f)] after:content-['']">
+                know the answers
+              </span>
+              .
+            </h1>
+            <p className="mb-[30px] max-w-[470px] font-read text-[19px] leading-[1.55] text-ink-soft">
+              Because you do. Upload your class materials and Strattigo builds
+              study guides, quizzes, and an AI tutor grounded in{" "}
+              <b className="font-semibold text-ink">
+                exactly what your course covers
+              </b>{" "}
+              — nothing generic, nothing off-topic.
+            </p>
+            <div className="flex items-center gap-3.5">
+              <Link
+                href={ctaHref}
+                className={cn(
+                  buttonVariants({ variant: "primary", size: "lg" }),
+                  primaryShadow
+                )}
+              >
+                Start free
+              </Link>
+              <a
+                href="#how"
+                className={cn(
+                  buttonVariants({ variant: "secondary", size: "lg" }),
+                  "bg-raised hover:border-accent hover:bg-raised"
+                )}
+              >
+                See how it works
+              </a>
+            </div>
+            <div className="mt-4 text-[13px] text-ink-faint">
+              Free to start · {PRICE_MONTHLY}/mo for Pro · no card to try
+            </div>
+          </div>
 
-          <p className="hero-body">
-            Upload your course materials. Strattigo&apos;s AI reads them and generates study guides, quizzes, and answers tailored to exactly what you need to know.
-          </p>
+          {/* illustration */}
+          <div className="relative z-[2]">
+            <div className="p-2.5">
+              <svg
+                viewBox="0 0 480 430"
+                xmlns="http://www.w3.org/2000/svg"
+                role="img"
+                aria-label="Your course materials becoming study guides, quizzes, and an AI tutor"
+                className="relative z-[1] block h-auto w-full overflow-visible"
+              >
+                {/* light warm blobs so bold cards pop */}
+                <ellipse cx="330" cy="150" rx="140" ry="120" fill="#F4E7CB" />
+                <ellipse cx="150" cy="310" rx="120" ry="100" fill="#E4EAD8" />
 
-          <div className="hero-ctas">
-            <a href={ctaHref} className="btn-primary">Begin studying →</a>
-            <a href="#how-it-works" className="btn-secondary">See how it works</a>
+                {/* dotted flow */}
+                <path
+                  d="M 135 285 C 195 285, 205 155, 285 148"
+                  fill="none"
+                  stroke="#C9A98A"
+                  strokeWidth="3"
+                  strokeDasharray="2 10"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M 135 292 C 205 315, 225 330, 295 312"
+                  fill="none"
+                  stroke="#C9A98A"
+                  strokeWidth="3"
+                  strokeDasharray="2 10"
+                  strokeLinecap="round"
+                />
+
+                {/* SOURCE: clay-topped material stack */}
+                <g className="landing-float3">
+                  <g transform="rotate(-7 100 300)">
+                    <rect x="55" y="250" width="104" height="130" rx="11" fill="#F1ECE0" />
+                    <rect x="48" y="243" width="104" height="130" rx="11" fill="#FBFAF6" />
+                    <rect x="41" y="236" width="104" height="130" rx="11" fill="#FFFFFF" stroke="#EDE9DF" strokeWidth="1" />
+                    <rect x="41" y="236" width="104" height="30" rx="11" fill="#A85A45" />
+                    <rect x="41" y="256" width="104" height="10" fill="#A85A45" />
+                    <text
+                      x="52"
+                      y="256"
+                      className="font-sans"
+                      fontSize="9.5"
+                      fontWeight="700"
+                      fill="#FFFFFF"
+                    >
+                      LECTURE 04.pdf
+                    </text>
+                    <rect x="55" y="282" width="76" height="6" rx="3" fill="#E3DED2" />
+                    <rect x="55" y="296" width="76" height="6" rx="3" fill="#E3DED2" />
+                    <rect x="55" y="310" width="52" height="6" rx="3" fill="#E3DED2" />
+                    <rect x="55" y="330" width="76" height="6" rx="3" fill="#EDE9DF" />
+                    <rect x="55" y="344" width="44" height="6" rx="3" fill="#EDE9DF" />
+                  </g>
+                </g>
+                <g transform="translate(37 218)">
+                  <circle cx="0" cy="0" r="17" fill="#5E7185" />
+                  <path
+                    d="M 0 7 L 0 -6 M -6 -1 L 0 -7 L 6 -1"
+                    stroke="#fff"
+                    strokeWidth="2.5"
+                    fill="none"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </g>
+
+                {/* OUTPUT 1: guide card — DUSK, bold */}
+                <g className="landing-float1">
+                  <g transform="rotate(5 350 130)">
+                    <rect x="258" y="66" width="184" height="128" rx="16" fill="#5E7185" />
+                    <text
+                      x="280"
+                      y="102"
+                      className="font-display"
+                      fontSize="19"
+                      fontWeight="600"
+                      fill="#FFFFFF"
+                    >
+                      Glycolysis
+                    </text>
+                    <rect x="280" y="116" width="34" height="4" rx="2" fill="#F4C86B" />
+                    <rect x="280" y="132" width="142" height="6" rx="3" fill="#fff" opacity="0.34" />
+                    <rect x="280" y="146" width="142" height="6" rx="3" fill="#fff" opacity="0.34" />
+                    <rect x="280" y="160" width="106" height="6" rx="3" fill="#fff" opacity="0.34" />
+                    <rect x="280" y="176" width="150" height="12" rx="6" fill="#fff" opacity="0.16" />
+                  </g>
+                </g>
+
+                {/* OUTPUT 2: quiz card — SAGE, bold */}
+                <g className="landing-float2">
+                  <g transform="rotate(-4 340 305)">
+                    <rect x="262" y="248" width="180" height="118" rx="16" fill="#6E7F5E" />
+                    <rect x="282" y="270" width="120" height="6" rx="3" fill="#fff" opacity="0.5" />
+                    <rect x="282" y="282" width="80" height="6" rx="3" fill="#fff" opacity="0.5" />
+                    <rect x="282" y="300" width="140" height="24" rx="8" fill="#FBFAF6" />
+                    <circle cx="298" cy="312" r="7" fill="#4E7A57" />
+                    <path
+                      d="M 294.6 312 l 2.6 2.6 l 4.6 -5"
+                      stroke="#fff"
+                      strokeWidth="1.8"
+                      fill="none"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                    <rect x="314" y="309" width="64" height="6" rx="3" fill="#4E7A57" opacity="0.55" />
+                    <rect x="282" y="332" width="140" height="24" rx="8" fill="#fff" opacity="0.22" />
+                    <circle cx="298" cy="344" r="7" fill="none" stroke="#fff" strokeWidth="1.8" opacity="0.7" />
+                    <rect x="314" y="341" width="70" height="6" rx="3" fill="#fff" opacity="0.5" />
+                  </g>
+                </g>
+
+                {/* OUTPUT 3: tutor bubble — OCHRE, bold */}
+                <g className="landing-float3">
+                  <g transform="translate(372 196)">
+                    <rect x="0" y="0" width="96" height="52" rx="16" fill="#B5842F" />
+                    <path d="M 20 52 l 0 12 l 14 -12 z" fill="#B5842F" />
+                    <circle cx="21" cy="21" r="9" fill="#fff" opacity="0.34" />
+                    <path
+                      d="M 21 15 l 0 12 M 15 21 l 12 0"
+                      stroke="#fff"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                    />
+                    <rect x="38" y="15" width="44" height="6" rx="3" fill="#fff" opacity="0.9" />
+                    <rect x="38" y="29" width="32" height="6" rx="3" fill="#fff" opacity="0.6" />
+                  </g>
+                </g>
+
+                {/* bold playful accents */}
+                <circle cx="232" cy="212" r="8" fill="#A85A45" className="landing-pulse" />
+                <path
+                  d="M 250 92 l 3.5 7 l 7.5 1 l -5.5 5.4 l 1.3 7.6 l -6.8 -3.6 l -6.8 3.6 l 1.3 -7.6 l -5.5 -5.4 l 7.5 -1 z"
+                  fill="#F4C86B"
+                  className="landing-pulse"
+                />
+                <circle cx="150" cy="168" r="6" fill="#5E7185" />
+                <circle cx="430" cy="300" r="7" fill="#6E7F5E" />
+              </svg>
+            </div>
           </div>
         </div>
+      </header>
 
-        {/* Floating dashboard card */}
-        <div className="hero-right" aria-hidden="true">
-          <div className="dashboard-card">
-            <div className="card-topbar">
-              <div className="dot dot-1"></div>
-              <div className="dot dot-2"></div>
-              <div className="dot dot-3"></div>
+      {/* ── TRUST — dark band for punch ── */}
+      <div className="bg-ink">
+        <div
+          className={cn(
+            container,
+            "flex flex-wrap items-center justify-center gap-[52px] py-[22px]"
+          )}
+        >
+          {[
+            ["3", "tools, done excellently"],
+            ["100%", "from your materials"],
+            [PRICE_MONTHLY, "a month for Pro"],
+          ].map(([stat, label]) => (
+            <div key={label} className="flex items-baseline gap-[9px]">
+              <b className="font-display text-[25px] font-semibold text-white">
+                {stat}
+              </b>
+              <span className="text-[13.5px] text-page/70">{label}</span>
             </div>
-            <div className="card-course-label">Calculus II — Exam 3 Study Guide</div>
-            <div className="card-sep"></div>
-            <div className="card-header-line"></div>
-            <div className="card-lines">
-              <div className="card-line" style={{width:'100%'}}></div>
-              <div className="card-line" style={{width:'85%'}}></div>
-              <div className="card-line" style={{width:'92%'}}></div>
-              <div className="card-line" style={{width:'70%'}}></div>
-              <div className="card-line-highlight">
-                <div className="cursor-blink"></div>
-              </div>
-              <div className="card-line" style={{width:'88%'}}></div>
-              <div className="card-line" style={{width:'60%'}}></div>
-              <div className="card-line" style={{width:'95%'}}></div>
-              <div className="card-line" style={{width:'75%'}}></div>
-            </div>
-            <div className="card-footer">Generated in 4.2s</div>
-          </div>
-        </div>
-
-      </section>
-
-      {/* STATS BAR */}
-      <div className="stats-bar" aria-label="Platform statistics">
-        <div className="stat-item">
-          <span className="stat-number">10K+</span>
-          <span className="stat-label">Study guides</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">50K+</span>
-          <span className="stat-label">Quiz questions</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">500+</span>
-          <span className="stat-label">Students</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">4.9★</span>
-          <span className="stat-label">Rating</span>
+          ))}
         </div>
       </div>
 
-      {/* SECTION 2: HOW IT WORKS */}
-      <section id="how-it-works" aria-label="How it works">
-        <div className="hiw-inner">
-
-          <div className="hiw-label">HOW IT WORKS</div>
-          <div className="hiw-title-row">
-            <span className="hiw-t1">Three steps.</span>
-            <span className="hiw-t2">That&apos;s it.</span>
+      {/* ── HOW IT WORKS ── */}
+      <section id="how" className="scroll-mt-[66px] py-[88px]">
+        <div className={container}>
+          <div className="mb-3.5 text-center font-sans text-eyebrow font-bold uppercase text-accent-deep">
+            How it works
           </div>
-
-          <div className="hiw-steps">
-            <div className="hiw-connector" aria-hidden="true"></div>
-
-            {/* Step 1 */}
-            <div className="hiw-step">
-              <div className="hiw-dot-row">
-                <div className="hiw-dot"></div>
-                <span className="hiw-num">01</span>
-              </div>
-              <h2 className="hiw-step-title">Upload your files</h2>
-              <p className="hiw-step-body">Drop in your PDFs, slides, and notes. Everything your professor gave you.</p>
-              <div className="hiw-mockup" aria-hidden="true">
-                <div className="hiw-file-row">
-                  <span className="hiw-file-badge">PDF</span>
-                  <div className="hiw-file-name" style={{width:'70%'}}></div>
+          <h2 className="mx-auto mb-4 max-w-[620px] text-center font-display text-[30px] leading-[1.1] font-semibold tracking-[-0.015em] min-[861px]:text-[37px]">
+            From your notes to knowing it cold — in three steps
+          </h2>
+          <p className="mx-auto mb-[54px] max-w-[520px] text-center font-read text-[17.5px] leading-[1.5] text-ink-soft">
+            No setup, no busywork. Bring what your class already gave you and
+            start studying in minutes.
+          </p>
+          <div className="grid gap-5 min-[861px]:grid-cols-3">
+            {STEPS.map((step, i) => (
+              <div
+                key={step.heading}
+                className={cn(
+                  "relative overflow-hidden rounded-xl px-6 py-7",
+                  step.card
+                )}
+              >
+                <div
+                  className={cn(
+                    "mb-[18px] grid size-[38px] place-items-center rounded-full font-display text-[17px] font-semibold text-white",
+                    step.num
+                  )}
+                >
+                  {i + 1}
                 </div>
-                <div className="hiw-file-row">
-                  <span className="hiw-file-badge">PPTX</span>
-                  <div className="hiw-file-name" style={{width:'55%'}}></div>
-                </div>
-                <div className="hiw-file-row">
-                  <span className="hiw-file-badge">DOCX</span>
-                  <div className="hiw-file-name" style={{width:'80%'}}></div>
-                </div>
+                <h3
+                  className={cn(
+                    "mb-2 font-display text-xl font-semibold",
+                    step.title
+                  )}
+                >
+                  {step.heading}
+                </h3>
+                <p className="font-read text-[15.5px] leading-[1.55] text-ink-soft">
+                  {step.body}
+                </p>
               </div>
-            </div>
-
-            {/* Step 2 */}
-            <div className="hiw-step">
-              <div className="hiw-dot-row">
-                <div className="hiw-dot"></div>
-                <span className="hiw-num">02</span>
-              </div>
-              <h2 className="hiw-step-title">AI processes everything</h2>
-              <p className="hiw-step-body">Not summarized — fully understood. Every concept, formula, and definition from your exact content.</p>
-              <div className="hiw-mockup" aria-hidden="true">
-                <div className="hiw-progress-label">Analyzing materials...</div>
-                <div className="hiw-progress-track">
-                  <div className="hiw-progress-fill"></div>
-                </div>
-                <div className="hiw-out-line" style={{width:'90%'}}></div>
-                <div className="hiw-out-line" style={{width:'65%'}}></div>
-              </div>
-            </div>
-
-            {/* Step 3 */}
-            <div className="hiw-step">
-              <div className="hiw-dot-row">
-                <div className="hiw-dot"></div>
-                <span className="hiw-num">03</span>
-              </div>
-              <h2 className="hiw-step-title">Study smarter</h2>
-              <p className="hiw-step-body">Guides, quizzes, and answers from YOUR materials — not generic internet noise.</p>
-              <div className="hiw-mockup" aria-hidden="true">
-                <div className="hiw-out-line" style={{width:'100%'}}></div>
-                <div className="hiw-out-highlight">
-                  <div className="hiw-cursor"></div>
-                </div>
-                <div className="hiw-out-line" style={{width:'85%'}}></div>
-                <div className="hiw-out-line" style={{width:'70%'}}></div>
-                <div className="hiw-out-line" style={{width:'92%'}}></div>
-              </div>
-            </div>
-
+            ))}
           </div>
         </div>
       </section>
 
-      {/* SECTION 3: FEATURES */}
-      <section id="features-atm" aria-label="Features">
-        <div className="feat-inner">
-          <div className="feat-label">FEATURES</div>
-          <div className="feat-title-wrap">
-            <span className="feat-t1">Everything you need</span>
-            <span className="feat-t2">to ace your exams.</span>
-          </div>
-
-          <div className="feat-grid">
-
-            <div className="feat-card">
-              <div className="feat-accent-bar"></div>
-              <div className="feat-name">Study Guides</div>
-              <p className="feat-desc">Comprehensive guides from your exact materials. Choose In-Depth or Quick Reference. Save up to 5 per course.</p>
-              <div className="feat-tag">→ From YOUR files</div>
+      {/* ── MOAT — sage band ── */}
+      <div className="bg-[var(--sage-f)]">
+        <div
+          className={cn(
+            container,
+            "grid items-center gap-[52px] py-[82px] min-[861px]:grid-cols-2"
+          )}
+        >
+          <div>
+            <div className="mb-3.5 font-sans text-eyebrow font-bold uppercase text-[var(--sage-d)]">
+              The difference
             </div>
-
-            <div className="feat-card">
-              <div className="feat-accent-bar mauve"></div>
-              <div className="feat-name">Practice Quizzes</div>
-              <p className="feat-desc">Exam-style questions pulled from YOUR content. Progressive streaming. Save your best sets.</p>
-              <div className="feat-tag">→ From YOUR files</div>
-            </div>
-
-            <div className="feat-card">
-              <div className="feat-accent-bar mauve"></div>
-              <div className="feat-name">Canvas Import</div>
-              <p className="feat-desc">Connect Canvas. Import entire modules automatically. Each module becomes an organized collection.</p>
-              <div className="feat-tag">→ From YOUR files</div>
-            </div>
-
-            <div className="feat-card">
-              <div className="feat-accent-bar"></div>
-              <div className="feat-name">AI Chat Tutor</div>
-              <p className="feat-desc">Ask anything. Get answers grounded in your uploaded materials, not generic knowledge.</p>
-              <div className="feat-tag">→ From YOUR files</div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 4: CANVAS SPOTLIGHT */}
-      <section id="canvas-spotlight" aria-label="Canvas LMS integration">
-        <div className="canvas-inner">
-
-          {/* Left: sticky copy */}
-          <div className="canvas-left">
-            <div className="canvas-label">CANVAS LMS</div>
-            <span className="canvas-t1">Your entire course.</span>
-            <span className="canvas-t2">Imported in seconds.</span>
-            <p className="canvas-body">Stop downloading files one by one. Connect Canvas once and pull in everything — organized exactly how your professor structured it.</p>
-            <ul className="canvas-bullets">
-              <li><span className="canvas-arrow">→</span> Connect with your Canvas API token</li>
-              <li><span className="canvas-arrow">→</span> Browse and select any course module</li>
-              <li><span className="canvas-arrow">→</span> Materials import and organize automatically</li>
-              <li><span className="canvas-arrow">→</span> External links (OpenStax) followed automatically</li>
+            <h2 className="mb-[18px] font-display text-[30px] leading-[1.12] font-semibold tracking-[-0.015em] min-[861px]:text-[35px]">
+              Generic AI guesses. Strattigo knows your class.
+            </h2>
+            <p className="mb-4 font-read text-[17px] leading-[1.6] text-ink-soft">
+              Most AI study tools answer from the whole internet — drifting
+              into things your professor never taught, missing the framing your
+              exam will use.
+            </p>
+            <p className="mb-4 font-read text-[17px] leading-[1.6] text-ink-soft">
+              Strattigo only ever draws from{" "}
+              <b className="font-semibold text-ink">
+                the materials you upload
+              </b>
+              . Scope it to a single collection and every guide, quiz, and
+              answer comes from that exact subtree — cited back to the source
+              page.
+            </p>
+            <ul className="mt-[22px]">
+              {[
+                "Answers grounded in your professor's actual material",
+                "Every response cites the file it came from",
+                "Nested collections let you study one topic at a time",
+              ].map((item) => (
+                <li
+                  key={item}
+                  className="mb-[13px] flex items-start gap-3 font-read text-read-s text-ink-soft"
+                >
+                  <span className="mt-0.5 shrink-0 text-[16px] font-bold text-success">
+                    ✓
+                  </span>{" "}
+                  {item}
+                </li>
+              ))}
             </ul>
           </div>
-
-          {/* Right: modal mockup */}
-          <div className="canvas-right">
-            <div className="canvas-modal" aria-hidden="true">
-              <div className="canvas-modal-title">Import from Canvas</div>
-              <div className="canvas-step-dots">
-                <div className="canvas-sdot active">1</div>
-                <div className="canvas-sdot">2</div>
-                <div className="canvas-sdot">3</div>
+          <div className="rounded-2xl bg-raised p-[26px] shadow-[0_18px_44px_rgba(84,99,74,.16)]">
+            <div className="mb-4 text-[12px] font-bold tracking-[0.05em] uppercase text-ink-faint">
+              Generate from
+            </div>
+            <div className="font-sans text-ui">
+              <div className="flex items-center gap-[9px] rounded-sm px-2.5 py-2 text-ink-soft">
+                <span className="text-[13px] text-accent">▾</span> Biochemistry
+                301
               </div>
-              <div className="canvas-module-list">
-                <div className="canvas-mod-item">
-                  <div className="canvas-cb checked"><div className="canvas-check"></div></div>
-                  <span className="canvas-mod-name">Week 1–4: Foundations</span>
-                  <span className="canvas-file-badge">12 files</span>
-                </div>
-                <div className="canvas-mod-item">
-                  <div className="canvas-cb checked"><div className="canvas-check"></div></div>
-                  <span className="canvas-mod-name">Midterm Review</span>
-                  <span className="canvas-file-badge">8 files</span>
-                </div>
-                <div className="canvas-mod-item">
-                  <div className="canvas-cb partial"></div>
-                  <span className="canvas-mod-name">Week 5–8: Advanced</span>
-                  <span className="canvas-file-badge">15 files</span>
-                </div>
-                <div className="canvas-mod-item">
-                  <div className="canvas-cb"></div>
-                  <span className="canvas-mod-name">Final Exam Prep</span>
-                  <span className="canvas-file-badge">6 files</span>
-                </div>
+              <div className="ml-6 flex items-center gap-[9px] rounded-sm px-2.5 py-2 text-ink-soft">
+                <span className="text-[13px] text-accent">▸</span> Unit 1 —
+                Foundations
               </div>
-              <div className="canvas-prog-note">23 files selected</div>
-              <button className="canvas-import-btn">Import 3 modules →</button>
+              <div className="ml-6 flex items-center gap-[9px] rounded-sm px-2.5 py-2 text-ink-soft">
+                <span className="text-[13px] text-accent">▸</span> Unit 2 —
+                Enzymes
+              </div>
+              <div className="ml-6 flex items-center gap-[9px] rounded-sm bg-accent-tint px-2.5 py-2 font-semibold text-accent-deep">
+                <span className="text-[13px] text-accent-deep">▾</span> Unit 3
+                — Metabolism
+              </div>
+              <div className="ml-12 flex items-center gap-[9px] rounded-sm bg-accent-tint px-2.5 py-2 font-semibold text-accent-deep">
+                ▣ Glycolysis
+              </div>
+              <div className="ml-12 flex items-center gap-[9px] rounded-sm bg-accent-tint px-2.5 py-2 font-semibold text-accent-deep">
+                ▣ Citric acid cycle
+              </div>
+            </div>
+            <div className="mt-4 inline-flex items-center gap-[7px] rounded-full bg-accent px-[15px] py-[9px] text-[12.5px] font-medium text-white">
+              ▣ Studying Unit 3 — 9 files, nothing else
             </div>
           </div>
+        </div>
+      </div>
 
+      {/* ── FEATURES — big bold colored cards ── */}
+      <section id="features" className="scroll-mt-[66px] py-[88px]">
+        <div className={container}>
+          <div className="mb-3.5 text-center font-sans text-eyebrow font-bold uppercase text-accent-deep">
+            Three tools, done excellently
+          </div>
+          <h2 className="mx-auto mb-4 max-w-[620px] text-center font-display text-[30px] leading-[1.1] font-semibold tracking-[-0.015em] min-[861px]:text-[37px]">
+            Everything you need to study. Nothing you don&apos;t.
+          </h2>
+          <p className="mx-auto mb-[54px] max-w-[520px] text-center font-read text-[17.5px] leading-[1.5] text-ink-soft">
+            We do three things extraordinarily well instead of ten things
+            adequately.
+          </p>
+          <div className="mt-2 grid gap-5 min-[861px]:grid-cols-3">
+            {FEATURES.map((feature) => (
+              <div
+                key={feature.heading}
+                className={cn(
+                  "relative flex min-h-[280px] flex-col overflow-hidden rounded-2xl px-7 py-8 text-white transition-transform duration-150 hover:-translate-y-1",
+                  "after:absolute after:-right-[50px] after:-bottom-[50px] after:size-[150px] after:rounded-full after:bg-white/[.09] after:content-['']",
+                  feature.bg
+                )}
+              >
+                <div className="relative z-[1] mb-[22px] grid size-[52px] place-items-center rounded-[14px] bg-white/[.18] text-2xl">
+                  {feature.icon}
+                </div>
+                <h3 className="relative z-[1] mb-2.5 font-display text-[23px] font-semibold">
+                  {feature.heading}
+                </h3>
+                <p className="relative z-[1] flex-1 font-read text-[15.5px] leading-[1.55] text-white/90">
+                  {feature.body}
+                </p>
+                <span className="relative z-[1] mt-[18px] inline-flex items-center gap-1.5 text-[13px] font-semibold">
+                  {feature.tag}
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* SECTION 5: TESTIMONIALS */}
-      <section id="testimonials-atm" aria-label="Testimonials">
-        <div className="testi-inner">
-
-          <div className="testi-pull-wrap">
-            <div className="testi-open-quote" aria-hidden="true">&ldquo;</div>
-            <blockquote className="testi-main-q">
-              &ldquo;I uploaded my Calc 2 notes and had a complete study guide in under a minute. Got a B+ on the exam I was going to fail.&rdquo;
-            </blockquote>
-            <p className="testi-attr">— Marcus T., Florida Polytechnic University</p>
+      {/* ── PRICING ── */}
+      <section
+        id="pricing"
+        className="scroll-mt-[66px] border-y border-rule bg-sheet py-[88px]"
+      >
+        <div className={container}>
+          <div className="mb-3.5 text-center font-sans text-eyebrow font-bold uppercase text-accent-deep">
+            Pricing
           </div>
-
-          <div className="testi-cards">
-
-            <div className="testi-card">
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-text">&ldquo;The Canvas import is insane. All my modules organized automatically.&rdquo;</p>
-              <div className="testi-name">— Sofia R., USF</div>
-            </div>
-
-            <div className="testi-card">
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-text">&ldquo;Other AI tools give generic answers. This reads my professor&apos;s actual slides.&rdquo;</p>
-              <div className="testi-name">— Jaylen K., FSU</div>
-            </div>
-
-            <div className="testi-card">
-              <div className="testi-stars">★★★★★</div>
-              <p className="testi-text">&ldquo;Generated a full quiz from my notes in 30 seconds. Passed my stats exam.&rdquo;</p>
-              <div className="testi-name">— Priya M., UCF</div>
-            </div>
-
-          </div>
-        </div>
-      </section>
-
-      {/* SECTION 6: PRICING */}
-      <section id="pricing-atm" aria-label="Pricing">
-        <div className="pricing-atm-inner">
-          <div className="pricing-atm-label">PRICING</div>
-          <div className="pricing-atm-title-row">
-            <span className="pricing-t1">Simple.</span>
-            <span className="pricing-t2">No tricks.</span>
-          </div>
-
-          <div className="pricing-atm-cards">
-
+          <h2 className="mx-auto mb-4 max-w-[620px] text-center font-display text-[30px] leading-[1.1] font-semibold tracking-[-0.015em] min-[861px]:text-[37px]">
+            Start free. Upgrade when you&apos;re hooked.
+          </h2>
+          <p className="mx-auto mb-[54px] max-w-[520px] text-center font-read text-[17.5px] leading-[1.5] text-ink-soft">
+            One simple plan when you&apos;re ready. No tiers to decode.
+          </p>
+          <div className="mx-auto grid max-w-[760px] gap-[22px] min-[861px]:grid-cols-2">
             {/* Free */}
-            <div className="pricing-atm-card pac-free">
-              <span className="pac-plan-free">Free</span>
-              <div className="pac-price-free">$0 / month</div>
-              <ul className="pac-features" aria-label="Free plan features">
-                <li>10 study guides / month</li>
-                <li>15 quizzes / month</li>
-                <li>AI chat (50 messages / month)</li>
-                <li>Store up to 20 materials</li>
-                <li>Uploads up to 50MB per file</li>
-              </ul>
-              <a href={ctaHref} className="btn-secondary" style={{width:'100%', textAlign:'center', display:'block'}}>Get started free</a>
-            </div>
-
-            {/* Pro */}
-            <div className="pricing-atm-card pac-pro">
-              <span className="pac-plan-pro">Pro</span>
-              <div className="pac-price-pro">
-                <span className="pac-dollar">$7.99</span>
-                <span className="pac-per">/ month</span>
+            <div className="rounded-xl border border-rule bg-raised px-[30px] py-8">
+              <div className="mb-1.5 font-display text-[22px] font-semibold">
+                Free
               </div>
-              <ul className="pac-features" aria-label="Pro plan features">
-                <li>Unlimited AI study guides</li>
-                <li>Unlimited quizzes — save &amp; organize sets</li>
-                <li>Unlimited AI chat</li>
-                <li>Store up to 500 materials</li>
-                <li>Canvas LMS integration</li>
-                <li>Priority AI processing</li>
-                <li>Early access to new features</li>
+              <div className="mb-1 flex items-baseline gap-1.5">
+                <span className="font-display text-[44px] font-semibold tracking-[-0.02em]">
+                  $0
+                </span>
+                <span className="text-[15px] text-ink-faint">forever</span>
+              </div>
+              <p className="mb-6 font-read text-[14.5px] text-ink-soft">
+                Everything you need to try it on a real course.
+              </p>
+              <ul className="mb-[26px]">
+                {FREE_FEATURES.map((item) => (
+                  <li
+                    key={item}
+                    className="mb-3 flex items-start gap-2.5 text-[14.5px] text-ink-soft"
+                  >
+                    <span className="mt-px shrink-0 font-bold text-success">
+                      ✓
+                    </span>{" "}
+                    {item}
+                  </li>
+                ))}
               </ul>
-              <a href={ctaHref} className="pac-cta">Start free →</a>
+              <Link
+                href={ctaHref}
+                className={cn(
+                  buttonVariants({ variant: "secondary" }),
+                  "w-full bg-raised hover:border-accent hover:bg-raised"
+                )}
+              >
+                Start free
+              </Link>
             </div>
-
+            {/* Pro */}
+            <div className="relative rounded-xl border-[2.5px] border-accent bg-raised px-[30px] py-8 shadow-[0_18px_44px_rgba(94,113,133,.16)]">
+              <div className="absolute -top-[13px] left-[30px] rounded-full bg-accent px-3.5 py-1.5 text-[12px] font-bold text-white">
+                For serious semesters
+              </div>
+              <div className="mb-1.5 font-display text-[22px] font-semibold">
+                Pro
+              </div>
+              <div className="mb-1 flex items-baseline gap-1.5">
+                <span className="font-display text-[44px] font-semibold tracking-[-0.02em]">
+                  {PRICE_MONTHLY}
+                </span>
+                <span className="text-[15px] text-ink-faint">/ month</span>
+              </div>
+              <p className="mb-6 font-read text-[14.5px] text-ink-soft">
+                Every course you&apos;re taking, all at once.
+              </p>
+              <ul className="mb-[26px]">
+                {PRO_FEATURES.map((item) => (
+                  <li
+                    key={item}
+                    className="mb-3 flex items-start gap-2.5 text-[14.5px] text-ink-soft"
+                  >
+                    <span className="mt-px shrink-0 font-bold text-success">
+                      ✓
+                    </span>{" "}
+                    {item}
+                  </li>
+                ))}
+              </ul>
+              <Link
+                href={ctaHref}
+                className={cn(
+                  buttonVariants({ variant: "primary" }),
+                  "w-full",
+                  primaryShadow
+                )}
+              >
+                Go Pro
+              </Link>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* SECTION 7: FINAL CTA */}
-      <section id="cta-final" aria-label="Call to action">
-        <div className="cta-final-content">
-          <span className="cta-final-l1">Ready to study</span>
-          <span className="cta-final-l2">smarter?</span>
-          <a href={ctaHref} className="cta-final-btn">Begin for free →</a>
-          <p className="cta-final-note">No credit card required</p>
+      {/* ── FINAL CTA — bold dusk block ── */}
+      <div className="py-20">
+        <div className={container}>
+          <div className="relative overflow-hidden rounded-2xl bg-[var(--dusk)] px-10 py-[72px] text-center before:absolute before:-top-[60px] before:-left-10 before:size-[200px] before:rounded-full before:bg-white/[.07] before:content-[''] after:absolute after:-right-[30px] after:-bottom-[70px] after:size-[220px] after:rounded-full after:bg-white/[.06] after:content-['']">
+            <h2 className="relative z-[1] mx-auto mb-[18px] max-w-[600px] font-display text-[34px] leading-[1.08] font-semibold tracking-[-0.02em] text-white min-[861px]:text-[42px]">
+              Walk into the exam like you&apos;ve{" "}
+              <span className="italic text-[var(--ochre-f)]">
+                seen it before
+              </span>
+              .
+            </h2>
+            <p className="relative z-[1] mx-auto mb-[30px] max-w-[440px] font-read text-lg leading-[1.5] text-white/[.88]">
+              Because you have — you studied the exact material it&apos;s built
+              from.
+            </p>
+            <Link
+              href={ctaHref}
+              className={cn(
+                buttonVariants({ variant: "primary", size: "lg" }),
+                "relative z-[1] bg-white text-ink transition hover:-translate-y-px hover:bg-white"
+              )}
+            >
+              Start free
+            </Link>
+          </div>
         </div>
-      </section>
+      </div>
 
-      {/* FOOTER */}
-      <footer>
-        <div className="footer-logo">STRATTIGO</div>
-        <div className="footer-center">© 2026 Strattigo. Built for students.</div>
-        <div className="footer-right">strattigo.com</div>
-      </footer>
+      <PublicFooter />
     </div>
   );
 }

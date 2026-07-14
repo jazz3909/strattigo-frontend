@@ -1110,12 +1110,15 @@ body {
   margin: var(--density-space) 0;
 }
 
-/* ─── Legal Pages (/terms, /privacy) ─────────────────────────────────────── */
+/* ─── Legal Pages (/terms, /privacy) ─────────────────────────────────────────
+   Cream legal-doc typography — auth-public.html `.legal-doc`: serif body in
+   ink, accent-deep underlined links, accent-dot lists. */
 .legal-prose p {
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
-  line-height: 1.8;
-  margin-bottom: 0.875rem;
+  font-family: var(--font-read);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--color-ink);
+  margin-bottom: 16px;
 }
 
 .legal-prose p:last-child {
@@ -1125,16 +1128,17 @@ body {
 .legal-prose ul {
   list-style: none;
   padding-left: 0;
-  margin-bottom: 0.875rem;
+  margin-bottom: 16px;
 }
 
 .legal-prose ul li {
   position: relative;
   padding-left: 1.375rem;
   margin-bottom: 0.5rem;
-  color: var(--text-secondary);
-  font-size: 0.9375rem;
-  line-height: 1.7;
+  font-family: var(--font-read);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-ink);
 }
 
 .legal-prose ul li::before {
@@ -1144,31 +1148,31 @@ body {
   top: 0.6rem;
   width: 5px;
   height: 5px;
-  background: var(--accent);
+  background: var(--color-accent);
   border-radius: 50%;
 }
 
 .legal-prose strong {
   font-weight: 600;
-  color: var(--text-primary);
+  color: var(--color-ink);
 }
 
 .legal-prose a {
-  color: var(--accent);
+  color: var(--color-accent-deep);
   text-decoration: underline;
   text-underline-offset: 3px;
   transition: color 0.15s ease;
 }
 
 .legal-prose a:hover {
-  color: var(--accent-hover);
+  color: var(--color-accent);
 }
 
 .legal-placeholder {
   font-family: var(--font-mono), monospace;
   font-size: 0.85em;
-  background: var(--accent-dim);
-  color: var(--accent);
+  background: var(--color-caution-tint);
+  color: var(--color-caution-deep);
   padding: 0.1rem 0.4rem;
   border-radius: 4px;
 }
