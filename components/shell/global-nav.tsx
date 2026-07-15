@@ -14,10 +14,12 @@ import { cn } from "@/lib/utils"
  * section links, user identity, logout. Cream system.
  */
 
+// Canvas is hidden until the feature ships — its routes/components stay
+// dormant (see app/settings/canvas, CanvasImportModal); re-add the link here.
 const NAV_LINKS = [
   { href: "/dashboard", label: "Courses" },
-  { href: "/settings/canvas", label: "Canvas" },
   { href: "/settings/billing", label: "Billing" },
+  { href: "/pricing", label: "Pricing" },
 ]
 
 /** "jordan.smith@…" → "JS"; single-word local parts fall back to 1 letter. */

@@ -81,7 +81,7 @@ function CourseCard({ course }: { course: Course }) {
   const hue = resolveCourseColor(course.id);
   return (
     <Link
-      href={`/dashboard/${course.id}`}
+      href={`/dashboard/${course.id}/chat`}
       className="group flex overflow-hidden rounded-lg border border-rule bg-raised transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-rule-strong hover:shadow-popover"
     >
       <span className="w-[5px] shrink-0" style={{ background: hue.color }} />

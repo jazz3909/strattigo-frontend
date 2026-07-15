@@ -130,16 +130,16 @@ export default function ChatPage({
       case "chat":
         break; // already here
       case "guides":
-        router.push(`/dashboard/${courseId}?tab=study-guide`);
+        router.push(`/dashboard/${courseId}/guides`);
         break;
       case "quizzes":
-        router.push(`/dashboard/${courseId}?tab=quiz`);
+        router.push(`/dashboard/${courseId}/quizzes`);
         break;
       case "materials":
         router.push(`/dashboard/${courseId}/materials`);
         break;
       case "settings":
-        router.push("/settings/canvas");
+        router.push("/settings/billing");
         break;
     }
   }

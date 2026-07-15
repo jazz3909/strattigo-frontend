@@ -208,15 +208,15 @@ export default function MaterialsPage({
         router.push(`/dashboard/${courseId}/chat`);
         break;
       case "guides":
-        router.push(`/dashboard/${courseId}?tab=study-guide`);
+        router.push(`/dashboard/${courseId}/guides`);
         break;
       case "quizzes":
-        router.push(`/dashboard/${courseId}?tab=quiz`);
+        router.push(`/dashboard/${courseId}/quizzes`);
         break;
       case "materials":
         break; // already here
       case "settings":
-        router.push("/settings/canvas");
+        router.push("/settings/billing");
         break;
     }
   }

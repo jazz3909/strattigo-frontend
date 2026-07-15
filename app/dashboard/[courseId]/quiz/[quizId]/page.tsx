@@ -235,21 +235,21 @@ export default function QuizPage({
         router.push(`/dashboard/${courseId}/chat`);
         break;
       case "guides":
-        router.push(`/dashboard/${courseId}?tab=study-guide`);
+        router.push(`/dashboard/${courseId}/guides`);
         break;
       case "quizzes":
-        router.push(`/dashboard/${courseId}?tab=quiz`);
+        router.push(`/dashboard/${courseId}/quizzes`);
         break;
       case "materials":
         router.push(`/dashboard/${courseId}/materials`);
         break;
       case "settings":
-        router.push("/settings/canvas");
+        router.push("/settings/billing");
         break;
     }
   }
 
-  const quizzesHref = `/dashboard/${courseId}?tab=quiz`;
+  const quizzesHref = `/dashboard/${courseId}/quizzes`;
   const guideNewHref = `/dashboard/${courseId}/guide/new${
     scopedId ? `?scope=${encodeURIComponent(scopedId)}` : ""
   }`;

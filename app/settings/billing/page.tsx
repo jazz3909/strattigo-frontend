@@ -9,10 +9,9 @@ import {
   openBillingPortal,
   SubscriptionStatus,
 } from "../../lib/stripe";
-import { Button } from "../../components/ui/Button";
-import { Card } from "../../components/ui/Card";
-import { Badge } from "../../components/ui/Badge";
-import { Skeleton } from "../../components/ui/Skeleton";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Pill } from "@/components/ui/pill";
 import { useToast } from "../../providers/ToastProvider";
 
 export default function BillingSettingsPage() {
@@ -62,38 +61,33 @@ export default function BillingSettingsPage() {
     status?.is_pro === true || status?.plan === "pro" || status?.plan === "annual";
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1
-        className="text-xl font-bold mb-1"
-        style={{ color: "var(--text-primary)" }}
-      >
+    <div className="mx-auto w-full max-w-[620px]">
+      <h1 className="font-display text-[28px] leading-[1.1] font-semibold tracking-[-0.012em] text-ink">
         Billing
       </h1>
-      <p className="text-sm mb-6" style={{ color: "var(--text-secondary)" }}>
+      <p className="mt-1.5 mb-7 font-read text-read-s text-ink-soft">
         Your subscription and payment details.
       </p>
 
       {loading ? (
         <Card>
-          <Skeleton className="h-5 w-40 mb-3" />
-          <Skeleton className="h-4 w-64 mb-6" />
-          <Skeleton className="h-9 w-44" />
+          <div className="mb-3 h-5 w-40 rounded bg-sunk" />
+          <div className="mb-6 h-4 w-64 rounded bg-sunk" />
+          <div className="h-9 w-44 rounded-sm bg-sunk" />
         </Card>
       ) : isPro ? (
         <Card>
-          <div className="flex items-center gap-3 mb-2">
-            <h2
-              className="text-base font-semibold"
-              style={{ color: "var(--text-primary)" }}
-            >
+          <div className="mb-2 flex items-center gap-3">
+            <h2 className="font-display text-[17px] font-medium text-ink">
               Strattigo Pro
             </h2>
-            <Badge variant="green" dot>
+            <Pill variant="success">
+              <span aria-hidden="true" className="size-[6px] rounded-full bg-current" />
               Active
-            </Badge>
+            </Pill>
           </div>
           {status?.expires_at && (
-            <p className="text-sm mb-4" style={{ color: "var(--text-secondary)" }}>
+            <p className="mb-4 font-read text-read-s text-ink-soft">
               Current period ends{" "}
               {new Date(status.expires_at).toLocaleDateString(undefined, {
                 year: "numeric",
@@ -103,31 +97,28 @@ export default function BillingSettingsPage() {
               .
             </p>
           )}
-          <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
+          <p className="mb-5 font-read text-read-s text-ink-soft">
             Cancel your subscription, update your payment method, or view
             invoices through Stripe&apos;s secure billing portal.
           </p>
           <Button
-            variant="secondary"
+            variant="primary"
             onClick={handleManageSubscription}
-            loading={portalLoading}
+            disabled={portalLoading}
           >
-            Manage subscription
+            {portalLoading ? "Opening…" : "Manage subscription"}
           </Button>
         </Card>
       ) : (
         <Card>
-          <h2
-            className="text-base font-semibold mb-2"
-            style={{ color: "var(--text-primary)" }}
-          >
+          <h2 className="mb-2 font-display text-[17px] font-medium text-ink">
             No active subscription
           </h2>
-          <p className="text-sm mb-5" style={{ color: "var(--text-secondary)" }}>
+          <p className="mb-5 font-read text-read-s text-ink-soft">
             You don&apos;t have an active plan on this account.
           </p>
-          <Link href="/pricing">
-            <Button variant="primary">View plans</Button>
+          <Link href="/pricing" className={buttonVariants({ variant: "primary" })}>
+            View plans
           </Link>
         </Card>
       )}
