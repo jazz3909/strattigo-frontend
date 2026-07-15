@@ -319,7 +319,11 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  /* Transparent, not var(--surface): that dark-theme value painted a dark
+     strip down the right edge of cream surfaces wherever a classic (non-
+     overlay) scrollbar shows. Transparent reads identically on the dark
+     surfaces it was matching. */
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
   background: var(--surface-3);
