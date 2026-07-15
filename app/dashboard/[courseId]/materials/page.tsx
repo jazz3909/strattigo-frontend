@@ -526,7 +526,7 @@ export default function MaterialsPage({
         />
 
         {/* Sub-tabs — underline bar; Collections is the default landing. */}
-        <div className="flex shrink-0 items-center gap-0 border-b border-rule px-10">
+        <div className="flex shrink-0 items-center gap-0 border-b border-rule px-10 max-md:px-4">
           <SubTabButton active={subTab === "collections"} onClick={() => setSubTab("collections")}>
             Collections{collections.length ? ` ${collections.length}` : ""}
           </SubTabButton>
@@ -536,7 +536,7 @@ export default function MaterialsPage({
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1040px] px-10 py-8">
+          <div className="mx-auto w-full max-w-[1040px] px-10 py-8 max-md:px-4">
             {loading ? (
               <ListSkeleton />
             ) : loadError ? (
@@ -839,7 +839,7 @@ function AllFilesView(props: {
                 <button
                   key={chip.key}
                   onClick={() => setFilterKey(chip.key)}
-                  className={`cursor-pointer rounded-full border px-3 py-[5px] font-sans text-ui-s transition-colors ${
+                  className={`cursor-pointer rounded-full border px-3 py-[5px] font-sans text-ui-s transition-colors max-md:py-2 ${
                     on
                       ? "border-accent-tint2 bg-accent-tint font-medium text-accent-deep"
                       : "border-rule-strong bg-raised text-ink-soft hover:border-accent"
@@ -894,7 +894,7 @@ function AllFilesView(props: {
           {collections.length > 0 && (
             <button
               onClick={() => setSelectMode(true)}
-              className="cursor-pointer font-medium text-accent-deep hover:underline"
+              className="cursor-pointer font-medium text-accent-deep hover:underline max-md:-my-2 max-md:p-2"
             >
               Select
             </button>
@@ -1092,7 +1092,7 @@ function FileRow(props: {
               <Menu.Root>
                 <Menu.Trigger
                   aria-label="More actions"
-                  className="grid size-8 cursor-pointer place-items-center rounded-[7px] text-ink-faint outline-none transition-colors hover:bg-sunk hover:text-ink-soft focus-visible:bg-sunk"
+                  className="grid size-8 cursor-pointer place-items-center rounded-[7px] text-ink-faint outline-none transition-colors hover:bg-sunk hover:text-ink-soft focus-visible:bg-sunk max-md:size-10"
                 >
                   <MoreHorizontal className="size-[18px]" />
                 </Menu.Trigger>

@@ -231,7 +231,7 @@ export default function ChatPage({
         {loading ? (
           <ChatSkeleton />
         ) : loadError ? (
-          <div className="mt-24 max-w-md px-14">
+          <div className="mt-24 max-w-md px-14 max-md:px-5">
             <p className="font-read text-read-s text-error-deep">{loadError}</p>
             <div className="mt-6">
               <Button variant="secondary" onClick={() => router.refresh()}>
@@ -259,7 +259,7 @@ export default function ChatPage({
               ) : (
                 /* Thread runs the full content width — equal 56px gutters,
                    no cap. Deliberately wider than the centered composer. */
-                <div className="px-14 py-[30px]">
+                <div className="px-14 py-[30px] max-md:px-5">
                   {messages.map((msg, i) => {
                     const isLastAssistant =
                       chatStreaming &&
@@ -307,7 +307,7 @@ export default function ChatPage({
             </div>
 
             {/* Pinned composer */}
-            <div className="shrink-0 border-t border-rule px-8 pt-4 pb-5">
+            <div className="shrink-0 border-t border-rule px-8 pt-4 pb-5 max-md:px-4 max-md:pb-3">
               {/* Centered, medium-width input — intentionally narrower than
                   the full-width thread above it. */}
               <div className="mx-auto w-full max-w-[760px]">
@@ -435,7 +435,7 @@ function EmptyState({
 
 function ChatSkeleton() {
   return (
-    <div className="flex-1 px-14 py-[30px]">
+    <div className="flex-1 px-14 py-[30px] max-md:px-5">
       <div className="mb-8 flex justify-end">
         <div className="h-11 w-1/3 rounded-[14px] bg-sunk" />
       </div>

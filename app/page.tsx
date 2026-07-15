@@ -185,7 +185,7 @@ export default function HomePage() {
             </div>
             <h1 className="mb-[22px] font-display text-[40px] leading-[1.03] font-semibold tracking-[-0.02em] min-[861px]:text-[53px]">
               Study like you already{" "}
-              <span className="relative whitespace-nowrap text-accent-deep after:absolute after:-inset-x-0.5 after:bottom-1.5 after:-z-10 after:h-3.5 after:-rotate-1 after:rounded after:bg-[var(--ochre-f)] after:content-['']">
+              <span className="relative min-[420px]:whitespace-nowrap text-accent-deep after:absolute after:-inset-x-0.5 after:bottom-1.5 after:-z-10 after:h-3.5 after:-rotate-1 after:rounded after:bg-[var(--ochre-f)] after:content-['']">
                 know the answers
               </span>
               .

@@ -289,11 +289,11 @@ export default function GuidePage({
         </div>
 
         {/* Top strip: breadcrumb + reading actions */}
-        <div className="flex items-center gap-3 border-b border-rule-soft px-14 py-4">
+        <div className="flex items-center gap-3 border-b border-rule-soft px-14 py-4 max-md:px-5">
           <nav className="flex min-w-0 items-center gap-2 font-sans text-ui-s text-ink-faint">
             <button
               onClick={() => router.push(guidesHref)}
-              className="cursor-pointer whitespace-nowrap hover:text-ink-soft"
+              className="cursor-pointer whitespace-nowrap hover:text-ink-soft max-md:-my-3 max-md:py-3"
             >
               Study guides
             </button>
@@ -332,7 +332,7 @@ export default function GuidePage({
           {loading ? (
             <DocumentSkeleton />
           ) : loadError ? (
-            <div className="mt-24 max-w-md px-14">
+            <div className="mt-24 max-w-md px-14 max-md:px-5">
               <p className="font-read text-read text-ink-soft">{loadError}</p>
               <div className="mt-6">
                 <Button variant="secondary" onClick={() => router.push(guidesHref)}>
@@ -341,7 +341,7 @@ export default function GuidePage({
               </div>
             </div>
           ) : genError ? (
-            <div className="mt-24 max-w-md px-14">
+            <div className="mt-24 max-w-md px-14 max-md:px-5">
               <p className="font-read text-read-s text-error-deep">{genError}</p>
               <div className="mt-6 flex gap-2">
                 <Button variant="secondary" onClick={() => router.push(guidesHref)}>
@@ -466,7 +466,7 @@ export default function GuidePage({
 
 function DocumentSkeleton() {
   return (
-    <div className="w-full px-14 pt-14 pb-32">
+    <div className="w-full px-14 pt-14 pb-32 max-md:px-5 max-md:pt-8">
       <div className="mb-5 h-3 w-28 rounded bg-sunk" />
       <div className="mb-4 h-9 w-4/5 rounded bg-sunk" />
       <div className="mb-8 h-4 w-2/3 rounded bg-sunk" />

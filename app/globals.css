@@ -1391,3 +1391,23 @@ body {
     @apply font-sans;
   }
 }
+
+/* ─── Mobile pass — markdown overflow guards (< md only) ─────────────────────
+   KaTeX never reflows and .app-md has no pre/table rules, so wide equations,
+   code, or GFM tables force horizontal scroll in a phone-width column. Scoped
+   to max-width so desktop rendering stays untouched. */
+@media (max-width: 47.9375rem) {
+  .reader-doc .katex-display,
+  .app-md .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .app-md pre {
+    overflow-x: auto;
+  }
+  .app-md table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+}

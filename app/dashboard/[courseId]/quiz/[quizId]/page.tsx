@@ -83,7 +83,7 @@ class QuizSurfaceBoundary extends Component<
   render() {
     if (this.state.crashed) {
       return (
-        <div className="mt-24 max-w-md px-10">
+        <div className="mt-24 max-w-md px-10 max-md:px-5">
           <p className="font-read text-read-s text-error-deep">
             This quiz failed to render — please regenerate it.
           </p>
@@ -377,7 +377,7 @@ export default function QuizPage({
             <nav className="flex min-w-0 items-center gap-2 font-sans text-ui-s text-ink-faint">
               <button
                 onClick={() => router.push(quizzesHref)}
-                className="cursor-pointer whitespace-nowrap hover:text-ink-soft"
+                className="cursor-pointer whitespace-nowrap hover:text-ink-soft max-md:-my-3 max-md:py-3"
               >
                 Quizzes
               </button>
@@ -423,7 +423,7 @@ export default function QuizPage({
             {loading ? (
               <QuizSkeleton />
             ) : loadError ? (
-              <div className="mt-24 max-w-md px-10">
+              <div className="mt-24 max-w-md px-10 max-md:px-5">
                 <p className="font-read text-read-s text-ink-soft">{loadError}</p>
                 <div className="mt-6">
                   <Button variant="secondary" onClick={() => router.push(quizzesHref)}>
@@ -432,7 +432,7 @@ export default function QuizPage({
                 </div>
               </div>
             ) : genError ? (
-              <div className="mt-24 max-w-md px-10">
+              <div className="mt-24 max-w-md px-10 max-md:px-5">
                 <p className="font-read text-read-s text-error-deep">{genError}</p>
                 <div className="mt-6 flex gap-2">
                   <Button variant="secondary" onClick={() => router.push(quizzesHref)}>
@@ -444,7 +444,7 @@ export default function QuizPage({
                 </div>
               </div>
             ) : emptySavedQuiz ? (
-              <div className="mt-24 max-w-md px-10">
+              <div className="mt-24 max-w-md px-10 max-md:px-5">
                 <p className="font-read text-read-s text-ink-soft">
                   This saved quiz couldn&apos;t be read — its questions may be in an
                   unexpected format.

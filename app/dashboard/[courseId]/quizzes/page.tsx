@@ -140,7 +140,7 @@ export default function QuizzesPage({
         />
 
         <div className="flex-1 overflow-y-auto">
-          <div className="mx-auto w-full max-w-[1040px] px-10 py-8">
+          <div className="mx-auto w-full max-w-[1040px] px-10 py-8 max-md:px-4">
             {/* Header: title + usage meta + the view's one primary action */}
             <div className="mb-6 flex flex-wrap items-end justify-between gap-3">
               <div>
@@ -285,7 +285,7 @@ function QuizRow({
         title="Delete quiz"
         disabled={deleting}
         onClick={onRequestDelete}
-        className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-[7px] text-ink-faint opacity-0 transition-all group-hover:opacity-100 hover:bg-error-tint hover:text-error focus-visible:opacity-100 disabled:opacity-50"
+        className="grid size-8 shrink-0 cursor-pointer place-items-center rounded-[7px] text-ink-faint opacity-0 transition-all group-hover:opacity-100 max-md:size-10 max-md:opacity-100 hover:bg-error-tint hover:text-error focus-visible:opacity-100 disabled:opacity-50"
       >
         {deleting ? <Spinner size="xs" /> : <Trash2 className="size-[17px]" />}
       </button>

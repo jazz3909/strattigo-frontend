@@ -45,7 +45,7 @@ export function QuizQuestionCard({
 
       {/* Display-scale prompt; a div (not h2) because markdown emits block
           elements that can't nest inside a heading. */}
-      <div className="mb-[30px] font-display text-[27px] font-semibold leading-[1.28] tracking-[-0.008em] text-ink">
+      <div className="mb-[30px] font-display text-[27px] font-semibold leading-[1.28] tracking-[-0.008em] text-ink max-md:text-[22px]">
         <AppMarkdown content={question.question} />
       </div>
 

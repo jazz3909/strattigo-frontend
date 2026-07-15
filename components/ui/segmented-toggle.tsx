@@ -48,7 +48,7 @@ function SegmentedToggle<T extends string>({
             aria-checked={active}
             onClick={() => onChange(opt.value)}
             className={cn(
-              "cursor-pointer rounded-[6px] px-3.5 py-1.5 font-sans text-ui-s outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent",
+              "cursor-pointer rounded-[6px] px-3.5 py-1.5 font-sans text-ui-s outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent max-md:py-2.5",
               active
                 ? "bg-raised font-medium text-ink shadow-sm"
                 : "text-ink-faint hover:text-ink-soft"

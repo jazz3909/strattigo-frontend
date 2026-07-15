@@ -393,7 +393,7 @@ export function CollectionsView({
                 {...STOP_CARD_DRAG}
                 aria-label={expanded ? "Collapse" : "Expand"}
                 aria-expanded={expanded}
-                className="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-ink-faint transition-colors hover:text-ink-soft"
+                className="grid size-6 shrink-0 cursor-pointer place-items-center rounded text-ink-faint transition-colors hover:text-ink-soft max-md:size-9"
               >
                 <ChevronRight className={`size-4 transition-transform duration-200 ${expanded ? "rotate-90" : ""}`} />
               </button>
@@ -425,12 +425,12 @@ export function CollectionsView({
               ) : (
                 <button
                   onClick={() => toggleExpand(node.id)}
-                  className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
+                  className="flex min-w-0 flex-1 items-baseline gap-2 text-left max-md:-my-3 max-md:py-3"
                 >
                   <span className={`truncate font-sans font-medium text-ink ${isRoot ? "text-[14.5px]" : "text-ui"}`}>
                     {node.name}
                   </span>
-                  <span className="shrink-0 font-sans text-ui-s whitespace-nowrap text-ink-faint">
+                  <span className="shrink-0 font-sans text-ui-s whitespace-nowrap text-ink-faint max-md:hidden">
                     {fileCount} file{fileCount === 1 ? "" : "s"}
                     {subCount > 0 ? ` · ${subCount} sub-folder${subCount === 1 ? "" : "s"}` : ""}
                   </span>
@@ -440,7 +440,7 @@ export function CollectionsView({
               {!isRenaming && !anyDrag && (
                 <div
                   {...STOP_CARD_DRAG}
-                  className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100"
+                  className="flex shrink-0 items-center gap-0.5 opacity-0 transition-opacity group-hover/row:opacity-100 focus-within:opacity-100 max-md:opacity-100"
                 >
                   {canAddSub ? (
                     <IconBtn label="Add sub-folder" onClick={() => openCreateSub(node.id, node.name)}>
@@ -484,7 +484,7 @@ export function CollectionsView({
                       {...STOP_CARD_DRAG}
                       aria-label="Remove from collection"
                       title="Remove from this folder"
-                      className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md text-ink-faint opacity-0 transition-all hover:bg-error-tint hover:text-error group-hover/file:opacity-100"
+                      className="grid size-7 shrink-0 cursor-pointer place-items-center rounded-md text-ink-faint opacity-0 transition-all hover:bg-error-tint hover:text-error group-hover/file:opacity-100 max-md:opacity-100"
                     >
                       <X className="size-3.5" />
                     </button>
@@ -582,7 +582,7 @@ export function CollectionsView({
           <div className="flex-1" />
           <button
             onClick={onReviewUnfiled}
-            className="cursor-pointer font-sans text-ui-s font-medium whitespace-nowrap text-accent-deep hover:underline"
+            className="cursor-pointer font-sans text-ui-s font-medium whitespace-nowrap text-accent-deep hover:underline max-md:-my-2 max-md:py-2"
           >
             Review unfiled →
           </button>
@@ -770,7 +770,7 @@ function IconBtn({
       title={label}
       onClick={onClick}
       disabled={disabled}
-      className={`grid size-8 cursor-pointer place-items-center rounded-[7px] text-ink-faint outline-none transition-colors disabled:opacity-50 ${
+      className={`grid size-8 cursor-pointer place-items-center rounded-[7px] text-ink-faint outline-none transition-colors disabled:opacity-50 max-md:size-10 ${
         danger ? "hover:bg-error-tint hover:text-error" : "hover:bg-accent-tint hover:text-accent-deep"
       }`}
     >

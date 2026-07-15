@@ -33,11 +33,11 @@ export function GuideDocument({
   content: string;
 }) {
   return (
-    <article data-density="document" className="w-full px-14 pt-14 pb-32">
+    <article data-density="document" className="w-full px-14 pt-14 pb-32 max-md:px-5 max-md:pt-8">
       <div className="mb-[18px] font-sans text-eyebrow font-semibold uppercase tracking-[0.09em] text-accent-deep">
         Study guide{scopeName ? ` · ${scopeName}` : ""}
       </div>
-      <h1 className="mb-5 font-display text-[40px] font-semibold leading-[1.12] tracking-[-0.012em] text-ink">
+      <h1 className="mb-5 font-display text-[40px] font-semibold leading-[1.12] tracking-[-0.012em] text-ink max-md:text-[31px]">
         {title}
       </h1>
       {subtitle && (
