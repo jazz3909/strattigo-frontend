@@ -4,7 +4,10 @@ import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FolderTree, Send, Sparkles } from "lucide-react";
 
-import { WorkspaceRail, type RailView } from "@/components/shell/workspace-rail";
+import {
+  WorkspaceRail,
+  type RailView,
+} from "@/components/shell/workspace-rail";
 import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar";
 import { Button } from "@/components/ui/button";
 import { AppMarkdown } from "@/app/components/ui/GuideMarkdown";
@@ -69,7 +72,7 @@ export default function ChatPage({
   // only), so the designed citation chips are omitted. Logged per spec.
   useEffect(() => {
     console.info(
-      "[chat] backend /ai/chat/stream returns no source references — citation chips omitted."
+      "[chat] backend /ai/chat/stream returns no source references — citation chips omitted.",
     );
   }, []);
 
@@ -93,7 +96,8 @@ export default function ChatPage({
         setCollections(cols);
         setMaterialCount(mats.length);
       } catch (err) {
-        if (!cancelled) setLoadError(err instanceof Error ? err.message : "Failed to load.");
+        if (!cancelled)
+          setLoadError(err instanceof Error ? err.message : "Failed to load.");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -146,7 +150,9 @@ export default function ChatPage({
   async function handleChat(question: string) {
     if (!question.trim()) return;
     if (chatLoading || chatStreaming || !canChat) return;
-    const historyToSend = messages.slice(-10).map((m) => ({ role: m.role, content: m.content }));
+    const historyToSend = messages
+      .slice(-10)
+      .map((m) => ({ role: m.role, content: m.content }));
     stickRef.current = true;
     setMessages((prev) => [...prev, { role: "user", content: question }]);
     setChatInput("");
@@ -155,23 +161,37 @@ export default function ChatPage({
 
     try {
       let firstChunk = true;
-      for await (const chunk of streamChat(courseId, question, historyToSend, scopedId ?? undefined)) {
+      for await (const chunk of streamChat(
+        courseId,
+        question,
+        historyToSend,
+        scopedId ?? undefined,
+      )) {
         if (firstChunk) {
           firstChunk = false;
           setChatLoading(false);
           setChatStreaming(true);
-          setMessages((prev) => [...prev, { role: "assistant", content: chunk }]);
+          setMessages((prev) => [
+            ...prev,
+            { role: "assistant", content: chunk },
+          ]);
         } else {
           setMessages((prev) => {
             const last = prev[prev.length - 1];
-            return [...prev.slice(0, -1), { ...last, content: last.content + chunk }];
+            return [
+              ...prev.slice(0, -1),
+              { ...last, content: last.content + chunk },
+            ];
           });
         }
       }
       if (firstChunk) {
         // No chunks received — fall back to non-streaming
         setChatLoading(false);
-        setMessages((prev) => [...prev, { role: "assistant", content: "No response received." }]);
+        setMessages((prev) => [
+          ...prev,
+          { role: "assistant", content: "No response received." },
+        ]);
       }
     } catch (err: unknown) {
       setChatLoading(false);
@@ -222,59 +242,78 @@ export default function ChatPage({
         ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             {/* Thread — the conversation owns the screen */}
-            <div ref={threadRef} onScroll={onThreadScroll} className="flex-1 overflow-y-auto">
+            <div
+              ref={threadRef}
+              onScroll={onThreadScroll}
+              className="flex-1 overflow-y-auto"
+            >
               {messages.length === 0 && !chatLoading ? (
                 <EmptyState
                   canChat={canChat}
                   scopeName={scopeName}
                   onAsk={handleChat}
-                  onUploadClick={() => router.push(`/dashboard/${courseId}/materials`)}
+                  onUploadClick={() =>
+                    router.push(`/dashboard/${courseId}/materials`)
+                  }
                 />
               ) : (
-                <div className="mx-auto w-full max-w-[720px] px-8 py-[30px]">
-                  {messages.map((msg, i) => {
-                    const isLastAssistant =
-                      chatStreaming && i === messages.length - 1 && msg.role === "assistant";
-                    return msg.role === "user" ? (
-                      <div key={i} className="mb-[30px] flex justify-end">
-                        <div className="max-w-[78%] rounded-[14px] rounded-br-[4px] bg-accent-tint px-4 py-3 font-sans text-[14.5px] leading-normal text-accent-deep">
-                          <AppMarkdown content={msg.content} />
+                /* Left-anchored reading column: pl-14 gutter shared with the
+                   other cream surfaces, 850px of content, whitespace falling
+                   to the right. */
+                <div className="pl-14 pr-8 py-[30px]">
+                  <div className="max-w-[850px]">
+                    {messages.map((msg, i) => {
+                      const isLastAssistant =
+                        chatStreaming &&
+                        i === messages.length - 1 &&
+                        msg.role === "assistant";
+                      return msg.role === "user" ? (
+                        <div key={i} className="mb-[30px] flex justify-end">
+                          <div className="max-w-[78%] rounded-[14px] rounded-br-[4px] bg-accent-tint px-4 py-3 font-sans text-[14.5px] leading-normal text-accent-deep">
+                            <AppMarkdown content={msg.content} />
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div key={i} className="mb-[30px]">
-                        <TutorHead />
-                        {/* The tutor speaks in the reading voice — serif, considered. */}
-                        <div className="font-read text-[17px] leading-[1.66] text-ink">
-                          <AppMarkdown content={msg.content} />
-                          {isLastAssistant && <span className="streaming-cursor" />}
+                      ) : (
+                        <div key={i} className="mb-[30px]">
+                          <TutorHead />
+                          {/* The tutor speaks in the reading voice — serif, considered. */}
+                          <div className="font-read text-[17px] leading-[1.66] text-ink">
+                            <AppMarkdown content={msg.content} />
+                            {isLastAssistant && (
+                              <span className="streaming-cursor" />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
 
-                  {/* Thinking indicator — only while waiting for the first chunk */}
-                  {chatLoading && (
-                    <div className="mb-[30px]">
-                      <TutorHead />
-                      <div className="flex items-center gap-1.5 py-1">
-                        {[0, 160, 320].map((delay) => (
-                          <span
-                            key={delay}
-                            className="size-2 rounded-full bg-ink-faint"
-                            style={{ animation: `bounceDot 1.2s ease-in-out ${delay}ms infinite` }}
-                          />
-                        ))}
+                    {/* Thinking indicator — only while waiting for the first chunk */}
+                    {chatLoading && (
+                      <div className="mb-[30px]">
+                        <TutorHead />
+                        <div className="flex items-center gap-1.5 py-1">
+                          {[0, 160, 320].map((delay) => (
+                            <span
+                              key={delay}
+                              className="size-2 rounded-full bg-ink-faint"
+                              style={{
+                                animation: `bounceDot 1.2s ease-in-out ${delay}ms infinite`,
+                              }}
+                            />
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               )}
             </div>
 
             {/* Pinned composer */}
-            <div className="shrink-0 border-t border-rule px-8 pt-4 pb-5">
-              <div className="mx-auto w-full max-w-[720px]">
+            <div className="shrink-0 border-t border-rule pt-4 pb-5 pl-14 pr-8">
+              {/* Same column + left edge as the thread, so the input sits
+                  under the conversation rather than spanning the screen. */}
+              <div className="max-w-[850px]">
                 <div className="flex items-end gap-2.5 rounded-lg border border-rule-strong bg-raised py-2.5 pr-2.5 pl-4 transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--color-accent-tint)]">
                   <textarea
                     ref={inputRef}
@@ -308,7 +347,10 @@ export default function ChatPage({
                 <div className="mt-2.5 flex items-center gap-2 px-0.5">
                   {/* Scope reminder — live view of the top-bar ScopePicker */}
                   <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-accent-tint px-[11px] py-1 font-sans text-ui-s text-accent-deep">
-                    <FolderTree className="size-3 shrink-0" aria-hidden="true" />
+                    <FolderTree
+                      className="size-3 shrink-0"
+                      aria-hidden="true"
+                    />
                     <span className="truncate">{scopeName || "…"}</span>
                   </span>
                   <span className="hidden font-sans text-ui-s text-ink-faint sm:inline">
@@ -334,7 +376,9 @@ function TutorHead() {
       <span className="grid size-[26px] place-items-center rounded-[7px] bg-accent text-white">
         <Sparkles className="size-3.5" aria-hidden="true" />
       </span>
-      <span className="font-sans text-ui-s font-semibold text-ink-soft">AI tutor</span>
+      <span className="font-sans text-ui-s font-semibold text-ink-soft">
+        AI tutor
+      </span>
     </div>
   );
 }
@@ -355,7 +399,9 @@ function EmptyState({
       <div className="mb-[22px] grid size-14 place-items-center rounded-xl bg-accent-tint text-accent-deep">
         <Sparkles className="size-[26px]" aria-hidden="true" />
       </div>
-      <h2 className="mb-2.5 font-display text-display-m text-ink">Ask your AI tutor anything</h2>
+      <h2 className="mb-2.5 font-display text-display-m text-ink">
+        Ask your AI tutor anything
+      </h2>
       <p className="max-w-[440px] font-read text-read-s text-ink-soft">
         {canChat
           ? "Answers are drawn from your course materials — not the open internet — so they match exactly what you're studying."
@@ -392,15 +438,21 @@ function EmptyState({
 
 function ChatSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-[720px] flex-1 px-8 py-[30px]">
-      <div className="mb-8 flex justify-end">
-        <div className="h-11 w-1/2 rounded-[14px] bg-sunk" />
-      </div>
-      <div className="mb-2.5 h-[26px] w-24 rounded bg-sunk" />
-      <div className="space-y-3">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-4 rounded bg-sunk" style={{ width: `${92 - (i % 3) * 14}%` }} />
-        ))}
+    <div className="flex-1 pl-14 pr-8 py-[30px]">
+      <div className="max-w-[850px]">
+        <div className="mb-8 flex justify-end">
+          <div className="h-11 w-1/2 rounded-[14px] bg-sunk" />
+        </div>
+        <div className="mb-2.5 h-[26px] w-24 rounded bg-sunk" />
+        <div className="space-y-3">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div
+              key={i}
+              className="h-4 rounded bg-sunk"
+              style={{ width: `${92 - (i % 3) * 14}%` }}
+            />
+          ))}
+        </div>
       </div>
     </div>
   );
