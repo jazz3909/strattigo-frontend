@@ -31,16 +31,22 @@ export type RailView =
 interface RailItemConfig {
   id: RailView
   label: string
+  /** Short form for the mobile tab bar (defaults to label). */
+  shortLabel?: string
   icon: React.ComponentType<{ className?: string }>
 }
 
 const RAIL_VIEWS: RailItemConfig[] = [
   { id: "courses", label: "Courses", icon: ArrowLeft },
   { id: "chat", label: "Chat", icon: MessageCircle },
-  { id: "guides", label: "Study guides", icon: FileText },
+  { id: "guides", label: "Study guides", shortLabel: "Guides", icon: FileText },
   { id: "quizzes", label: "Quizzes", icon: SquareCheck },
   { id: "materials", label: "Materials", icon: FolderTree },
 ]
+
+/** The phone mock's bottom bar carries only the course views — "← Courses"
+    lives in the compact top bar and settings in the avatar menu. */
+const TAB_VIEWS = RAIL_VIEWS.filter((v) => v.id !== "courses")
 
 const SETTINGS_ITEM: RailItemConfig = {
   id: "settings",
@@ -91,30 +97,77 @@ interface WorkspaceRailProps {
 
 function WorkspaceRail({ activeView, onNavigate, className }: WorkspaceRailProps) {
   return (
-    <nav
-      aria-label="Workspace"
-      className={cn(
-        "flex w-[66px] shrink-0 flex-col items-center gap-1.5 border-r border-rule bg-page py-4",
-        className
-      )}
-    >
-      <div className="mb-3.5 grid size-[34px] place-items-center rounded-md bg-accent font-display text-lg font-semibold text-white">
-        S
-      </div>
-      {RAIL_VIEWS.map((item) => (
+    <>
+      <WorkspaceTabBar activeView={activeView} onNavigate={onNavigate} />
+      <nav
+        aria-label="Workspace"
+        className={cn(
+          "hidden w-[66px] shrink-0 flex-col items-center gap-1.5 border-r border-rule bg-page py-4 md:flex",
+          className
+        )}
+      >
+        <div className="mb-3.5 grid size-[34px] place-items-center rounded-md bg-accent font-display text-lg font-semibold text-white">
+          S
+        </div>
+        {RAIL_VIEWS.map((item) => (
+          <RailButton
+            key={item.id}
+            item={item}
+            active={activeView === item.id}
+            onNavigate={onNavigate}
+          />
+        ))}
+        <div className="flex-1" />
         <RailButton
-          key={item.id}
-          item={item}
-          active={activeView === item.id}
+          item={SETTINGS_ITEM}
+          active={activeView === "settings"}
           onNavigate={onNavigate}
         />
-      ))}
-      <div className="flex-1" />
-      <RailButton
-        item={SETTINGS_ITEM}
-        active={activeView === "settings"}
-        onNavigate={onNavigate}
-      />
+      </nav>
+    </>
+  )
+}
+
+/**
+ * WorkspaceTabBar — the rail's mobile form (workspace-chat.html
+ * `.m-bottomnav`): one fixed, thumb-reachable bottom bar with the four
+ * course views. Pages keep a matching bottom padding on their root
+ * (`max-md:pb-…`) so scroll content clears the bar.
+ */
+function WorkspaceTabBar({
+  activeView,
+  onNavigate,
+}: {
+  activeView: RailView
+  onNavigate: (view: RailView) => void
+}) {
+  return (
+    <nav
+      aria-label="Workspace"
+      className="fixed inset-x-0 bottom-0 z-40 flex border-t border-rule bg-page pb-[env(safe-area-inset-bottom)] md:hidden"
+    >
+      {TAB_VIEWS.map((item) => {
+        const Icon = item.icon
+        const active = activeView === item.id
+        return (
+          <button
+            key={item.id}
+            type="button"
+            aria-label={item.label}
+            aria-current={active ? "page" : undefined}
+            onClick={() => onNavigate(item.id)}
+            className={cn(
+              "flex h-14 flex-1 cursor-pointer flex-col items-center justify-center gap-1 outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-accent",
+              active ? "text-accent-deep" : "text-ink-faint"
+            )}
+          >
+            <Icon className={cn("size-5", active && "text-accent")} />
+            <span className="font-sans text-[10.5px] font-medium">
+              {item.shortLabel ?? item.label}
+            </span>
+          </button>
+        )
+      })}
     </nav>
   )
 }

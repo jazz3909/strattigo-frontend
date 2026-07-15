@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Fraunces, Newsreader, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "./providers/ToastProvider";
@@ -29,6 +29,12 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   weight: ["400", "500"],
 });
+
+// viewport-fit=cover lets the mobile shell pad into the notch / home-indicator
+// safe areas (env(safe-area-inset-*)); width/scale defaults are merged in.
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "Strattigo — Your AI Study Partner",

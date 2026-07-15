@@ -128,7 +128,7 @@ export default function GuidesPage({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-page text-ink">
+    <div className="flex h-screen overflow-hidden bg-page text-ink max-md:h-dvh max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
       <WorkspaceRail activeView="guides" onNavigate={navTab} />
 
       <div className="flex min-w-0 flex-1 flex-col">

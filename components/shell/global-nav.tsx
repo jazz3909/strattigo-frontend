@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { Brand } from "@/components/public/brand"
+import { UserMenu } from "@/components/shell/user-menu"
 import { clearToken, getEmail } from "@/app/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -48,9 +49,11 @@ function GlobalNav() {
   return (
     <header className="sticky top-0 z-40 border-b border-rule bg-sheet">
       <div className="mx-auto flex h-14 w-full max-w-[1100px] items-center gap-5 px-4 sm:gap-6 sm:px-6">
-        <Brand href="/dashboard" className="[&>span:last-child]:hidden min-[420px]:[&>span:last-child]:inline" />
+        <Brand href="/dashboard" />
 
-        <nav className="flex items-center gap-4 sm:gap-5">
+        {/* Inline section links are desktop-only; below sm they live in the
+            avatar menu (mobile pass — one bar, no overflow). */}
+        <nav className="hidden items-center gap-4 sm:flex sm:gap-5">
           {NAV_LINKS.map((link) => {
             const isActive =
               link.href === "/dashboard"
@@ -73,7 +76,9 @@ function GlobalNav() {
 
         <div className="flex-1" />
 
-        <div className="flex items-center gap-2.5">
+        <UserMenu className="sm:hidden" />
+
+        <div className="hidden items-center gap-2.5 sm:flex">
           {email && (
             <>
               <span
