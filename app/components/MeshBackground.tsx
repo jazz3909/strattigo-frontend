@@ -1,4 +1,10 @@
 'use client';
+/**
+ * DORMANT — the dark-theme mesh backdrop, unmounted from the root layout in
+ * the cream sweep (every live page paints its own bg-page, so this only ever
+ * showed as a dark flash on overscroll/first paint). Do not delete: dormant,
+ * not dead — same status as dormant-views.tsx and the Canvas import wizard.
+ */
 import { useEffect, useRef } from 'react';
 
 interface ColorPoint {

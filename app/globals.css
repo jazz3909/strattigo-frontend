@@ -303,13 +303,15 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--text-primary);
+  color: var(--color-ink);
 }
 
 body {
-  background: #0D1420;
+  /* Cream, not the old #0D1420: this is what shows on first paint, overscroll,
+     and route transitions before a page paints its own bg-page. */
+  background: var(--color-page);
   min-height: 100vh;
-  color: var(--text-primary);
+  color: var(--color-ink);
   font-family: var(--font-outfit), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -326,24 +328,27 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-3);
+  background: var(--color-rule-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--color-accent);
 }
 
 /* ─── Focus Ring ─────────────────────────────────────────────────────────── */
+/* Dusk Blue (cream token), not the legacy salmon var(--accent): this
+   unlayered rule out-cascades component `outline-none` utilities, so its
+   color shows on every focused control app-wide. */
 *:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 /* ─── Selection ──────────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(225,148,133,0.3);
-  color: var(--text-primary);
+  background: var(--color-accent-tint2);
+  color: var(--color-ink);
 }
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────── */
@@ -534,6 +539,15 @@ body {
 
 .animate-shimmer {
   background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface-3) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
+/* Cream companion to .animate-shimmer — same motion, accent tokens. Needed
+   because this file is unlayered, so .animate-shimmer's dark gradient would
+   out-cascade any bg-* utility set on the same element. */
+.animate-shimmer-accent {
+  background: linear-gradient(90deg, var(--color-accent-tint2) 25%, var(--color-accent) 50%, var(--color-accent-tint2) 75%);
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
@@ -1338,8 +1352,8 @@ input:-webkit-autofill:focus {
 
 /* ─── Celebration Sparkle Pulse ─────────────────────────────────────────── */
 @keyframes sparkle-pulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255,176,117,0.4)); }
-  50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,176,117,0.7)); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px var(--color-accent-tint2)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 20px var(--color-accent-tint2)); }
 }
 
 .animate-sparkle-pulse {

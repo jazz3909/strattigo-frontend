@@ -3,7 +3,6 @@ import { Fraunces, Newsreader, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "./providers/ToastProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
-import { MeshBackground } from "./components/MeshBackground";
 import { cn } from "@/lib/utils";
 
 const fraunces = Fraunces({
@@ -47,8 +46,7 @@ export default function RootLayout({
       lang="en"
       className={cn(fraunces.variable, newsreader.variable, outfit.variable, jetbrainsMono.variable, "font-sans")}
     >
-      <body className="min-h-full flex flex-col" style={{ color: "var(--text-primary)" }}>
-        <MeshBackground />
+      <body className="min-h-full flex flex-col text-ink">
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>

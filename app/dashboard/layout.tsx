@@ -144,7 +144,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </span>
         {/* Loading bar */}
         <div className="w-[120px] h-[2px] rounded-[1px] overflow-hidden bg-sunk">
-          <div className="animate-shimmer h-full rounded-[1px] bg-accent" />
+          <div className="animate-shimmer-accent h-full rounded-[1px]" />
         </div>
         {confirmingCheckout && (
           <p className="text-ui text-ink-soft" style={{ animation: "fadeIn 0.5s ease-out both" }}>
