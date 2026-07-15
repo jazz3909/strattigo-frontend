@@ -78,12 +78,15 @@ function RailButton({
           : "text-ink-faint hover:bg-rule-soft hover:text-ink-soft"
       )}
     >
-      {active && (
-        <span
-          aria-hidden="true"
-          className="absolute top-[9px] bottom-[9px] -left-3 w-[3px] rounded-r-[3px] bg-accent"
-        />
-      )}
+      {/* Always in the tree so the active marker can ease in/out (grow from
+          center) instead of hard-snapping between views. */}
+      <span
+        aria-hidden="true"
+        className={cn(
+          "absolute top-[9px] bottom-[9px] -left-3 w-[3px] rounded-r-[3px] bg-accent transition-[opacity,scale] duration-(--duration-base) ease-out-soft",
+          active ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50"
+        )}
+      />
       <Icon className="size-[19px]" />
     </button>
   )

@@ -25,7 +25,7 @@ export function Spinner({ size = "md", className = "" }: SpinnerProps) {
       aria-label="Loading"
       className={cn(
         sizeMap[size],
-        "border-accent-tint2 border-t-accent rounded-full animate-spin inline-block flex-shrink-0",
+        "border-accent-tint2 border-t-accent rounded-full spinner-eased inline-block flex-shrink-0",
         className
       )}
     />

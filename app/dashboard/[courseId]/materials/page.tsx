@@ -954,7 +954,7 @@ function SortMenu({ sortKey, setSortKey }: { sortKey: SortKey; setSortKey: (v: S
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner align="end" sideOffset={6} className="z-50">
-          <Menu.Popup className="w-48 rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
+          <Menu.Popup className="origin-(--transform-origin) transition-[opacity,scale] duration-(--duration-fast) ease-out-soft data-starting-style:scale-97 data-starting-style:opacity-0 w-48 rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
             <Menu.RadioGroup value={sortKey} onValueChange={(v) => setSortKey(v as SortKey)}>
               {(Object.keys(SORT_LABELS) as SortKey[]).map((k) => (
                 <Menu.RadioItem
@@ -1098,7 +1098,7 @@ function FileRow(props: {
                 </Menu.Trigger>
                 <Menu.Portal>
                   <Menu.Positioner align="end" sideOffset={6} className="z-50">
-                    <Menu.Popup className="w-52 rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
+                    <Menu.Popup className="origin-(--transform-origin) transition-[opacity,scale] duration-(--duration-fast) ease-out-soft data-starting-style:scale-97 data-starting-style:opacity-0 w-52 rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
                       <MenuAction onClick={onDownload}>
                         <Download className="size-4" /> Download
                       </MenuAction>
@@ -1179,15 +1179,15 @@ function MenuAction({
 function ListSkeleton() {
   return (
     <div>
-      <div className="mb-[22px] h-16 w-full rounded-lg bg-sunk" />
-      <div className="mb-[18px] h-10 w-full rounded-sm bg-sunk" />
+      <div className="skeleton-sheen mb-[22px] h-16 w-full rounded-lg bg-sunk" />
+      <div className="skeleton-sheen mb-[18px] h-10 w-full rounded-sm bg-sunk" />
       <div className="overflow-hidden rounded-lg border border-rule">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className={`flex items-center gap-3.5 px-4 py-3.5 ${i ? "border-t border-rule-soft" : ""}`}>
-            <div className="size-[38px] shrink-0 rounded-[9px] bg-sunk" />
+            <div className="skeleton-sheen size-[38px] shrink-0 rounded-[9px] bg-sunk" />
             <div className="flex-1">
-              <div className="mb-2 h-3.5 w-2/3 rounded bg-sunk" />
-              <div className="h-3 w-24 rounded bg-sunk" />
+              <div className="skeleton-sheen mb-2 h-3.5 w-2/3 rounded bg-sunk" />
+              <div className="skeleton-sheen h-3 w-24 rounded bg-sunk" />
             </div>
           </div>
         ))}

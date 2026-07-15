@@ -276,10 +276,7 @@ export default function ChatPage({
                         <TutorHead />
                         {/* The tutor speaks in the reading voice — serif, considered. */}
                         <div className="font-read text-[17px] leading-[1.66] text-ink">
-                          <AppMarkdown content={msg.content} />
-                          {isLastAssistant && (
-                            <span className="streaming-cursor" />
-                          )}
+                          <AppMarkdown content={msg.content} isStreaming={isLastAssistant} />
                         </div>
                       </div>
                     );
@@ -437,14 +434,14 @@ function ChatSkeleton() {
   return (
     <div className="flex-1 px-14 py-[30px] max-md:px-5">
       <div className="mb-8 flex justify-end">
-        <div className="h-11 w-1/3 rounded-[14px] bg-sunk" />
+        <div className="skeleton-sheen h-11 w-1/3 rounded-[14px] bg-sunk" />
       </div>
-      <div className="mb-2.5 h-[26px] w-24 rounded bg-sunk" />
+      <div className="mb-2.5 h-[26px] w-24 rounded bg-sunk skeleton-sheen" />
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
           <div
             key={i}
-            className="h-4 rounded bg-sunk"
+            className="h-4 rounded bg-sunk skeleton-sheen"
             style={{ width: `${92 - (i % 3) * 14}%` }}
           />
         ))}

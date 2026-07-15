@@ -52,7 +52,7 @@ function SegmentedProgress({
         <span
           key={i}
           className={cn(
-            "flex-1 rounded-[2px]",
+            "flex-1 rounded-[2px] transition-colors duration-(--duration-base) ease-out-soft",
             i < current - 1 ? "bg-accent" : i === current - 1 ? "bg-accent-tint2" : "bg-sunk"
           )}
         />

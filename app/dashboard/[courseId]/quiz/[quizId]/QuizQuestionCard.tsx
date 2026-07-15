@@ -38,7 +38,7 @@ export function QuizQuestionCard({
   const isRight = resolved && selected === correct;
 
   return (
-    <div>
+    <div className="rise-in-fast">
       <div className="mb-4 font-sans text-eyebrow font-semibold uppercase tracking-[0.09em] text-accent-deep">
         Question {number}
       </div>
@@ -91,7 +91,7 @@ export function QuizQuestionCard({
               </span>
               <AppMarkdown content={opt.text} className="min-w-0 flex-1" />
               {resolvedCorrect && (
-                <Check aria-label="Correct answer" className="ml-auto size-[18px] shrink-0 text-success" />
+                <Check aria-label="Correct answer" className="check-pop ml-auto size-[18px] shrink-0 text-success" />
               )}
               {resolvedWrong && (
                 <X aria-label="Your answer" className="ml-auto size-[18px] shrink-0 text-error" />
@@ -110,7 +110,7 @@ export function QuizQuestionCard({
               {isRight ? "Correct" : `Not quite — you chose ${selected ?? "—"}`}
             </span>
           }
-          className="mt-[22px] px-[22px] py-5 text-[16.5px] leading-[1.6]"
+          className="rise-in-fast mt-[22px] px-[22px] py-5 text-[16.5px] leading-[1.6]"
         >
           <AppMarkdown
             content={question.explanation ?? `The correct answer is ${correct}.`}

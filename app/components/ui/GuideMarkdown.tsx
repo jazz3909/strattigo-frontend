@@ -38,10 +38,17 @@ function MarkdownPipeline({ content }: { content: string }) {
   );
 }
 
-/** Document density — the study-guide reader. */
-export function GuideMarkdown({ content }: { content: string }) {
+/** Document density — the study-guide reader. `isStreaming` adds the shared
+    stream treatment (caret on the last block, per-block fade-in). */
+export function GuideMarkdown({
+  content,
+  isStreaming,
+}: {
+  content: string;
+  isStreaming?: boolean;
+}) {
   return (
-    <div className="reader-doc">
+    <div className={cn("reader-doc", isStreaming && "stream-md")}>
       <MarkdownPipeline content={content} />
     </div>
   );
@@ -51,12 +58,14 @@ export function GuideMarkdown({ content }: { content: string }) {
 export function AppMarkdown({
   content,
   className,
+  isStreaming,
 }: {
   content: string;
   className?: string;
+  isStreaming?: boolean;
 }) {
   return (
-    <div className={cn("app-md", className)}>
+    <div className={cn("app-md", isStreaming && "stream-md", className)}>
       <MarkdownPipeline content={content} />
     </div>
   );

@@ -62,7 +62,7 @@ function UserMenu({ className }: { className?: string }) {
       </Menu.Trigger>
       <Menu.Portal>
         <Menu.Positioner align="end" sideOffset={6} className="z-50">
-          <Menu.Popup className="max-h-[min(420px,var(--available-height))] w-56 overflow-y-auto rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
+          <Menu.Popup className="origin-(--transform-origin) transition-[opacity,scale] duration-(--duration-fast) ease-out-soft data-starting-style:scale-97 data-starting-style:opacity-0 max-h-[min(420px,var(--available-height))] w-56 overflow-y-auto rounded-md border border-rule bg-raised p-1.5 shadow-popover outline-none">
             {email && (
               <>
                 <div className="truncate px-2.5 py-2 font-sans text-ui-s text-ink-faint">

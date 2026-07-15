@@ -371,12 +371,12 @@ export default function GuidePage({
       {/* Generation modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
+          className="backdrop-enter fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
           onClick={() => (isNew && genState === "idle" && !streamContent ? router.push(guidesHref) : setModalOpen(false))}
           role="presentation"
         >
           <div
-            className="w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
+            className="panel-enter w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -467,12 +467,12 @@ export default function GuidePage({
 function DocumentSkeleton() {
   return (
     <div className="w-full px-14 pt-14 pb-32 max-md:px-5 max-md:pt-8">
-      <div className="mb-5 h-3 w-28 rounded bg-sunk" />
-      <div className="mb-4 h-9 w-4/5 rounded bg-sunk" />
-      <div className="mb-8 h-4 w-2/3 rounded bg-sunk" />
+      <div className="mb-5 h-3 w-28 rounded bg-sunk skeleton-sheen" />
+      <div className="mb-4 h-9 w-4/5 rounded bg-sunk skeleton-sheen" />
+      <div className="mb-8 h-4 w-2/3 rounded bg-sunk skeleton-sheen" />
       <div className="space-y-3">
         {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="h-4 rounded bg-sunk" style={{ width: `${90 - (i % 3) * 12}%` }} />
+          <div key={i} className="h-4 rounded bg-sunk skeleton-sheen" style={{ width: `${90 - (i % 3) * 12}%` }} />
         ))}
       </div>
     </div>

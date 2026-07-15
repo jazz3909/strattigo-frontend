@@ -72,10 +72,7 @@ export function GuideDocument({
       </div>
 
       {content ? (
-        <>
-          <GuideMarkdown content={content} />
-          {streaming && <span className="streaming-cursor text-accent" />}
-        </>
+        <GuideMarkdown content={content} isStreaming={streaming} />
       ) : streaming ? (
         <div className="flex items-center gap-3 py-4 font-sans text-ui text-ink-faint">
           <span className="flex gap-1">

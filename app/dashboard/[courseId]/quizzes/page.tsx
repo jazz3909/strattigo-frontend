@@ -306,10 +306,10 @@ function ListSkeleton() {
     <div className="overflow-hidden rounded-lg border border-rule">
       {Array.from({ length: 3 }).map((_, i) => (
         <div key={i} className={`flex items-center gap-3.5 px-4 py-3.5 ${i ? "border-t border-rule-soft" : ""}`}>
-          <div className="size-[38px] shrink-0 rounded-[9px] bg-sunk" />
+          <div className="skeleton-sheen size-[38px] shrink-0 rounded-[9px] bg-sunk" />
           <div className="flex-1">
-            <div className="mb-2 h-3.5 w-2/3 rounded bg-sunk" />
-            <div className="h-3 w-24 rounded bg-sunk" />
+            <div className="mb-2 h-3.5 w-2/3 rounded bg-sunk skeleton-sheen" />
+            <div className="h-3 w-24 rounded bg-sunk skeleton-sheen" />
           </div>
         </div>
       ))}

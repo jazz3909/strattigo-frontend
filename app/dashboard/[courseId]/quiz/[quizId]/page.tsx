@@ -480,6 +480,7 @@ export default function QuizPage({
             ) : current ? (
               <div className={`${TAKE_COLUMN} pt-11 pb-20`}>
                 <QuizQuestionCard
+                  key={currentIdx}
                   question={current}
                   number={currentIdx + 1}
                   selected={selected}
@@ -529,7 +530,7 @@ export default function QuizPage({
       {/* Generation modal */}
       {modalOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
+          className="backdrop-enter fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
           onClick={() =>
             isNew && genState === "idle" && !rawContent
               ? router.push(quizzesHref)
@@ -538,7 +539,7 @@ export default function QuizPage({
           role="presentation"
         >
           <div
-            className="w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
+            className="panel-enter w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -614,12 +615,12 @@ export default function QuizPage({
       {/* Save modal (new quizzes only — saved rows already have a title) */}
       {saveModalOpen && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
+          className="backdrop-enter fixed inset-0 z-50 grid place-items-center bg-ink/40 p-4"
           onClick={() => setSaveModalOpen(false)}
           role="presentation"
         >
           <div
-            className="w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
+            className="panel-enter w-full max-w-md rounded-xl border border-rule bg-raised p-6 shadow-lg"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -659,12 +660,12 @@ export default function QuizPage({
 function QuizSkeleton() {
   return (
     <div className={`${TAKE_COLUMN} pt-11 pb-20`}>
-      <div className="mb-5 h-3 w-24 rounded bg-sunk" />
-      <div className="mb-3 h-7 w-11/12 rounded bg-sunk" />
-      <div className="mb-8 h-7 w-2/3 rounded bg-sunk" />
+      <div className="mb-5 h-3 w-24 rounded bg-sunk skeleton-sheen" />
+      <div className="mb-3 h-7 w-11/12 rounded bg-sunk skeleton-sheen" />
+      <div className="mb-8 h-7 w-2/3 rounded bg-sunk skeleton-sheen" />
       <div className="space-y-3">
         {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-[58px] rounded-lg bg-sunk" />
+          <div key={i} className="skeleton-sheen h-[58px] rounded-lg bg-sunk" />
         ))}
       </div>
     </div>

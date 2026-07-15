@@ -65,8 +65,16 @@ function ToastIcon({ type }: { type: ToastType }) {
   const cls = `w-5 h-5 flex-shrink-0 ${iconColors[type]}`;
   if (type === "success")
     return (
+      // Check on its own path so it draws in (toast-check-path); circle static.
       <svg className={cls} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        <path
+          className="toast-check-path"
+          pathLength={1}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M9 12.75L11.25 15 15 9.75"
+        />
       </svg>
     );
   if (type === "error")

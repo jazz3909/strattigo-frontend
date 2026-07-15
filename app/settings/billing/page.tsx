@@ -71,9 +71,9 @@ export default function BillingSettingsPage() {
 
       {loading ? (
         <Card>
-          <div className="mb-3 h-5 w-40 rounded bg-sunk" />
-          <div className="mb-6 h-4 w-64 rounded bg-sunk" />
-          <div className="h-9 w-44 rounded-sm bg-sunk" />
+          <div className="skeleton-sheen mb-3 h-5 w-40 rounded bg-sunk" />
+          <div className="skeleton-sheen mb-6 h-4 w-64 rounded bg-sunk" />
+          <div className="skeleton-sheen h-9 w-44 rounded-sm bg-sunk" />
         </Card>
       ) : isPro ? (
         <Card>

@@ -82,7 +82,7 @@ function CourseCard({ course }: { course: Course }) {
   return (
     <Link
       href={`/dashboard/${course.id}/chat`}
-      className="group flex overflow-hidden rounded-lg border border-rule bg-raised transition-[border-color,transform,box-shadow] duration-150 hover:-translate-y-0.5 hover:border-rule-strong hover:shadow-popover"
+      className="lift-hover group flex overflow-hidden rounded-lg border border-rule bg-raised hover:border-rule-strong"
     >
       <span className="w-[5px] shrink-0" style={{ background: hue.color }} />
       <div className="flex min-w-0 flex-1 flex-col p-[18px] pb-4">
@@ -120,12 +120,12 @@ function CourseCardSkeleton() {
   return (
     <div className="flex overflow-hidden rounded-lg border border-rule bg-raised">
       <span className="w-[5px] shrink-0 bg-sunk" />
-      <div className="flex-1 animate-pulse p-[18px]">
+      <div className="flex-1 p-[18px]">
         <div className="mb-4 flex items-center gap-3">
-          <span className="size-10 rounded-[10px] bg-sunk" />
-          <span className="h-4 w-2/3 rounded bg-sunk" />
+          <span className="skeleton-sheen size-10 rounded-[10px] bg-sunk" />
+          <span className="h-4 w-2/3 rounded bg-sunk skeleton-sheen" />
         </div>
-        <div className="h-3 w-1/3 rounded bg-sunk" />
+        <div className="h-3 w-1/3 rounded bg-sunk skeleton-sheen" />
       </div>
     </div>
   );
@@ -233,7 +233,8 @@ export default function DashboardPage() {
   return (
     <>
       {/* Editorial header */}
-      <div className="mb-9 flex flex-wrap items-end gap-4">
+      {/* Greeting fades up once per load — the only page-level entrance. */}
+      <div className="rise-in mb-9 flex flex-wrap items-end gap-4">
         <div>
           {dateline && (
             <div className="mb-3 font-sans text-eyebrow font-semibold tracking-[0.08em] text-accent-deep uppercase">
@@ -318,7 +319,7 @@ export default function DashboardPage() {
       {/* Add-course modal */}
       {showModal && (
         <div
-          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[rgba(35,33,28,0.32)] p-4"
+          className="backdrop-enter fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[rgba(35,33,28,0.32)] p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="add-course-title"
@@ -326,7 +327,7 @@ export default function DashboardPage() {
             if (e.target === e.currentTarget) setShowModal(false);
           }}
         >
-          <div className="w-full max-w-[480px] overflow-hidden rounded-xl border border-rule bg-sheet shadow-lg">
+          <div className="panel-enter w-full max-w-[480px] overflow-hidden rounded-xl border border-rule bg-sheet shadow-lg">
             <form onSubmit={handleCreate}>
               <div className="px-7 pt-6">
                 <div className="mb-2.5 font-sans text-eyebrow font-semibold tracking-[0.08em] text-accent-deep uppercase">
