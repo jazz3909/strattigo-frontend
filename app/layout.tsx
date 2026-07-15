@@ -28,6 +28,11 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500"],
+  // Mono is only used for code spans (error page, inline code) — never in the
+  // above-the-fold text of the pages Lighthouse measures. Skip preloading it so
+  // it doesn't compete for bandwidth on first paint; it still loads on demand
+  // via font-display swap wherever code actually renders.
+  preload: false,
 });
 
 // viewport-fit=cover lets the mobile shell pad into the notch / home-indicator

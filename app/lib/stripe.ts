@@ -1,4 +1,3 @@
-import { loadStripe } from "@stripe/stripe-js";
 import { apiGet, apiPost } from "./api";
 
 // The only live Stripe price ($7.99/month, verified active 2026-07-12).
@@ -9,16 +8,12 @@ import { apiGet, apiPost } from "./api";
 // anything else).
 export const MONTHLY_PRICE_ID = "price_1TsD19Gm99mbwFrzu0uWwOLK";
 
-let stripePromise: ReturnType<typeof loadStripe> | null = null;
-
-function getStripe() {
-  if (!stripePromise) {
-    const key = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
-    if (!key) throw new Error("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is not set");
-    stripePromise = loadStripe(key);
-  }
-  return stripePromise;
-}
+// Checkout and the billing portal both run through server-generated hosted
+// URLs (see checkoutSession / openBillingPortal), so the browser never needs
+// Stripe.js. The @stripe/stripe-js SDK was dropped from the client bundle to
+// keep it off every page that only reads subscription status (dashboard,
+// login, signup). Reintroduce loadStripe here only if a surface adopts Stripe
+// Elements / on-page card collection.
 
 interface CheckoutSessionResponse {
   url: string;
@@ -75,5 +70,3 @@ export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
     cache: "no-store",
   });
 }
-
-export { getStripe };
