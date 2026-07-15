@@ -257,63 +257,60 @@ export default function ChatPage({
                   }
                 />
               ) : (
-                /* Left-anchored reading column: pl-14 gutter shared with the
-                   other cream surfaces, 850px of content, whitespace falling
-                   to the right. */
-                <div className="pl-14 pr-8 py-[30px]">
-                  <div className="max-w-[850px]">
-                    {messages.map((msg, i) => {
-                      const isLastAssistant =
-                        chatStreaming &&
-                        i === messages.length - 1 &&
-                        msg.role === "assistant";
-                      return msg.role === "user" ? (
-                        <div key={i} className="mb-[30px] flex justify-end">
-                          <div className="max-w-[78%] rounded-[14px] rounded-br-[4px] bg-accent-tint px-4 py-3 font-sans text-[14.5px] leading-normal text-accent-deep">
-                            <AppMarkdown content={msg.content} />
-                          </div>
-                        </div>
-                      ) : (
-                        <div key={i} className="mb-[30px]">
-                          <TutorHead />
-                          {/* The tutor speaks in the reading voice — serif, considered. */}
-                          <div className="font-read text-[17px] leading-[1.66] text-ink">
-                            <AppMarkdown content={msg.content} />
-                            {isLastAssistant && (
-                              <span className="streaming-cursor" />
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })}
-
-                    {/* Thinking indicator — only while waiting for the first chunk */}
-                    {chatLoading && (
-                      <div className="mb-[30px]">
-                        <TutorHead />
-                        <div className="flex items-center gap-1.5 py-1">
-                          {[0, 160, 320].map((delay) => (
-                            <span
-                              key={delay}
-                              className="size-2 rounded-full bg-ink-faint"
-                              style={{
-                                animation: `bounceDot 1.2s ease-in-out ${delay}ms infinite`,
-                              }}
-                            />
-                          ))}
+                /* Thread runs the full content width — equal 56px gutters,
+                   no cap. Deliberately wider than the centered composer. */
+                <div className="px-14 py-[30px]">
+                  {messages.map((msg, i) => {
+                    const isLastAssistant =
+                      chatStreaming &&
+                      i === messages.length - 1 &&
+                      msg.role === "assistant";
+                    return msg.role === "user" ? (
+                      <div key={i} className="mb-[30px] flex justify-end">
+                        <div className="max-w-[78%] rounded-[14px] rounded-br-[4px] bg-accent-tint px-4 py-3 font-sans text-[14.5px] leading-normal text-accent-deep">
+                          <AppMarkdown content={msg.content} />
                         </div>
                       </div>
-                    )}
-                  </div>
+                    ) : (
+                      <div key={i} className="mb-[30px]">
+                        <TutorHead />
+                        {/* The tutor speaks in the reading voice — serif, considered. */}
+                        <div className="font-read text-[17px] leading-[1.66] text-ink">
+                          <AppMarkdown content={msg.content} />
+                          {isLastAssistant && (
+                            <span className="streaming-cursor" />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Thinking indicator — only while waiting for the first chunk */}
+                  {chatLoading && (
+                    <div className="mb-[30px]">
+                      <TutorHead />
+                      <div className="flex items-center gap-1.5 py-1">
+                        {[0, 160, 320].map((delay) => (
+                          <span
+                            key={delay}
+                            className="size-2 rounded-full bg-ink-faint"
+                            style={{
+                              animation: `bounceDot 1.2s ease-in-out ${delay}ms infinite`,
+                            }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>
 
             {/* Pinned composer */}
-            <div className="shrink-0 border-t border-rule pt-4 pb-5 pl-14 pr-8">
-              {/* Same column + left edge as the thread, so the input sits
-                  under the conversation rather than spanning the screen. */}
-              <div className="max-w-[850px]">
+            <div className="shrink-0 border-t border-rule px-8 pt-4 pb-5">
+              {/* Centered, medium-width input — intentionally narrower than
+                  the full-width thread above it. */}
+              <div className="mx-auto w-full max-w-[760px]">
                 <div className="flex items-end gap-2.5 rounded-lg border border-rule-strong bg-raised py-2.5 pr-2.5 pl-4 transition-[border-color,box-shadow] focus-within:border-accent focus-within:shadow-[0_0_0_3px_var(--color-accent-tint)]">
                   <textarea
                     ref={inputRef}
@@ -438,21 +435,19 @@ function EmptyState({
 
 function ChatSkeleton() {
   return (
-    <div className="flex-1 pl-14 pr-8 py-[30px]">
-      <div className="max-w-[850px]">
-        <div className="mb-8 flex justify-end">
-          <div className="h-11 w-1/2 rounded-[14px] bg-sunk" />
-        </div>
-        <div className="mb-2.5 h-[26px] w-24 rounded bg-sunk" />
-        <div className="space-y-3">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div
-              key={i}
-              className="h-4 rounded bg-sunk"
-              style={{ width: `${92 - (i % 3) * 14}%` }}
-            />
-          ))}
-        </div>
+    <div className="flex-1 px-14 py-[30px]">
+      <div className="mb-8 flex justify-end">
+        <div className="h-11 w-1/3 rounded-[14px] bg-sunk" />
+      </div>
+      <div className="mb-2.5 h-[26px] w-24 rounded bg-sunk" />
+      <div className="space-y-3">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div
+            key={i}
+            className="h-4 rounded bg-sunk"
+            style={{ width: `${92 - (i % 3) * 14}%` }}
+          />
+        ))}
       </div>
     </div>
   );
