@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strattigo — Study Guide Reading View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Shared cream-and-ink foundation (constant across all three variants) */
+    --page:      #F4F1E9;   /* warm bone page */
+    --sheet:     #FBFAF6;   /* the document sheet — a touch lighter than page */
+    --ink:       #23211C;   /* near-black warm ink for body */
+    --ink-soft:  #4A4740;   /* secondary text */
+    --ink-faint: #86827A;   /* metadata, captions */
+    --rule:      #E3DED2;   /* hairline separation, warm */
+    --rule-soft: #EDE9DF;
+    --sans: "Outfit", system-ui, sans-serif;
+    --display: "Fraunces", Georgia, serif;
+    --read: "Newsreader", Georgia, serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font-family: var(--sans);
+  }
+
+  /* ---- variant harness ---- */
+  .variant-label {
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 48px 40px 0;
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+  }
+  .variant-label .tag {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .variant-label .name {
+    font-family: var(--display);
+    font-size: 20px;
+    font-weight: 500;
+  }
+  .variant-label .swatch {
+    width: 13px; height: 13px; border-radius: 50%;
+    align-self: center;
+  }
+  .variant-divider {
+    max-width: 1100px;
+    margin: 0 auto;
+    border: 0;
+    border-top: 1px dashed var(--rule);
+    margin-top: 64px;
+  }
+
+  /* =========================================================
+     THE WORKSPACE FRAME (what makes it feel like a real page,
+     not a naked mock). Left rail + top bar + document.
+     ========================================================= */
+  .frame {
+    max-width: 1100px;
+    margin: 20px auto 0;
+    background: var(--sheet);
+    border-radius: 16px;
+    border: 1px solid var(--rule);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 66px 1fr;
+    min-height: 760px;
+  }
+
+  /* left icon rail */
+  .rail {
+    background: var(--page);
+    border-right: 1px solid var(--rule);
+    padding: 16px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+  }
+  .rail .logo {
+    width: 34px; height: 34px; border-radius: 9px;
+    display: grid; place-items: center;
+    font-family: var(--display); font-weight: 600; font-size: 18px;
+    color: var(--sheet);
+    margin-bottom: 14px;
+  }
+  .rail button {
+    width: 42px; height: 42px; border: 0; background: transparent;
+    border-radius: 10px; color: var(--ink-faint);
+    display: grid; place-items: center; cursor: pointer;
+    font-size: 19px; position: relative; transition: background .15s, color .15s;
+  }
+  .rail button:hover { background: var(--rule-soft); color: var(--ink-soft); }
+  .rail button.active { color: var(--ink); }
+  .rail .spacer { flex: 1; }
+
+  /* content column */
+  .content { display: flex; flex-direction: column; min-width: 0; }
+
+  /* top bar */
+  .topbar {
+    height: 62px;
+    border-bottom: 1px solid var(--rule);
+    display: flex; align-items: center;
+    padding: 0 26px; gap: 16px;
+    flex-shrink: 0;
+  }
+  .course-id { display: flex; align-items: center; gap: 11px; min-width: 0; }
+  .course-avatar {
+    width: 30px; height: 30px; border-radius: 8px;
+    display: grid; place-items: center;
+    font-family: var(--display); font-weight: 600; font-size: 15px;
+    color: var(--sheet); flex-shrink: 0;
+  }
+  .course-name {
+    font-family: var(--display); font-weight: 500; font-size: 17px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .course-meta { font-size: 13px; color: var(--ink-faint); display: flex; align-items: center; gap: 6px; }
+  .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .topbar .spacer { flex: 1; }
+  .scope-picker {
+    display: flex; align-items: center; gap: 8px;
+    font-size: 13px; color: var(--ink-soft);
+    padding: 7px 13px; border: 1px solid var(--rule);
+    border-radius: 9px; background: var(--sheet); cursor: pointer;
+  }
+  .scope-picker .scope-val { font-weight: 500; color: var(--ink); }
+  .btn-upload {
+    display: flex; align-items: center; gap: 7px;
+    font-family: var(--sans); font-size: 13px; font-weight: 500;
+    padding: 8px 15px; border-radius: 9px; border: 0;
+    color: var(--sheet); cursor: pointer;
+  }
+
+  /* the scroll region */
+  .scroll {
+    flex: 1; overflow: hidden;
+    display: flex; flex-direction: column;
+    align-items: center;
+    padding: 0;
+  }
+
+  /* ---------- the guide list header (breadcrumb + actions) ---------- */
+  .doc-topstrip {
+    width: 100%;
+    display: flex; align-items: center;
+    padding: 16px 40px;
+    gap: 12px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .breadcrumb { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-faint); }
+  .breadcrumb a { color: var(--ink-faint); text-decoration: none; }
+  .breadcrumb .here { color: var(--ink-soft); font-weight: 500; }
+  .doc-topstrip .spacer { flex: 1; }
+  .doc-action {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 13px; color: var(--ink-soft);
+    padding: 6px 11px; border-radius: 8px; border: 1px solid var(--rule);
+    background: transparent; cursor: pointer; font-family: var(--sans);
+  }
+  .doc-action:hover { background: var(--rule-soft); }
+
+  /* =========================================================
+     THE DOCUMENT — the actual reading experience.
+     This is the whole point: a well-set page.
+     ========================================================= */
+  .document {
+    width: 100%;
+    max-width: 660px;      /* comfortable measure ~68 chars */
+    padding: 56px 20px 120px;
+  }
+
+  .doc-eyebrow {
+    font-family: var(--sans);
+    font-size: 12.5px; font-weight: 600;
+    letter-spacing: 0.09em; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .doc-title {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 40px;
+    line-height: 1.12;
+    letter-spacing: -0.012em;
+    margin: 0 0 20px;
+    color: var(--ink);
+  }
+  .doc-sub {
+    font-family: var(--read);
+    font-size: 18px;
+    line-height: 1.55;
+    color: var(--ink-soft);
+    margin: 0 0 24px;
+  }
+  .doc-byline {
+    display: flex; align-items: center; gap: 14px;
+    font-family: var(--sans);
+    font-size: 13px; color: var(--ink-faint);
+    padding-bottom: 30px;
+    margin-bottom: 44px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .doc-byline .sep { width: 3px; height: 3px; border-radius: 50%; background: var(--ink-faint); }
+
+  /* body reading typography — the crown jewel */
+  .document h2 {
+    font-family: var(--display);
+    font-weight: 600;
+    font-size: 25px;
+    line-height: 1.2;
+    letter-spacing: -0.008em;
+    margin: 52px 0 4px;
+    color: var(--ink);
+  }
+  .document h2 + .h2-kicker {
+    font-family: var(--sans);
+    font-size: 13px; color: var(--ink-faint);
+    margin: 0 0 22px;
+  }
+  .document h3 {
+    font-family: var(--display);
+    font-weight: 500;
+    font-size: 19px;
+    margin: 36px 0 12px;
+    color: var(--ink);
+  }
+  .document p {
+    font-family: var(--read);
+    font-size: 18.5px;
+    line-height: 1.72;
+    color: #2E2B25;
+    margin: 0 0 22px;
+    letter-spacing: 0.003em;
+  }
+  .document p .term { font-weight: 500; color: var(--ink); font-style: normal; }
+  .document ul, .document ol {
+    font-family: var(--read);
+    font-size: 18.5px;
+    line-height: 1.66;
+    color: #2E2B25;
+    margin: 0 0 24px;
+    padding-left: 26px;
+  }
+  .document li { margin-bottom: 11px; padding-left: 4px; }
+
+  /* callout — a definition / key concept box, done with tint not border */
+  .callout {
+    border-radius: 12px;
+    padding: 20px 24px;
+    margin: 34px 0;
+    font-family: var(--read);
+    font-size: 17.5px;
+    line-height: 1.6;
+  }
+  .callout .callout-label {
+    font-family: var(--sans);
+    font-size: 11.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    display: block; margin-bottom: 8px;
+  }
+  .callout p { font-family: var(--read); font-size: 17.5px; margin: 0; color: inherit; line-height: 1.6; }
+
+  /* a worked formula block */
+  .formula {
+    background: var(--page);
+    border-radius: 12px;
+    padding: 22px 26px;
+    margin: 30px 0;
+    text-align: center;
+    font-family: var(--read);
+    font-size: 21px;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+  }
+  .formula .fn { font-style: italic; }
+
+  /* progress affordance at very bottom of a section */
+  .keypoints {
+    margin: 40px 0;
+    border-radius: 12px;
+    padding: 22px 26px;
+  }
+  .keypoints .kp-label {
+    font-family: var(--sans); font-size: 11.5px; font-weight: 600;
+    letter-spacing: 0.08em; text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  .keypoints ul { margin: 0; padding-left: 20px; font-size: 17px; }
+  .keypoints li { margin-bottom: 8px; }
+
+  /* reading progress rail on the right of the document */
+  .reading-meta {
+    display: flex; align-items: center; gap: 8px;
+    font-family: var(--sans); font-size: 13px; color: var(--ink-faint);
+  }
+
+  /* ============ VARIANT THEMING — only the accent changes ============ */
+
+  /* Variant A — Sage (dusty green from Duna's hills) */
+  .v-sage {
+    --accent:      #6E7F5E;
+    --accent-deep: #48543C;
+    --accent-tint: #E9EDE1;
+    --accent-tint2:#DFE5D3;
+  }
+  /* Variant B — Dusk Blue (the muted slate-blue of Duna's distant peaks) */
+  .v-dusk {
+    --accent:      #5E7185;
+    --accent-deep: #3B4a5a;
+    --accent-tint: #E5EAF0;
+    --accent-tint2:#D9E1EA;
+  }
+  /* Variant C — Ochre (warm gold, steered away from cliché terracotta) */
+  .v-ochre {
+    --accent:      #B08637;
+    --accent-deep: #7C5C1E;
+    --accent-tint: #F3EAD5;
+    --accent-tint2:#ECDFC2;
+  }
+
+  /* apply the accent var wherever color lives */
+  .frame .logo,
+  .frame .course-avatar,
+  .frame .btn-upload { background: var(--accent); }
+  .frame .rail button.active::before {
+    content: ""; position: absolute; left: -0px; top: 9px; bottom: 9px;
+    width: 3px; border-radius: 0 3px 3px 0; background: var(--accent);
+  }
+  .frame .dot { background: var(--accent); }
+  .frame .doc-eyebrow { color: var(--accent-deep); }
+  .frame .scope-picker .scope-val { color: var(--accent-deep); }
+  .frame .document p .term { color: var(--accent-deep); }
+  .frame .document a { color: var(--accent-deep); text-decoration: underline; text-underline-offset: 2px; text-decoration-thickness: 1px; }
+  .frame .callout {
+    background: var(--accent-tint);
+    color: var(--accent-deep);
+  }
+  .frame .callout .callout-label { color: var(--accent-deep); }
+  .frame .keypoints { background: var(--accent-tint); }
+  .frame .keypoints .kp-label { color: var(--accent-deep); }
+  .frame .keypoints li { color: var(--accent-deep); }
+  .frame .document h2::after {
+    content: ""; display: block; width: 34px; height: 3px;
+    background: var(--accent); border-radius: 2px; margin-top: 14px;
+  }
+  .frame .reading-progress-fill { background: var(--accent); }
+
+  /* reading progress bar under top bar */
+  .progressbar { height: 2px; width: 100%; background: var(--rule-soft); flex-shrink: 0; }
+  .reading-progress-fill { height: 100%; width: 34%; }
+
+  ul.clean { list-style: none; padding-left: 0; }
+  ul.clean li { position: relative; padding-left: 26px; }
+  .frame ul.clean li::before {
+    content: ""; position: absolute; left: 4px; top: 12px;
+    width: 6px; height: 6px; border-radius: 50%; background: var(--accent);
+  }
+
+  .footnote {
+    max-width: 660px; margin: 40px auto 0; padding: 0 20px 60px;
+    font-family: var(--sans); font-size: 12.5px; color: var(--ink-faint);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ============================ VARIANT A: SAGE ============================ -->
+<div class="variant-label">
+  <span class="tag">Variant A</span>
+  <span class="swatch" style="background:#6E7F5E"></span>
+  <span class="name">Sage</span>
+</div>
+
+<div class="frame v-sage">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button title="Courses"><span>&#8592;</span></button>
+    <button title="Chat">&#9679;</button>
+    <button class="active" title="Study Guides">&#9632;</button>
+    <button title="Quizzes">&#9633;</button>
+    <button title="Materials">&#9635;</button>
+    <div class="spacer"></div>
+    <button title="Settings">&#9881;</button>
+  </nav>
+
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id">
+        <div class="course-avatar">B</div>
+        <div>
+          <div class="course-name">Biochemistry 301</div>
+          <div class="course-meta"><span class="dot"></span> 24 materials</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="scope-picker">
+        <span>Generate from:</span>
+        <span class="scope-val">Unit 3 — Metabolism</span>
+        <span>&#9662;</span>
+      </div>
+      <button class="btn-upload"><span>&#43;</span> Upload</button>
+    </div>
+
+    <div class="progressbar"><div class="reading-progress-fill"></div></div>
+
+    <div class="scroll">
+      <div class="doc-topstrip">
+        <div class="breadcrumb">
+          <a href="#">Study guides</a> <span>/</span>
+          <span class="here">Glycolysis &amp; the pathway to pyruvate</span>
+        </div>
+        <div class="spacer"></div>
+        <div class="reading-meta"><span>12 min read</span></div>
+        <button class="doc-action"><span>&#9634;</span> Bullet view</button>
+        <button class="doc-action"><span>&#8595;</span> Export</button>
+      </div>
+
+      <article class="document">
+        <div class="doc-eyebrow">Study guide · Unit 3</div>
+        <h1 class="doc-title">Glycolysis and the pathway to pyruvate</h1>
+        <p class="doc-sub">How the cell breaks a single glucose molecule into two molecules of pyruvate — and banks a small, fast profit of ATP along the way.</p>
+        <div class="doc-byline">
+          <span>Generated from 6 materials</span>
+          <span class="sep"></span>
+          <span>Detailed style</span>
+          <span class="sep"></span>
+          <span>Updated today</span>
+        </div>
+
+        <p>Glycolysis is the oldest and most universal way that living cells extract energy from sugar. It happens in the <span class="term">cytoplasm</span>, needs no oxygen, and runs in nearly every organism on Earth — which is a strong hint that it evolved very early. Before you memorize the ten steps, it helps to hold the shape of the whole thing in your head: one six-carbon sugar goes in, two three-carbon molecules come out, and the cell nets a little usable energy in the process.</p>
+
+        <div class="callout">
+          <span class="callout-label">Key idea</span>
+          <p>Glycolysis is an <em>investment</em>. The cell spends 2 ATP up front to destabilize glucose, then earns 4 ATP back — for a net gain of 2 ATP and 2 NADH per glucose.</p>
+        </div>
+
+        <h2>The two halves of the pathway</h2>
+        <p class="h2-kicker">Preparatory phase, then payoff phase</p>
+        <p>The ten reactions divide cleanly into two phases. The first is the <span class="term">preparatory phase</span>, where the cell actually spends energy. It uses 2 ATP to add phosphate groups to glucose, making the molecule less stable and easier to split. This is the "you have to spend money to make money" half.</p>
+        <p>The second is the <span class="term">payoff phase</span>, where the destabilized fragments are oxidized and the cell collects its return: 4 ATP and 2 NADH. Because two three-carbon molecules travel through this phase, everything in it happens twice per glucose.</p>
+
+        <div class="formula">
+          Glucose + 2 NAD<sup>+</sup> + 2 ADP + 2 P<sub><span class="fn">i</span></sub>
+          &nbsp;&#8594;&nbsp;
+          2 Pyruvate + 2 NADH + 2 ATP
+        </div>
+
+        <h3>Why the cell bothers with NADH</h3>
+        <p>The 2 ATP are the obvious prize, but the 2 NADH matter just as much. Each NADH is a loaded electron carrier — under aerobic conditions it will later be cashed in at the electron transport chain for far more ATP. Glycolysis, in other words, is only the opening move.</p>
+
+        <div class="keypoints">
+          <div class="kp-label">Remember for the exam</div>
+          <ul class="clean">
+            <li>Net yield per glucose: <strong>2 ATP, 2 NADH, 2 pyruvate</strong></li>
+            <li>Location: cytoplasm — no membrane, no oxygen required</li>
+            <li>Regulation happens mainly at <strong>phosphofructokinase</strong> (step 3)</li>
+            <li>The payoff phase runs twice, because glucose is split in two</li>
+          </ul>
+        </div>
+
+        <h2>Where it's regulated</h2>
+        <p class="h2-kicker">The committed step</p>
+        <p>If you only remember one control point, make it <span class="term">phosphofructokinase-1</span>. This enzyme catalyzes the first truly committed step of glycolysis, and it responds to the cell's energy charge: when ATP is abundant, it slows down; when the cell is energy-hungry and AMP is high, it speeds up. This is a textbook example of <a href="#">feedback inhibition</a> and a favorite exam target.</p>
+      </article>
+    </div>
+  </div>
+</div>
+
+<hr class="variant-divider">
+
+<!-- ============================ VARIANT B: DUSK BLUE ============================ -->
+<div class="variant-label">
+  <span class="tag">Variant B</span>
+  <span class="swatch" style="background:#5E7185"></span>
+  <span class="name">Dusk Blue</span>
+</div>
+
+<div class="frame v-dusk">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button title="Courses"><span>&#8592;</span></button>
+    <button title="Chat">&#9679;</button>
+    <button class="active" title="Study Guides">&#9632;</button>
+    <button title="Quizzes">&#9633;</button>
+    <button title="Materials">&#9635;</button>
+    <div class="spacer"></div>
+    <button title="Settings">&#9881;</button>
+  </nav>
+
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id">
+        <div class="course-avatar">B</div>
+        <div>
+          <div class="course-name">Biochemistry 301</div>
+          <div class="course-meta"><span class="dot"></span> 24 materials</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="scope-picker">
+        <span>Generate from:</span>
+        <span class="scope-val">Unit 3 — Metabolism</span>
+        <span>&#9662;</span>
+      </div>
+      <button class="btn-upload"><span>&#43;</span> Upload</button>
+    </div>
+
+    <div class="progressbar"><div class="reading-progress-fill"></div></div>
+
+    <div class="scroll">
+      <div class="doc-topstrip">
+        <div class="breadcrumb">
+          <a href="#">Study guides</a> <span>/</span>
+          <span class="here">Glycolysis &amp; the pathway to pyruvate</span>
+        </div>
+        <div class="spacer"></div>
+        <div class="reading-meta"><span>12 min read</span></div>
+        <button class="doc-action"><span>&#9634;</span> Bullet view</button>
+        <button class="doc-action"><span>&#8595;</span> Export</button>
+      </div>
+
+      <article class="document">
+        <div class="doc-eyebrow">Study guide · Unit 3</div>
+        <h1 class="doc-title">Glycolysis and the pathway to pyruvate</h1>
+        <p class="doc-sub">How the cell breaks a single glucose molecule into two molecules of pyruvate — and banks a small, fast profit of ATP along the way.</p>
+        <div class="doc-byline">
+          <span>Generated from 6 materials</span>
+          <span class="sep"></span>
+          <span>Detailed style</span>
+          <span class="sep"></span>
+          <span>Updated today</span>
+        </div>
+
+        <p>Glycolysis is the oldest and most universal way that living cells extract energy from sugar. It happens in the <span class="term">cytoplasm</span>, needs no oxygen, and runs in nearly every organism on Earth — which is a strong hint that it evolved very early. Before you memorize the ten steps, it helps to hold the shape of the whole thing in your head: one six-carbon sugar goes in, two three-carbon molecules come out, and the cell nets a little usable energy in the process.</p>
+
+        <div class="callout">
+          <span class="callout-label">Key idea</span>
+          <p>Glycolysis is an <em>investment</em>. The cell spends 2 ATP up front to destabilize glucose, then earns 4 ATP back — for a net gain of 2 ATP and 2 NADH per glucose.</p>
+        </div>
+
+        <h2>The two halves of the pathway</h2>
+        <p class="h2-kicker">Preparatory phase, then payoff phase</p>
+        <p>The ten reactions divide cleanly into two phases. The first is the <span class="term">preparatory phase</span>, where the cell actually spends energy. It uses 2 ATP to add phosphate groups to glucose, making the molecule less stable and easier to split. This is the "you have to spend money to make money" half.</p>
+        <p>The second is the <span class="term">payoff phase</span>, where the destabilized fragments are oxidized and the cell collects its return: 4 ATP and 2 NADH. Because two three-carbon molecules travel through this phase, everything in it happens twice per glucose.</p>
+
+        <div class="formula">
+          Glucose + 2 NAD<sup>+</sup> + 2 ADP + 2 P<sub><span class="fn">i</span></sub>
+          &nbsp;&#8594;&nbsp;
+          2 Pyruvate + 2 NADH + 2 ATP
+        </div>
+
+        <h3>Why the cell bothers with NADH</h3>
+        <p>The 2 ATP are the obvious prize, but the 2 NADH matter just as much. Each NADH is a loaded electron carrier — under aerobic conditions it will later be cashed in at the electron transport chain for far more ATP. Glycolysis, in other words, is only the opening move.</p>
+
+        <div class="keypoints">
+          <div class="kp-label">Remember for the exam</div>
+          <ul class="clean">
+            <li>Net yield per glucose: <strong>2 ATP, 2 NADH, 2 pyruvate</strong></li>
+            <li>Location: cytoplasm — no membrane, no oxygen required</li>
+            <li>Regulation happens mainly at <strong>phosphofructokinase</strong> (step 3)</li>
+            <li>The payoff phase runs twice, because glucose is split in two</li>
+          </ul>
+        </div>
+
+        <h2>Where it's regulated</h2>
+        <p class="h2-kicker">The committed step</p>
+        <p>If you only remember one control point, make it <span class="term">phosphofructokinase-1</span>. This enzyme catalyzes the first truly committed step of glycolysis, and it responds to the cell's energy charge: when ATP is abundant, it slows down; when the cell is energy-hungry and AMP is high, it speeds up. This is a textbook example of <a href="#">feedback inhibition</a> and a favorite exam target.</p>
+      </article>
+    </div>
+  </div>
+</div>
+
+<hr class="variant-divider">
+
+<!-- ============================ VARIANT C: OCHRE ============================ -->
+<div class="variant-label">
+  <span class="tag">Variant C</span>
+  <span class="swatch" style="background:#B08637"></span>
+  <span class="name">Ochre</span>
+</div>
+
+<div class="frame v-ochre">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button title="Courses"><span>&#8592;</span></button>
+    <button title="Chat">&#9679;</button>
+    <button class="active" title="Study Guides">&#9632;</button>
+    <button title="Quizzes">&#9633;</button>
+    <button title="Materials">&#9635;</button>
+    <div class="spacer"></div>
+    <button title="Settings">&#9881;</button>
+  </nav>
+
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id">
+        <div class="course-avatar">B</div>
+        <div>
+          <div class="course-name">Biochemistry 301</div>
+          <div class="course-meta"><span class="dot"></span> 24 materials</div>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <div class="scope-picker">
+        <span>Generate from:</span>
+        <span class="scope-val">Unit 3 — Metabolism</span>
+        <span>&#9662;</span>
+      </div>
+      <button class="btn-upload"><span>&#43;</span> Upload</button>
+    </div>
+
+    <div class="progressbar"><div class="reading-progress-fill"></div></div>
+
+    <div class="scroll">
+      <div class="doc-topstrip">
+        <div class="breadcrumb">
+          <a href="#">Study guides</a> <span>/</span>
+          <span class="here">Glycolysis &amp; the pathway to pyruvate</span>
+        </div>
+        <div class="spacer"></div>
+        <div class="reading-meta"><span>12 min read</span></div>
+        <button class="doc-action"><span>&#9634;</span> Bullet view</button>
+        <button class="doc-action"><span>&#8595;</span> Export</button>
+      </div>
+
+      <article class="document">
+        <div class="doc-eyebrow">Study guide · Unit 3</div>
+        <h1 class="doc-title">Glycolysis and the pathway to pyruvate</h1>
+        <p class="doc-sub">How the cell breaks a single glucose molecule into two molecules of pyruvate — and banks a small, fast profit of ATP along the way.</p>
+        <div class="doc-byline">
+          <span>Generated from 6 materials</span>
+          <span class="sep"></span>
+          <span>Detailed style</span>
+          <span class="sep"></span>
+          <span>Updated today</span>
+        </div>
+
+        <p>Glycolysis is the oldest and most universal way that living cells extract energy from sugar. It happens in the <span class="term">cytoplasm</span>, needs no oxygen, and runs in nearly every organism on Earth — which is a strong hint that it evolved very early. Before you memorize the ten steps, it helps to hold the shape of the whole thing in your head: one six-carbon sugar goes in, two three-carbon molecules come out, and the cell nets a little usable energy in the process.</p>
+
+        <div class="callout">
+          <span class="callout-label">Key idea</span>
+          <p>Glycolysis is an <em>investment</em>. The cell spends 2 ATP up front to destabilize glucose, then earns 4 ATP back — for a net gain of 2 ATP and 2 NADH per glucose.</p>
+        </div>
+
+        <h2>The two halves of the pathway</h2>
+        <p class="h2-kicker">Preparatory phase, then payoff phase</p>
+        <p>The ten reactions divide cleanly into two phases. The first is the <span class="term">preparatory phase</span>, where the cell actually spends energy. It uses 2 ATP to add phosphate groups to glucose, making the molecule less stable and easier to split. This is the "you have to spend money to make money" half.</p>
+        <p>The second is the <span class="term">payoff phase</span>, where the destabilized fragments are oxidized and the cell collects its return: 4 ATP and 2 NADH. Because two three-carbon molecules travel through this phase, everything in it happens twice per glucose.</p>
+
+        <div class="formula">
+          Glucose + 2 NAD<sup>+</sup> + 2 ADP + 2 P<sub><span class="fn">i</span></sub>
+          &nbsp;&#8594;&nbsp;
+          2 Pyruvate + 2 NADH + 2 ATP
+        </div>
+
+        <h3>Why the cell bothers with NADH</h3>
+        <p>The 2 ATP are the obvious prize, but the 2 NADH matter just as much. Each NADH is a loaded electron carrier — under aerobic conditions it will later be cashed in at the electron transport chain for far more ATP. Glycolysis, in other words, is only the opening move.</p>
+
+        <div class="keypoints">
+          <div class="kp-label">Remember for the exam</div>
+          <ul class="clean">
+            <li>Net yield per glucose: <strong>2 ATP, 2 NADH, 2 pyruvate</strong></li>
+            <li>Location: cytoplasm — no membrane, no oxygen required</li>
+            <li>Regulation happens mainly at <strong>phosphofructokinase</strong> (step 3)</li>
+            <li>The payoff phase runs twice, because glucose is split in two</li>
+          </ul>
+        </div>
+
+        <h2>Where it's regulated</h2>
+        <p class="h2-kicker">The committed step</p>
+        <p>If you only remember one control point, make it <span class="term">phosphofructokinase-1</span>. This enzyme catalyzes the first truly committed step of glycolysis, and it responds to the cell's energy charge: when ATP is abundant, it slows down; when the cell is energy-hungry and AMP is high, it speeds up. This is a textbook example of <a href="#">feedback inhibition</a> and a favorite exam target.</p>
+      </article>
+    </div>
+  </div>
+</div>
+
+<p class="footnote">Same document, same cream-and-ink foundation. Only the functional accent changes — nav active state, terms, callouts, links, buttons, section rules.</p>
+
+</body>
+</html>

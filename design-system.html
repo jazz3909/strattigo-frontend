@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strattigo — Design System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* ============ FOUNDATION TOKENS ============ */
+    /* Surfaces (warm cream lineage) */
+    --page:      #F4F1E9;
+    --sheet:     #FBFAF6;
+    --raised:    #FFFFFF;
+    --sunk:      #EFEBE1;
+
+    /* Ink */
+    --ink:       #23211C;
+    --ink-soft:  #4A4740;
+    --ink-faint: #86827A;
+
+    /* Rules / separation */
+    --rule:        #E3DED2;
+    --rule-soft:   #EDE9DF;
+    --rule-strong: #D6D0C2;
+
+    /* Accent — Dusk Blue */
+    --accent:      #5E7185;
+    --accent-hover:#4E6072;
+    --accent-deep: #3B4A5A;
+    --accent-tint: #E5EAF0;
+    --accent-tint2:#D9E1EA;
+
+    /* Semantic (states only) */
+    --ok:      #4E7A57;  --ok-tint:   #E6EEE4;
+    --warn:    #9A7B2A;  --warn-tint: #F3EAD5;
+    --bad:     #A6503F;  --bad-tint:  #F2E1DA;
+
+    /* Radii */
+    --r-sm: 8px;
+    --r-md: 10px;
+    --r-lg: 12px;
+    --r-xl: 16px;
+
+    /* Type families */
+    --display: "Fraunces", Georgia, serif;
+    --read:    "Newsreader", Georgia, serif;
+    --sans:    "Outfit", system-ui, sans-serif;
+
+    /* ---- DENSITY: DOCUMENT (spacious) ---- */
+    --doc-body:   18.5px;
+    --doc-lh:     1.72;
+    --doc-space:  22px;
+    --doc-measure:660px;
+
+    /* ---- DENSITY: APP (compact working surfaces) ---- */
+    --app-body:   14px;
+    --app-lh:     1.5;
+    --app-space:  12px;
+    --app-pad:    14px;
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+  body {
+    margin: 0; background: var(--page); color: var(--ink);
+    font-family: var(--sans); font-size: 15px; line-height: 1.5;
+  }
+
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 40px 120px; }
+
+  /* doc header */
+  .ds-head { padding: 64px 0 40px; border-bottom: 1px solid var(--rule); margin-bottom: 8px; }
+  .ds-head .kicker { font-size: 12.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--accent-deep); margin-bottom: 16px; }
+  .ds-head h1 { font-family: var(--display); font-weight: 600; font-size: 46px; line-height: 1.08; letter-spacing: -.015em; margin: 0 0 18px; }
+  .ds-head p { font-family: var(--read); font-size: 19px; line-height: 1.55; color: var(--ink-soft); max-width: 620px; margin: 0; }
+
+  /* section scaffolding */
+  section { padding: 56px 0; border-bottom: 1px solid var(--rule-soft); }
+  .sec-num { font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: .08em; color: var(--ink-faint); }
+  h2.sec { font-family: var(--display); font-weight: 600; font-size: 30px; letter-spacing: -.01em; margin: 8px 0 8px; }
+  .sec-lead { font-family: var(--read); font-size: 17px; color: var(--ink-soft); max-width: 620px; margin: 0 0 36px; line-height: 1.5; }
+  h3.sub { font-family: var(--sans); font-weight: 600; font-size: 14px; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-faint); margin: 40px 0 18px; }
+
+  /* ============ TOKEN SWATCHES ============ */
+  .swatch-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; }
+  .swatch { border-radius: var(--r-md); overflow: hidden; border: 1px solid var(--rule); background: var(--sheet); }
+  .swatch .chip { height: 66px; }
+  .swatch .meta { padding: 10px 12px; }
+  .swatch .nm { font-size: 13px; font-weight: 600; }
+  .swatch .hex { font-family: var(--sans); font-size: 12px; color: var(--ink-faint); margin-top: 2px; }
+  .swatch .role { font-size: 11.5px; color: var(--ink-faint); margin-top: 6px; line-height: 1.35; }
+
+  /* ============ TYPE SCALE ============ */
+  .type-row { display: flex; align-items: baseline; gap: 20px; padding: 16px 0; border-bottom: 1px solid var(--rule-soft); }
+  .type-row .label { flex: 0 0 130px; font-size: 12px; color: var(--ink-faint); line-height: 1.4; }
+  .type-row .label b { display: block; color: var(--ink-soft); font-weight: 600; font-size: 12.5px; }
+  .type-row .sample { min-width: 0; }
+  .t-display-xl { font-family: var(--display); font-weight: 600; font-size: 46px; letter-spacing: -.015em; line-height: 1; }
+  .t-display-l  { font-family: var(--display); font-weight: 600; font-size: 34px; letter-spacing: -.012em; line-height: 1; }
+  .t-display-m  { font-family: var(--display); font-weight: 600; font-size: 25px; line-height: 1; }
+  .t-display-s  { font-family: var(--display); font-weight: 500; font-size: 19px; line-height: 1; }
+  .t-read       { font-family: var(--read); font-size: 18.5px; line-height: 1.5; }
+  .t-read-s     { font-family: var(--read); font-size: 16px; line-height: 1.5; }
+  .t-ui         { font-family: var(--sans); font-size: 14px; }
+  .t-ui-s       { font-family: var(--sans); font-size: 13px; }
+  .t-eyebrow    { font-family: var(--sans); font-size: 12.5px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; }
+
+  /* ============ DENSITY DEMO ============ */
+  .density-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .density-panel { border: 1px solid var(--rule); border-radius: var(--r-lg); overflow: hidden; background: var(--sheet); }
+  .density-panel .dp-head { padding: 12px 16px; border-bottom: 1px solid var(--rule-soft); display: flex; align-items: baseline; gap: 10px; }
+  .density-panel .dp-head b { font-family: var(--display); font-size: 16px; font-weight: 500; }
+  .density-panel .dp-head span { font-size: 12px; color: var(--ink-faint); }
+
+  .doc-demo { padding: 26px 28px; }
+  .doc-demo h4 { font-family: var(--display); font-weight: 600; font-size: 22px; margin: 0 0 12px; }
+  .doc-demo p { font-family: var(--read); font-size: var(--doc-body); line-height: var(--doc-lh); color: #2E2B25; margin: 0 0 var(--doc-space); }
+  .doc-demo p:last-child { margin-bottom: 0; }
+
+  .app-demo { padding: 14px; }
+  .app-list-row { display: flex; align-items: center; gap: 10px; padding: var(--app-pad); border-radius: var(--r-sm); font-family: var(--sans); font-size: var(--app-body); }
+  .app-list-row + .app-list-row { border-top: 1px solid var(--rule-soft); }
+  .app-list-row .ico { width: 30px; height: 30px; border-radius: 7px; background: var(--sunk); display: grid; place-items: center; color: var(--ink-faint); flex-shrink: 0; font-size: 15px; }
+  .app-list-row .fn { font-weight: 500; }
+  .app-list-row .fm { font-size: 12px; color: var(--ink-faint); }
+  .app-list-row .spacer { flex: 1; }
+
+  /* ============ COMPONENTS ============ */
+  .comp-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; align-items: start; }
+  .comp-cell { border: 1px solid var(--rule); border-radius: var(--r-lg); background: var(--sheet); padding: 22px; }
+  .comp-cell .cc-label { font-size: 11.5px; font-weight: 600; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-faint); margin-bottom: 16px; }
+  .comp-cell .cc-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .comp-cell .cc-row + .cc-row { margin-top: 12px; }
+
+  /* buttons */
+  .btn { font-family: var(--sans); font-size: 13.5px; font-weight: 500; border-radius: var(--r-sm); padding: 9px 16px; cursor: pointer; border: 1px solid transparent; display: inline-flex; align-items: center; gap: 7px; transition: background .15s, border-color .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent-hover); }
+  .btn-secondary { background: transparent; border-color: var(--rule-strong); color: var(--ink-soft); }
+  .btn-secondary:hover { background: var(--rule-soft); }
+  .btn-ghost { background: transparent; color: var(--accent-deep); }
+  .btn-ghost:hover { background: var(--accent-tint); }
+  .btn-danger { background: transparent; border-color: var(--bad); color: var(--bad); }
+  .btn-danger:hover { background: var(--bad-tint); }
+
+  /* inputs */
+  .field { display: block; width: 100%; font-family: var(--sans); font-size: 14px; color: var(--ink); background: var(--raised); border: 1px solid var(--rule-strong); border-radius: var(--r-sm); padding: 9px 12px; }
+  .field:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-tint); }
+  .field::placeholder { color: var(--ink-faint); }
+  label.fl { display: block; font-size: 12.5px; font-weight: 500; color: var(--ink-soft); margin-bottom: 6px; }
+
+  /* pills / badges */
+  .pill { font-family: var(--sans); font-size: 12px; font-weight: 500; padding: 4px 11px; border-radius: 20px; display: inline-flex; align-items: center; gap: 5px; }
+  .pill-accent { background: var(--accent-tint); color: var(--accent-deep); }
+  .pill-ok { background: var(--ok-tint); color: var(--ok); }
+  .pill-warn { background: var(--warn-tint); color: #7C5C1E; }
+  .pill-bad { background: var(--bad-tint); color: var(--bad); }
+  .pill-neutral { background: var(--sunk); color: var(--ink-soft); }
+
+  /* card */
+  .demo-card { background: var(--raised); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: 18px 20px; }
+  .demo-card .dc-top { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .demo-card .dc-avatar { width: 38px; height: 38px; border-radius: 9px; background: var(--accent); color: #fff; display: grid; place-items: center; font-family: var(--display); font-weight: 600; font-size: 17px; }
+  .demo-card .dc-title { font-family: var(--display); font-weight: 500; font-size: 16px; }
+  .demo-card .dc-meta { font-size: 12.5px; color: var(--ink-faint); }
+  .demo-card p { font-family: var(--read); font-size: 15px; color: var(--ink-soft); line-height: 1.5; margin: 0 0 14px; }
+  .demo-card .dc-foot { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--accent-deep); font-weight: 500; }
+
+  /* callout */
+  .co { border-radius: var(--r-lg); padding: 16px 18px; font-family: var(--read); font-size: 15px; line-height: 1.55; }
+  .co .co-l { font-family: var(--sans); font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; display: block; margin-bottom: 7px; }
+  .co-accent { background: var(--accent-tint); color: var(--accent-deep); }
+  .co-ok { background: var(--ok-tint); color: var(--ok); }
+  .co-bad { background: var(--bad-tint); color: var(--bad); }
+
+  /* nav rail sample */
+  .rail-demo { display: inline-flex; flex-direction: column; gap: 6px; background: var(--page); border: 1px solid var(--rule); border-radius: var(--r-lg); padding: 12px 10px; }
+  .rail-demo button { width: 40px; height: 40px; border: 0; background: transparent; border-radius: 9px; color: var(--ink-faint); cursor: pointer; position: relative; font-size: 17px; }
+  .rail-demo button:hover { background: var(--rule-soft); }
+  .rail-demo button.active { color: var(--accent-deep); background: var(--accent-tint); }
+
+  /* scope picker */
+  .scope { display: inline-flex; align-items: center; gap: 8px; font-family: var(--sans); font-size: 13px; color: var(--ink-soft); padding: 8px 13px; border: 1px solid var(--rule-strong); border-radius: var(--r-sm); background: var(--raised); cursor: pointer; }
+  .scope b { color: var(--accent-deep); font-weight: 500; }
+
+  /* segmented toggle */
+  .seg { display: inline-flex; background: var(--sunk); border-radius: var(--r-sm); padding: 3px; }
+  .seg button { border: 0; background: transparent; font-family: var(--sans); font-size: 13px; padding: 6px 14px; border-radius: 6px; cursor: pointer; color: var(--ink-faint); }
+  .seg button.on { background: var(--raised); color: var(--ink); font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,.04); }
+
+  /* progress */
+  .prog { height: 6px; background: var(--sunk); border-radius: 3px; overflow: hidden; }
+  .prog > i { display: block; height: 100%; width: 62%; background: var(--accent); }
+
+  .note { font-family: var(--read); font-size: 14px; color: var(--ink-faint); font-style: italic; margin-top: 10px; }
+
+  @media (max-width: 720px) {
+    .density-cols { grid-template-columns: 1fr; }
+    .wrap { padding: 0 22px 80px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="ds-head">
+    <div class="kicker">Strattigo · Design system v1</div>
+    <h1>The system, before the pages</h1>
+    <p>A warm, calm, reading-first foundation. Cream and ink do the structure; Dusk Blue does the states. One vocabulary, two densities — spacious for documents, compact for working surfaces.</p>
+  </header>
+
+  <!-- 1. COLOR -->
+  <section>
+    <div class="sec-num">01</div>
+    <h2 class="sec">Color</h2>
+    <p class="sec-lead">Cream surfaces, warm ink, warm hairlines. Dusk Blue appears only on functional states — never as decoration. Semantic colors are reserved strictly for correctness, success, and error.</p>
+
+    <h3 class="sub">Surfaces &amp; ink</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#F4F1E9"></div><div class="meta"><div class="nm">Page</div><div class="hex">#F4F1E9</div><div class="role">App canvas</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#FBFAF6"></div><div class="meta"><div class="nm">Sheet</div><div class="hex">#FBFAF6</div><div class="role">Document / panel</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#FFFFFF"></div><div class="meta"><div class="nm">Raised</div><div class="hex">#FFFFFF</div><div class="role">Cards, inputs</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#EFEBE1"></div><div class="meta"><div class="nm">Sunk</div><div class="hex">#EFEBE1</div><div class="role">Tracks, wells, icon tiles</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#23211C"></div><div class="meta"><div class="nm">Ink</div><div class="hex">#23211C</div><div class="role">Body text, headings</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#4A4740"></div><div class="meta"><div class="nm">Ink soft</div><div class="hex">#4A4740</div><div class="role">Secondary text</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#86827A"></div><div class="meta"><div class="nm">Ink faint</div><div class="hex">#86827A</div><div class="role">Metadata, captions</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#E3DED2"></div><div class="meta"><div class="nm">Rule</div><div class="hex">#E3DED2</div><div class="role">Default hairline</div></div></div>
+    </div>
+
+    <h3 class="sub">Accent — Dusk Blue</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#5E7185"></div><div class="meta"><div class="nm">Accent</div><div class="hex">#5E7185</div><div class="role">Primary buttons, active states, fills</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#4E6072"></div><div class="meta"><div class="nm">Accent hover</div><div class="hex">#4E6072</div><div class="role">Button hover</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#3B4A5A"></div><div class="meta"><div class="nm">Accent deep</div><div class="hex">#3B4A5A</div><div class="role">Text on tint, links, terms</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#E5EAF0"></div><div class="meta"><div class="nm">Accent tint</div><div class="hex">#E5EAF0</div><div class="role">Callouts, active-item bg</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#D9E1EA"></div><div class="meta"><div class="nm">Accent tint 2</div><div class="hex">#D9E1EA</div><div class="role">Hover on tint, borders</div></div></div>
+    </div>
+
+    <h3 class="sub">Semantic — states only</h3>
+    <div class="swatch-grid">
+      <div class="swatch"><div class="chip" style="background:#4E7A57"></div><div class="meta"><div class="nm">Correct</div><div class="hex">#4E7A57</div><div class="role">Right answers, success</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#9A7B2A"></div><div class="meta"><div class="nm">Caution</div><div class="hex">#9A7B2A</div><div class="role">Warnings, pending</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#A6503F"></div><div class="meta"><div class="nm">Wrong</div><div class="hex">#A6503F</div><div class="role">Wrong answers, destructive</div></div></div>
+    </div>
+    <p class="note">Muted to sit inside the warm palette — a study tool marks a wrong answer without alarming the student. Never used for brand or decoration.</p>
+  </section>
+
+  <!-- 2. TYPE -->
+  <section>
+    <div class="sec-num">02</div>
+    <h2 class="sec">Typography</h2>
+    <p class="sec-lead">Three families, three jobs. Fraunces gives headings editorial character; Newsreader makes long-form reading comfortable; Outfit keeps the UI quiet and legible.</p>
+
+    <div class="type-row"><div class="label"><b>Display XL</b>Fraunces 600 · 46px</div><div class="sample t-display-xl">Glycolysis</div></div>
+    <div class="type-row"><div class="label"><b>Display L</b>Fraunces 600 · 34px</div><div class="sample t-display-l">Study guide title</div></div>
+    <div class="type-row"><div class="label"><b>Display M</b>Fraunces 600 · 25px</div><div class="sample t-display-m">Section heading</div></div>
+    <div class="type-row"><div class="label"><b>Display S</b>Fraunces 500 · 19px</div><div class="sample t-display-s">Subsection heading</div></div>
+    <div class="type-row"><div class="label"><b>Read body</b>Newsreader · 18.5px</div><div class="sample t-read">The reading body face. Set at a comfortable measure with generous line-height, this is what a study guide is actually read in.</div></div>
+    <div class="type-row"><div class="label"><b>Read small</b>Newsreader · 16px</div><div class="sample t-read-s">Secondary reading text, captions inside documents.</div></div>
+    <div class="type-row"><div class="label"><b>UI body</b>Outfit · 14px</div><div class="sample t-ui">Interface text — labels, list rows, menus, buttons.</div></div>
+    <div class="type-row"><div class="label"><b>UI small</b>Outfit · 13px</div><div class="sample t-ui-s">Dense metadata, secondary UI.</div></div>
+    <div class="type-row"><div class="label"><b>Eyebrow</b>Outfit 600 · 12.5px</div><div class="sample t-eyebrow" style="color:var(--accent-deep)">Study guide · Unit 3</div></div>
+  </section>
+
+  <!-- 3. DENSITY -->
+  <section>
+    <div class="sec-num">03</div>
+    <h2 class="sec">Two densities</h2>
+    <p class="sec-lead">Same palette, same families — one switch changes base size and spacing. Document density gives guides and quiz review room to breathe; app density keeps materials, chat, and lists efficient.</p>
+    <div class="density-cols">
+      <div class="density-panel">
+        <div class="dp-head"><b>Document</b><span>guides · quiz review</span></div>
+        <div class="doc-demo">
+          <h4>The two halves</h4>
+          <p>The reactions divide into two phases. The first spends energy to destabilize glucose; the second collects the return.</p>
+          <p>Because two fragments travel through the payoff phase, everything in it happens twice per glucose.</p>
+        </div>
+      </div>
+      <div class="density-panel">
+        <div class="dp-head"><b>App</b><span>materials · chat · lists</span></div>
+        <div class="app-demo">
+          <div class="app-list-row"><div class="ico">&#9635;</div><div><div class="fn">Lecture 04 — Metabolism.pdf</div><div class="fm">2.4 MB · added today</div></div><div class="spacer"></div><span class="pill pill-neutral">Unit 3</span></div>
+          <div class="app-list-row"><div class="ico">&#9635;</div><div><div class="fn">Krebs cycle notes.docx</div><div class="fm">88 KB · yesterday</div></div><div class="spacer"></div><span class="pill pill-neutral">Unit 3</span></div>
+          <div class="app-list-row"><div class="ico">&#9635;</div><div><div class="fn">Problem set 3.pdf</div><div class="fm">1.1 MB · 3 days ago</div></div><div class="spacer"></div><span class="pill pill-accent">scoped</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. COMPONENTS -->
+  <section>
+    <div class="sec-num">04</div>
+    <h2 class="sec">Core components</h2>
+    <p class="sec-lead">The shared vocabulary every page is built from. Each renders in the system so a page never re-derives a button or a card.</p>
+
+    <div class="comp-grid">
+      <div class="comp-cell">
+        <div class="cc-label">Buttons</div>
+        <div class="cc-row">
+          <button class="btn btn-primary">Generate guide</button>
+          <button class="btn btn-secondary">Cancel</button>
+        </div>
+        <div class="cc-row">
+          <button class="btn btn-ghost">Bullet view</button>
+          <button class="btn btn-danger">Delete</button>
+        </div>
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Inputs</div>
+        <label class="fl">Course name</label>
+        <input class="field" placeholder="Biochemistry 301" />
+        <div style="height:12px"></div>
+        <label class="fl">Focus topics (optional)</label>
+        <input class="field" placeholder="Glycolysis, Krebs cycle" />
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Pills &amp; badges</div>
+        <div class="cc-row">
+          <span class="pill pill-accent">Scoped</span>
+          <span class="pill pill-ok">Correct</span>
+          <span class="pill pill-bad">Wrong</span>
+        </div>
+        <div class="cc-row">
+          <span class="pill pill-warn">Generating</span>
+          <span class="pill pill-neutral">Unit 3</span>
+        </div>
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Course card</div>
+        <div class="demo-card">
+          <div class="dc-top">
+            <div class="dc-avatar">B</div>
+            <div><div class="dc-title">Biochemistry 301</div><div class="dc-meta">24 materials · updated today</div></div>
+          </div>
+          <p>Metabolism, enzymes, and the pathways that power the cell.</p>
+          <div class="dc-foot">Study now &#8594;</div>
+        </div>
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Callouts</div>
+        <div class="co co-accent"><span class="co-l">Key idea</span>Glycolysis nets 2 ATP and 2 NADH per glucose.</div>
+        <div style="height:10px"></div>
+        <div class="co co-ok"><span class="co-l">Correct</span>Phosphofructokinase is the committed step.</div>
+        <div style="height:10px"></div>
+        <div class="co co-bad"><span class="co-l">Not quite</span>That's the payoff phase, not the prep phase.</div>
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Navigation rail</div>
+        <div class="rail-demo">
+          <button title="Courses">&#8592;</button>
+          <button title="Chat">&#9679;</button>
+          <button class="active" title="Guides">&#9632;</button>
+          <button title="Quizzes">&#9633;</button>
+          <button title="Materials">&#9635;</button>
+        </div>
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Scope picker (the moat)</div>
+        <div class="scope"><span>Generate from:</span> <b>Unit 3 — Metabolism</b> <span>&#9662;</span></div>
+        <p class="note" style="font-size:13px">The one control that expresses nested-collection scoping. First-class, not buried.</p>
+      </div>
+
+      <div class="comp-cell">
+        <div class="cc-label">Segmented toggle</div>
+        <div class="seg">
+          <button class="on">Detailed</button>
+          <button>Bullet points</button>
+        </div>
+        <div style="height:16px"></div>
+        <div class="cc-label">Progress</div>
+        <div class="prog"><i></i></div>
+      </div>
+    </div>
+  </section>
+
+  <section style="border-bottom:0">
+    <div class="sec-num">05</div>
+    <h2 class="sec">Usage rules</h2>
+    <p class="sec-lead">The disciplines that keep it coherent as it scales to every page.</p>
+    <ul style="font-family:var(--read); font-size:16.5px; line-height:1.6; color:#2E2B25; max-width:640px; padding-left:22px;">
+      <li style="margin-bottom:12px">Separation is whitespace, tint, and hairline — <b style="font-weight:600">never a thick border</b>. If a region needs emphasis, change its background, don't outline it.</li>
+      <li style="margin-bottom:12px">One accent, three jobs: <b style="font-weight:600">actions, active states, and moments of warmth</b>. If Dusk Blue is doing a fourth job, question it.</li>
+      <li style="margin-bottom:12px">Semantic colors are for <b style="font-weight:600">correctness and system state only</b> — a wrong quiz answer, a failed upload — never for brand.</li>
+      <li style="margin-bottom:12px">Reading surfaces use <b style="font-weight:600">document density and the serif body</b>. Working surfaces use app density and the sans. Don't mix.</li>
+      <li style="margin-bottom:12px">Content owns the page. Chrome (rail, top bar) stays quiet so the guide, the quiz, the materials are the loudest thing on screen.</li>
+    </ul>
+  </section>
+
+</div>
+</body>
+</html>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,31 +10,24 @@ import {
   getToken,
   getEmail,
 } from "../lib/api";
-import { Button } from "../components/ui/Button";
-import { Modal } from "../components/ui/Modal";
-import { Input, Textarea } from "../components/ui/Input";
-import { Skeleton } from "../components/ui/Skeleton";
-import { EmptyState } from "../components/ui/EmptyState";
-import { Avatar } from "../components/ui/Avatar";
-import { Badge } from "../components/ui/Badge";
 import { useToast } from "../providers/ToastProvider";
+import { Button } from "@/components/ui/button";
+import { Input, Textarea } from "@/components/ui/input";
+import { Callout } from "@/components/ui/callout";
+import {
+  SUBJECT_COLORS,
+  type SubjectColor,
+  resolveCourseColor,
+  setStoredCourseColor,
+} from "@/components/shell/course-color";
+import { cn } from "@/lib/utils";
 
-const COURSE_GRADIENTS = [
-  "from-violet-500 to-purple-600",
-  "from-blue-500 to-indigo-600",
-  "from-emerald-500 to-teal-600",
-  "from-pink-500 to-rose-600",
-  "from-amber-500 to-orange-600",
-  "from-cyan-500 to-blue-600",
-  "from-fuchsia-500 to-violet-600",
-  "from-red-500 to-pink-600",
-];
-
-function courseGradient(name: string): string {
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h << 5) - h + name.charCodeAt(i);
-  return COURSE_GRADIENTS[Math.abs(h) % COURSE_GRADIENTS.length];
-}
+/**
+ * Dashboard home — dashboard.html "The shelf".
+ * Courses as warm cream cards with a subject-color spine + tile (identity
+ * only; every action stays accent). No jump-back-in card: courses carry no
+ * recency signal (only created_at), and we don't fabricate one.
+ */
 
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -43,231 +36,112 @@ function getGreeting(): string {
   return "Good evening";
 }
 
-const shimmerStyle = `
-  @keyframes borderTrace {
-    0%   { background-position: 200% 0%; }
-    100% { background-position: -200% 0%; }
-  }
-  @keyframes rimLight {
-    0%   { opacity: 0; transform: translateX(-100%); }
-    50%  { opacity: 1; }
-    100% { opacity: 0; transform: translateX(100%); }
-  }
-  .card-shimmer {
-    position: absolute;
-    inset: 0;
-    border-radius: 24px;
-    padding: 1.5px;
-    background: linear-gradient(
-      270deg,
-      transparent 0%,
-      transparent 30%,
-      rgba(255,255,255,0.0) 38%,
-      rgba(255,255,255,0.95) 50%,
-      rgba(220,230,255,0.8) 56%,
-      rgba(255,255,255,0.0) 62%,
-      transparent 70%,
-      transparent 100%
-    );
-    background-size: 200% 100%;
-    -webkit-mask:
-      linear-gradient(#fff 0 0) content-box,
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    pointer-events: none;
-    opacity: 0;
-  }
-  .card-inner-border {
-    position: absolute;
-    inset: 3px;
-    border-radius: 21px;
-    border: 1px solid rgba(255,255,255,0.06);
-    pointer-events: none;
-    transition: border-color 300ms ease;
-  }
-  .card-inner-border.active {
-    border-color: rgba(255,255,255,0.12);
-  }
-  .card-rim-light {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.8) 50%, transparent 100%);
-    border-radius: 24px 24px 0 0;
-    pointer-events: none;
-    opacity: 0.4;
-  }
-`;
+/** "Monday · July 13" */
+function getDateline(): string {
+  const now = new Date();
+  const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
+  const date = now.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+  return `${weekday} · ${date}`;
+}
+
+/** Relative "added …" label from created_at. */
+function addedLabel(iso?: string): string {
+  if (!iso) return "added recently";
+  const then = new Date(iso);
+  const days = Math.floor((Date.now() - then.getTime()) / 86_400_000);
+  if (days <= 0) return "added today";
+  if (days === 1) return "added yesterday";
+  if (days < 30) return `added ${days} days ago`;
+  const sameYear = then.getFullYear() === new Date().getFullYear();
+  return `added ${then.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    ...(sameYear ? {} : { year: "numeric" }),
+  })}`;
+}
+
+function PlusIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+    </svg>
+  );
+}
+
+function ButtonSpinner() {
+  return (
+    <svg className="size-4 animate-spin" viewBox="0 0 24 24" fill="none">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+      <path className="opacity-90" fill="currentColor" d="M12 2a10 10 0 0110 10h-3a7 7 0 00-7-7V2z" />
+    </svg>
+  );
+}
+
+function CourseCard({ course }: { course: Course }) {
+  const hue = resolveCourseColor(course.id);
+  return (
+    <Link
+      href={`/dashboard/${course.id}/chat`}
+      className="lift-hover group flex overflow-hidden rounded-lg border border-rule bg-raised hover:border-rule-strong"
+    >
+      <span className="w-[5px] shrink-0" style={{ background: hue.color }} />
+      <div className="flex min-w-0 flex-1 flex-col p-[18px] pb-4">
+        <div className="mb-3.5 flex items-center gap-3">
+          <span
+            className="grid size-10 shrink-0 place-items-center rounded-[10px] font-display text-[19px] font-semibold text-white"
+            style={{ background: hue.color }}
+          >
+            {course.name[0]?.toUpperCase() ?? "C"}
+          </span>
+          <h3 className="line-clamp-2 font-display text-[16.5px] leading-[1.15] font-medium text-ink">
+            {course.name}
+          </h3>
+        </div>
+        {/* Backend courses carry no description today (silently dropped on
+            create) — render it if it ever appears. */}
+        {course.description && (
+          <p className="mb-4 line-clamp-2 font-read text-[14.5px] leading-[1.45] text-ink-soft">
+            {course.description}
+          </p>
+        )}
+        <div className="mt-auto flex items-center gap-2 pt-1">
+          <span className="font-sans text-xs text-ink-faint">{addedLabel(course.created_at)}</span>
+          <span className="flex-1" />
+          <span className="inline-flex items-center gap-1 font-sans text-ui-s font-medium text-accent-deep opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+            Study now →
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
 
 function CourseCardSkeleton() {
   return (
-    <div className="rounded-2xl border p-6" style={{ background: "var(--surface)", borderColor: "var(--border)" }}>
-      <div className="flex items-start gap-4 mb-4">
-        <Skeleton className="w-12 h-12 rounded-2xl flex-shrink-0" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-4 w-3/4" />
-          <Skeleton className="h-3 w-1/2" />
+    <div className="flex overflow-hidden rounded-lg border border-rule bg-raised">
+      <span className="w-[5px] shrink-0 bg-sunk" />
+      <div className="flex-1 p-[18px]">
+        <div className="mb-4 flex items-center gap-3">
+          <span className="skeleton-sheen size-10 rounded-[10px] bg-sunk" />
+          <span className="h-4 w-2/3 rounded bg-sunk skeleton-sheen" />
         </div>
+        <div className="h-3 w-1/3 rounded bg-sunk skeleton-sheen" />
       </div>
-      <Skeleton className="h-3 w-full mb-2" />
-      <Skeleton className="h-3 w-4/5 mb-4" />
-      <Skeleton className="h-8 w-28 rounded-lg" />
     </div>
   );
 }
 
-
-function CourseCard({ course, index }: { course: Course; index: number }) {
-  const [hovered, setHovered] = useState(false);
-  const shimmerRef = useRef<HTMLDivElement>(null);
-  const gradient = courseGradient(course.name);
-
-  const baseStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.03)',
-    backdropFilter: 'blur(6px) saturate(120%) brightness(1.08)',
-    WebkitBackdropFilter: 'blur(6px) saturate(120%) brightness(1.08)',
-    borderRadius: '24px',
-    border: 'none',
-    boxShadow: `
-      0 0 0 1px rgba(255,255,255,0.18),
-      0 0 0 1.5px rgba(255,255,255,0.06),
-      inset 0 1.5px 0 rgba(255,255,255,0.35),
-      inset 1.5px 0 0 rgba(255,255,255,0.2),
-      inset 0 -1.5px 0 rgba(0,0,0,0.15),
-      inset -1.5px 0 0 rgba(0,0,0,0.1),
-      0 8px 32px rgba(0,0,0,0.25),
-      0 2px 8px rgba(0,0,0,0.15)
-    `,
-    transition: 'all 300ms cubic-bezier(0.34, 1.56, 0.64, 1)',
-    cursor: 'pointer',
-    position: 'relative',
-    padding: '32px',
-    overflow: 'hidden',
-    animationDelay: `${index * 60}ms`,
-  };
-
-  const hoverStyle: React.CSSProperties = {
-    background: 'rgba(255, 255, 255, 0.06)',
-    backdropFilter: 'blur(8px) saturate(140%) brightness(1.12)',
-    WebkitBackdropFilter: 'blur(8px) saturate(140%) brightness(1.12)',
-    boxShadow: `
-      0 0 0 1px rgba(255,255,255,0.28),
-      0 0 0 1.5px rgba(255,255,255,0.1),
-      inset 0 1.5px 0 rgba(255,255,255,0.5),
-      inset 1.5px 0 0 rgba(255,255,255,0.3),
-      inset 0 -1.5px 0 rgba(0,0,0,0.2),
-      inset -1.5px 0 0 rgba(0,0,0,0.15),
-      0 20px 60px rgba(0,0,0,0.4),
-      0 4px 12px rgba(0,0,0,0.2)
-    `,
-    transform: 'translateY(-4px) scale(1.03)',
-  };
-
+function AddCourseTile({ onClick }: { onClick: () => void }) {
   return (
-    <Link
-      href={`/dashboard/${course.id}`}
-      className="block animate-fade-in-up"
-      style={hovered ? { ...baseStyle, ...hoverStyle } : baseStyle}
-      onMouseEnter={() => {
-        setHovered(true);
-        if (shimmerRef.current) {
-          shimmerRef.current.style.animation = 'none';
-          shimmerRef.current.offsetHeight; // force reflow
-          shimmerRef.current.style.animation = 'borderTrace 2.4s linear infinite';
-          shimmerRef.current.style.opacity = '1';
-        }
-      }}
-      onMouseLeave={() => {
-        setHovered(false);
-        if (shimmerRef.current) {
-          shimmerRef.current.style.opacity = '0';
-          shimmerRef.current.style.animation = 'none';
-        }
-      }}
+    <button
+      onClick={onClick}
+      className="group flex min-h-[140px] cursor-pointer flex-col items-center justify-center gap-2.5 rounded-lg border-[1.5px] border-dashed border-rule-strong text-ink-faint transition-colors hover:border-accent hover:bg-accent-tint hover:text-accent-deep"
     >
-      {/* Top highlight line */}
-      <div style={{
-        position: 'absolute',
-        top: 0,
-        left: '10%',
-        right: '10%',
-        height: '1px',
-        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.25), transparent)',
-        pointerEvents: 'none',
-        borderRadius: '1px',
-      }} />
-      {/* Rim light */}
-      <div className="card-rim-light" />
-      {/* Border shimmer trace */}
-      <div
-        className="card-shimmer"
-        ref={shimmerRef}
-      />
-      {/* Inner border ring */}
-      <div className={`card-inner-border ${hovered ? 'active' : ''}`} />
-
-      {/* Content */}
-      <div style={{ position: 'relative', zIndex: 1 }}>
-        {/* Icon */}
-        <div className="flex items-start justify-between mb-4">
-          <div
-            className={`bg-gradient-to-br ${gradient} flex items-center justify-center text-white font-bold text-lg transition-all duration-200`}
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "14px",
-              flexShrink: 0,
-              boxShadow: hovered
-                ? "0 4px 20px rgba(225,148,133,0.35)"
-                : "0 2px 8px rgba(0,0,0,0.2)",
-            }}
-          >
-            {course.name[0]?.toUpperCase() ?? "C"}
-          </div>
-          <Badge variant="purple" size="sm" className={`transition-opacity duration-200 ${hovered ? "opacity-100" : "opacity-0"}`}>
-            Open →
-          </Badge>
-        </div>
-
-        {/* Info */}
-        <div>
-          <h2
-            className="line-clamp-1 mb-1.5"
-            style={{
-              color: "var(--text-primary)",
-              fontFamily: "var(--font-fraunces)",
-              fontWeight: 700,
-              fontSize: "20px",
-            }}
-          >
-            {course.name}
-          </h2>
-          {course.description ? (
-            <p className="text-sm line-clamp-2 leading-relaxed mb-4" style={{ color: "var(--text-secondary)" }}>
-              {course.description}
-            </p>
-          ) : null}
-
-          {/* Footer */}
-          <div className="flex items-center justify-between pt-3 border-t" style={{ borderColor: "var(--border)" }}>
-            <span className="flex items-center gap-1.5" style={{ color: "var(--text-tertiary)", fontSize: "13px" }}>
-              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              {course.created_at
-                ? new Date(course.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : "Recently added"}
-            </span>
-            <span className="flex items-center gap-1" style={{ color: "var(--accent)", fontWeight: 600, fontSize: "13px" }}>
-              Study now →
-            </span>
-          </div>
-        </div>
-      </div>
-    </Link>
+      <span className="grid size-9 place-items-center rounded-full bg-sunk transition-colors group-hover:bg-accent-tint2">
+        <PlusIcon className="size-4" />
+      </span>
+      <span className="font-sans text-[13.5px] font-medium">Add course</span>
+    </button>
   );
 }
 
@@ -284,6 +158,8 @@ export default function DashboardPage() {
   const [createError, setCreateError] = useState("");
   const [email, setEmail] = useState("");
   const [greeting, setGreeting] = useState("");
+  const [dateline, setDateline] = useState("");
+  const [newColor, setNewColor] = useState<SubjectColor>(SUBJECT_COLORS[0]);
 
   useEffect(() => {
     if (!getToken()) {
@@ -293,6 +169,7 @@ export default function DashboardPage() {
     const e = getEmail();
     if (e) setEmail(e);
     setGreeting(getGreeting());
+    setDateline(getDateline());
     fetchCourses();
   }, [router]);
 
@@ -316,6 +193,9 @@ export default function DashboardPage() {
     setCreateError("");
     try {
       const course = await createCourse(newName.trim(), newDesc.trim() || undefined);
+      // The chosen shelf color is a client-side presentation preference —
+      // no backend column exists (FUTURE-ENHANCEMENTS.md).
+      setStoredCourseColor(course.id, newColor.key);
       setCourses((prev) => [course, ...prev]);
       setShowModal(false);
       setNewName("");
@@ -332,179 +212,231 @@ export default function DashboardPage() {
     setNewName("");
     setNewDesc("");
     setCreateError("");
+    // Default swatch: cycle the palette by shelf size so consecutive new
+    // courses land on different hues.
+    setNewColor(SUBJECT_COLORS[courses.length % SUBJECT_COLORS.length]);
     setShowModal(true);
   }
+
+  // Close the modal on Escape.
+  useEffect(() => {
+    if (!showModal) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setShowModal(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [showModal]);
 
   const displayName = email.split("@")[0] || email;
 
   return (
     <>
-      <style>{shimmerStyle}</style>
-      <div style={{ position: 'relative', overflow: 'visible' }}>
-
-      {/* Greeting header */}
-      <div className="mb-8" style={{ position: 'relative', zIndex: 1 }}>
-        <div className="flex items-start justify-between gap-4 flex-wrap mb-6">
-          <div className="flex items-center gap-3">
-            <Avatar name={email || "User"} size="md" />
-            <div>
-              <h1
-                className="text-2xl sm:text-3xl tracking-tight leading-tight"
-                style={{ color: "var(--text-primary)", fontFamily: "var(--font-fraunces)", fontWeight: 800 }}
-              >
-                {greeting ? (
-                  <>{greeting}, <span style={{ color: "var(--accent)" }}>{displayName}</span>!</>
-                ) : (
-                  <>Hi, <span style={{ color: "var(--accent)" }}>{displayName}</span>!</>
-                )}
-              </h1>
+      {/* Editorial header */}
+      {/* Greeting fades up once per load — the only page-level entrance. */}
+      <div className="rise-in mb-9 flex flex-wrap items-end gap-4">
+        <div>
+          {dateline && (
+            <div className="mb-3 font-sans text-eyebrow font-semibold tracking-[0.08em] text-accent-deep uppercase">
+              {dateline}
             </div>
-          </div>
-
-          <Button
-            variant="primary"
-            size="md"
-            onClick={openModal}
-            leftIcon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            }
-          >
-            Add Course
-          </Button>
+          )}
+          <h1 className="mb-3 font-display text-[32px] leading-[1.05] font-semibold tracking-[-0.015em] text-ink sm:text-[40px]">
+            {greeting || "Welcome back"}
+            {displayName ? `, ${displayName}` : ""}
+          </h1>
+          {!loading && !error && (
+            <p className="font-read text-read-s text-ink-soft">
+              <b className="font-medium text-ink">
+                {courses.length} {courses.length === 1 ? "course" : "courses"}
+              </b>
+              {courses.length > 0 && " · ready when you are"}
+            </p>
+          )}
         </div>
-
+        <div className="flex-1" />
+        <Button variant="primary" onClick={openModal}>
+          <PlusIcon /> Add course
+        </Button>
       </div>
 
-      {/* Loading state */}
+      {/* Loading — skeleton shelf */}
       {loading && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ position: 'relative', zIndex: 1 }}>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {[...Array(6)].map((_, i) => (
             <CourseCardSkeleton key={i} />
           ))}
         </div>
       )}
 
-      {/* Error state */}
+      {/* Error */}
       {!loading && error && (
-        <div className="flex items-center gap-3 bg-red-50 border border-red-200 text-red-700 rounded-2xl px-5 py-4" style={{ position: 'relative', zIndex: 1 }}>
-          <svg className="w-5 h-5 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-          </svg>
-          <span className="text-sm flex-1">{error}</span>
-          <button onClick={fetchCourses} className="text-sm font-semibold underline hover:no-underline ml-2 flex-shrink-0">
-            Retry
-          </button>
-        </div>
+        <Callout variant="error" label="Couldn't load your courses">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="flex-1">{error}</span>
+            <Button variant="secondary" onClick={fetchCourses}>
+              Retry
+            </Button>
+          </div>
+        </Callout>
       )}
 
       {/* Empty state */}
       {!loading && !error && courses.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-24 text-center" style={{ position: 'relative', zIndex: 1 }}>
-          <div
-            className="relative w-20 h-20 rounded-3xl flex items-center justify-center mb-6"
-            style={{
-              background: "var(--accent-dim)",
-              boxShadow: "0 0 40px rgba(255,176,117,0.25), 0 0 80px rgba(255,176,117,0.1)",
-            }}
-          >
-            <svg className="w-10 h-10" style={{ color: "var(--accent)" }} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+        <div className="flex flex-col items-center px-6 py-20 text-center">
+          <span className="mb-6 grid size-16 place-items-center rounded-xl bg-accent-tint text-accent-deep">
+            <svg className="size-7" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25" />
             </svg>
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full animate-ping" style={{ background: "rgba(255,176,117,0.4)" }} />
-            <div className="absolute -top-1 -right-1 w-4 h-4 rounded-full" style={{ background: "var(--accent)" }} />
-          </div>
-          <h2 className="text-xl font-extrabold mb-2" style={{ color: "var(--text-primary)" }}>Start your first course</h2>
-          <p className="text-sm max-w-sm leading-relaxed mb-6" style={{ color: "var(--text-secondary)" }}>
-            Add a course and upload your materials — Strattigo will generate study guides, quizzes, and more instantly.
+          </span>
+          <h2 className="mb-3 font-display text-[28px] font-semibold text-ink">Start your first course</h2>
+          <p className="mb-7 max-w-[400px] font-read text-[17px] leading-normal text-ink-soft">
+            A course is where your materials live and where the AI tutor, study
+            guides, and quizzes are grounded. Create one to begin.
           </p>
-          <Button
-            variant="primary"
-            size="md"
-            onClick={openModal}
-            leftIcon={
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2.5} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-              </svg>
-            }
-          >
-            Add your first course
+          <Button variant="primary" onClick={openModal}>
+            <PlusIcon /> Add course
           </Button>
         </div>
       )}
 
-      {/* Course grid */}
+      {/* The shelf */}
       {!loading && !error && courses.length > 0 && (
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5" style={{ position: 'relative', zIndex: 1, overflow: 'visible' }}>
-          {courses.map((course, i) => (
-            <CourseCard key={course.id} course={course} index={i} />
-          ))}
-        </div>
+        <>
+          <div className="mb-4 flex items-baseline gap-2.5">
+            <h2 className="font-display text-[20px] font-semibold text-ink">Your courses</h2>
+            <span className="font-sans text-ui-s text-ink-faint">{courses.length}</span>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {courses.map((course) => (
+              <CourseCard key={course.id} course={course} />
+            ))}
+            <AddCourseTile onClick={openModal} />
+          </div>
+        </>
       )}
 
+      {/* Add-course modal */}
+      {showModal && (
+        <div
+          className="backdrop-enter fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[rgba(35,33,28,0.32)] p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="add-course-title"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setShowModal(false);
+          }}
+        >
+          <div className="panel-enter w-full max-w-[480px] overflow-hidden rounded-xl border border-rule bg-sheet shadow-lg">
+            <form onSubmit={handleCreate}>
+              <div className="px-7 pt-6">
+                <div className="mb-2.5 font-sans text-eyebrow font-semibold tracking-[0.08em] text-accent-deep uppercase">
+                  New course
+                </div>
+                <h3 id="add-course-title" className="mb-1.5 font-display text-[23px] font-semibold text-ink">
+                  Add a course
+                </h3>
+                <p className="font-read text-[14.5px] leading-normal text-ink-soft">
+                  Name it, then pick a color for its place on your shelf.
+                </p>
+              </div>
 
-      {/* Add Course Modal */}
-      <Modal
-        open={showModal}
-        onClose={() => setShowModal(false)}
-        title="Add a new course"
-        description="Give your course a name to get started with AI-powered studying."
-      >
-        <form onSubmit={handleCreate} className="space-y-4">
-          {createError && (
-            <div className="flex items-center gap-2 bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
-              <svg className="w-4 h-4 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
-              </svg>
-              {createError}
-            </div>
-          )}
+              <div className="space-y-5 px-7 py-5">
+                {createError && <Callout variant="error">{createError}</Callout>}
 
-          <Input
-            label="Course name"
-            required
-            value={newName}
-            onChange={(e) => setNewName(e.target.value)}
-            placeholder="e.g. Organic Chemistry"
-            autoFocus
-            helperText={`${newName.length}/100 characters`}
-            maxLength={100}
-          />
+                {/* Live shelf preview — updates as the name and color change */}
+                <div className="flex overflow-hidden rounded-lg border border-rule bg-raised">
+                  <span className="w-[5px] shrink-0" style={{ background: newColor.color }} />
+                  <div className="flex items-center gap-3 px-4 py-3.5">
+                    <span
+                      className="grid size-[38px] shrink-0 place-items-center rounded-[9px] font-display text-lg font-semibold text-white"
+                      style={{ background: newColor.color }}
+                    >
+                      {newName.trim()[0]?.toUpperCase() ?? "?"}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="block truncate font-display text-[16px] font-medium text-ink">
+                        {newName.trim() || "Your course"}
+                      </span>
+                      <span className="block font-sans text-xs text-ink-faint">
+                        New course · pick a color below
+                      </span>
+                    </span>
+                  </div>
+                </div>
 
-          <Textarea
-            label="Description"
-            value={newDesc}
-            onChange={(e) => setNewDesc(e.target.value)}
-            rows={3}
-            placeholder="Brief description of this course (optional)"
-            helperText="Optional — helps the AI understand your course context"
-          />
+                <Input
+                  label="Course name"
+                  counter={`${newName.length} / 100`}
+                  required
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                  placeholder="e.g. Organic Chemistry"
+                  maxLength={100}
+                  autoFocus
+                />
 
-          <div className="flex gap-3 pt-1">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
-              fullWidth
-              onClick={() => setShowModal(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              variant="primary"
-              size="md"
-              fullWidth
-              loading={creating}
-              disabled={!newName.trim()}
-            >
-              Create course
-            </Button>
+                {/* Shelf color — the ten curated subject hues, identity only */}
+                <div>
+                  <div className="mb-2 font-sans text-ui-s font-medium text-ink-soft">Shelf color</div>
+                  <div className="flex flex-wrap gap-2.5" role="radiogroup" aria-label="Shelf color">
+                    {SUBJECT_COLORS.map((c) => {
+                      const selected = c.key === newColor.key;
+                      return (
+                        <button
+                          key={c.key}
+                          type="button"
+                          role="radio"
+                          aria-checked={selected}
+                          title={c.name}
+                          onClick={() => setNewColor(c)}
+                          className={cn(
+                            "grid size-[34px] cursor-pointer place-items-center rounded-full border-2 border-transparent text-white transition-transform hover:scale-[1.08]",
+                            selected && "border-sheet shadow-[0_0_0_2px_var(--color-ink)]"
+                          )}
+                          style={{ background: c.color }}
+                        >
+                          {selected && (
+                            <svg className="size-3.5" fill="none" stroke="currentColor" strokeWidth={3} viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                            </svg>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div>
+                  <Textarea
+                    label={
+                      <>
+                        Description <span className="font-normal text-ink-faint">· optional</span>
+                      </>
+                    }
+                    value={newDesc}
+                    onChange={(e) => setNewDesc(e.target.value)}
+                    rows={3}
+                    placeholder="Metabolism, enzymes, and the pathways that power the cell."
+                  />
+                  <p className="mt-2 font-read text-[12.5px] italic text-ink-faint">
+                    A short description helps the AI tutor understand your course.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2.5 border-t border-rule-soft px-7 py-4">
+                <Button type="button" variant="secondary" onClick={() => setShowModal(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit" variant="primary" disabled={creating || !newName.trim()}>
+                  {creating && <ButtonSpinner />} Create course
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
-      </Modal>
-      </div>
+        </div>
+      )}
     </>
   );
 }

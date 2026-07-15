@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Strattigo — Quiz View</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600&family=Newsreader:opsz,wght@6..72,400;6..72,500&family=Outfit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --page:#F4F1E9; --sheet:#FBFAF6; --raised:#FFFFFF; --sunk:#EFEBE1;
+    --ink:#23211C; --ink-soft:#4A4740; --ink-faint:#86827A;
+    --rule:#E3DED2; --rule-soft:#EDE9DF; --rule-strong:#D6D0C2;
+    --accent:#5E7185; --accent-hover:#4E6072; --accent-deep:#3B4A5A;
+    --accent-tint:#E5EAF0; --accent-tint2:#D9E1EA;
+    --ok:#4E7A57; --ok-tint:#E6EEE4; --ok-line:#BCCEB8;
+    --bad:#A6503F; --bad-tint:#F2E1DA; --bad-line:#E3C3B8;
+    --r-sm:8px; --r-md:10px; --r-lg:12px; --r-xl:16px;
+    --display:"Fraunces",Georgia,serif; --read:"Newsreader",Georgia,serif; --sans:"Outfit",system-ui,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  html { -webkit-font-smoothing:antialiased; text-rendering:optimizeLegibility; }
+  body { margin:0; background:var(--page); color:var(--ink); font-family:var(--sans); }
+
+  .lbl { max-width:1100px; margin:0 auto; padding:48px 40px 0; display:flex; align-items:baseline; gap:14px; }
+  .lbl .tag { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); }
+  .lbl .name { font-family:var(--display); font-size:20px; font-weight:500; }
+  .divider { max-width:1100px; margin:60px auto 0; border:0; border-top:1px dashed var(--rule); }
+
+  /* frame */
+  .frame { max-width:1100px; margin:20px auto 0; background:var(--sheet); border-radius:16px; border:1px solid var(--rule); overflow:hidden; display:grid; grid-template-columns:66px 1fr; min-height:720px; }
+  .rail { background:var(--page); border-right:1px solid var(--rule); padding:16px 0; display:flex; flex-direction:column; align-items:center; gap:6px; }
+  .rail .logo { width:34px; height:34px; border-radius:9px; background:var(--accent); display:grid; place-items:center; font-family:var(--display); font-weight:600; font-size:18px; color:#fff; margin-bottom:14px; }
+  .rail button { width:42px; height:42px; border:0; background:transparent; border-radius:10px; color:var(--ink-faint); display:grid; place-items:center; cursor:pointer; font-size:18px; position:relative; }
+  .rail button:hover { background:var(--rule-soft); }
+  .rail button.active { color:var(--accent-deep); background:var(--accent-tint); }
+  .rail button.active::before { content:""; position:absolute; left:-10px; top:9px; bottom:9px; width:3px; border-radius:0 3px 3px 0; background:var(--accent); }
+  .rail .spacer { flex:1; }
+  .content { display:flex; flex-direction:column; min-width:0; }
+  .topbar { height:62px; border-bottom:1px solid var(--rule); display:flex; align-items:center; padding:0 26px; gap:16px; flex-shrink:0; }
+  .course-id { display:flex; align-items:center; gap:11px; }
+  .course-avatar { width:30px; height:30px; border-radius:8px; background:var(--accent); display:grid; place-items:center; font-family:var(--display); font-weight:600; font-size:15px; color:#fff; }
+  .course-name { font-family:var(--display); font-weight:500; font-size:17px; }
+  .course-meta { font-size:13px; color:var(--ink-faint); display:flex; align-items:center; gap:6px; }
+  .cm-dot { width:5px; height:5px; border-radius:50%; background:var(--accent); }
+  .topbar .spacer { flex:1; }
+  .scope { display:inline-flex; align-items:center; gap:8px; font-size:13px; color:var(--ink-soft); padding:8px 13px; border:1px solid var(--rule-strong); border-radius:var(--r-sm); background:var(--raised); cursor:pointer; }
+  .scope b { color:var(--accent-deep); font-weight:500; }
+  .btn { font-family:var(--sans); font-size:13.5px; font-weight:500; border-radius:var(--r-sm); padding:9px 16px; cursor:pointer; border:1px solid transparent; display:inline-flex; align-items:center; gap:7px; }
+  .btn-primary { background:var(--accent); color:#fff; } .btn-primary:hover { background:var(--accent-hover); }
+  .btn-secondary { background:transparent; border-color:var(--rule-strong); color:var(--ink-soft); } .btn-secondary:hover{ background:var(--rule-soft); }
+  .btn-ghost { background:transparent; color:var(--accent-deep); } .btn-ghost:hover { background:var(--accent-tint); }
+
+  .stage { flex:1; display:flex; flex-direction:column; align-items:center; padding:0; }
+
+  /* quiz progress strip */
+  .qstrip { width:100%; padding:16px 40px; display:flex; align-items:center; gap:16px; border-bottom:1px solid var(--rule-soft); }
+  .qstrip .qcount { font-size:13px; color:var(--ink-faint); font-weight:500; white-space:nowrap; }
+  .qstrip .qcount b { color:var(--ink); }
+  .qbar { flex:1; height:6px; background:var(--sunk); border-radius:3px; overflow:hidden; display:flex; gap:3px; }
+  .qbar i { flex:1; background:var(--sunk); border-radius:2px; }
+  .qbar i.done { background:var(--accent); }
+  .qbar i.cur { background:var(--accent-tint2); }
+  .qstrip .qscope { font-size:12.5px; color:var(--ink-faint); display:flex; align-items:center; gap:6px; }
+  .qstrip .qscope b { color:var(--accent-deep); font-weight:500; }
+
+  /* the question stage */
+  .qwrap { width:100%; max-width:680px; padding:44px 20px 80px; }
+  .q-eyebrow { font-family:var(--sans); font-size:12.5px; font-weight:600; letter-spacing:.09em; text-transform:uppercase; color:var(--accent-deep); margin-bottom:16px; }
+  .q-prompt { font-family:var(--display); font-weight:600; font-size:27px; line-height:1.28; letter-spacing:-.008em; margin:0 0 30px; }
+  .opts { display:flex; flex-direction:column; gap:12px; }
+  .opt { display:flex; align-items:center; gap:14px; padding:16px 18px; background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-lg); cursor:pointer; font-family:var(--read); font-size:17.5px; color:var(--ink); transition:border-color .15s, background .15s; }
+  .opt:hover { border-color:var(--accent); background:var(--accent-tint); }
+  .opt .key { width:28px; height:28px; border-radius:7px; background:var(--sunk); color:var(--ink-soft); display:grid; place-items:center; font-family:var(--sans); font-weight:600; font-size:13px; flex-shrink:0; }
+  .opt.selected { border-color:var(--accent); background:var(--accent-tint); }
+  .opt.selected .key { background:var(--accent); color:#fff; }
+
+  /* resolved states */
+  .opt.correct { border-color:var(--ok); background:var(--ok-tint); color:#2C4A33; cursor:default; }
+  .opt.correct .key { background:var(--ok); color:#fff; }
+  .opt.wrong { border-color:var(--bad); background:var(--bad-tint); color:#5E2C22; cursor:default; }
+  .opt.wrong .key { background:var(--bad); color:#fff; }
+  .opt.muted { opacity:.55; cursor:default; }
+  .opt .mark { margin-left:auto; font-size:18px; }
+  .opt.correct .mark { color:var(--ok); }
+  .opt.wrong .mark { color:var(--bad); }
+
+  /* explanation */
+  .explain { margin-top:22px; border-radius:var(--r-lg); padding:20px 22px; font-family:var(--read); font-size:16.5px; line-height:1.6; }
+  .explain .ex-l { font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .explain.ok { background:var(--ok-tint); color:#2C4A33; }
+  .explain.ok .ex-l { color:var(--ok); }
+  .explain.bad { background:var(--bad-tint); color:#5E2C22; }
+  .explain.bad .ex-l { color:var(--bad); }
+  .explain p { margin:0 0 10px; }
+  .explain p:last-child { margin-bottom:0; }
+  .explain .src { font-family:var(--sans); font-size:12.5px; margin-top:12px; display:inline-flex; align-items:center; gap:6px; padding:5px 10px; background:rgba(255,255,255,.6); border-radius:20px; color:var(--ink-soft); }
+
+  .qfoot { display:flex; align-items:center; margin-top:28px; }
+  .qfoot .spacer { flex:1; }
+  .hint { font-size:13px; color:var(--ink-faint); }
+
+  /* ===== modal ===== */
+  .modal-stage { min-height:640px; background:rgba(35,33,28,.32); display:flex; align-items:center; justify-content:center; padding:20px; }
+  .modal { width:100%; max-width:520px; background:var(--sheet); border-radius:var(--r-xl); border:1px solid var(--rule); overflow:hidden; }
+  .modal-head { padding:24px 28px 0; }
+  .modal-head .mh-eyebrow { font-size:12px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-deep); margin-bottom:10px; }
+  .modal-head h3 { font-family:var(--display); font-weight:600; font-size:24px; margin:0 0 6px; }
+  .modal-head p { font-family:var(--read); font-size:15px; color:var(--ink-soft); margin:0; line-height:1.5; }
+  .modal-body { padding:22px 28px; }
+  .fl { display:block; font-size:12.5px; font-weight:500; color:var(--ink-soft); margin-bottom:8px; }
+  .field { width:100%; font-family:var(--sans); font-size:14px; color:var(--ink); background:var(--raised); border:1px solid var(--rule-strong); border-radius:var(--r-sm); padding:10px 12px; }
+  .field:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-tint); }
+  .fg { margin-bottom:20px; }
+  .scope-inline { display:flex; align-items:center; justify-content:space-between; padding:12px 14px; background:var(--accent-tint); border-radius:var(--r-sm); }
+  .scope-inline .si-l { font-size:12px; color:var(--accent-deep); font-weight:500; }
+  .scope-inline .si-v { font-family:var(--sans); font-weight:500; font-size:14px; color:var(--accent-deep); display:flex; align-items:center; gap:6px; }
+  .seg { display:inline-flex; background:var(--sunk); border-radius:var(--r-sm); padding:3px; }
+  .seg button { border:0; background:transparent; font-family:var(--sans); font-size:13px; padding:7px 16px; border-radius:6px; cursor:pointer; color:var(--ink-faint); }
+  .seg button.on { background:var(--raised); color:var(--ink); font-weight:500; }
+  .count-row { display:flex; gap:8px; }
+  .count-chip { flex:1; text-align:center; padding:9px 0; border:1px solid var(--rule-strong); border-radius:var(--r-sm); font-family:var(--sans); font-size:14px; color:var(--ink-soft); cursor:pointer; background:var(--raised); }
+  .count-chip.on { border-color:var(--accent); background:var(--accent-tint); color:var(--accent-deep); font-weight:500; }
+  .modal-foot { padding:18px 28px; border-top:1px solid var(--rule-soft); display:flex; justify-content:flex-end; gap:10px; }
+
+  /* ===== results ===== */
+  .results { width:100%; max-width:680px; padding:48px 20px 90px; }
+  .res-hero { text-align:center; padding-bottom:36px; border-bottom:1px solid var(--rule); margin-bottom:36px; }
+  .res-ring { width:120px; height:120px; margin:0 auto 22px; position:relative; }
+  .res-ring svg { transform:rotate(-90deg); }
+  .res-ring .score { position:absolute; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+  .res-ring .score b { font-family:var(--display); font-weight:600; font-size:34px; line-height:1; }
+  .res-ring .score span { font-size:12px; color:var(--ink-faint); margin-top:4px; }
+  .res-hero h2 { font-family:var(--display); font-weight:600; font-size:26px; margin:0 0 8px; }
+  .res-hero p { font-family:var(--read); font-size:16.5px; color:var(--ink-soft); margin:0; }
+  .res-section-label { font-family:var(--sans); font-size:12.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:16px; }
+  .review-row { display:flex; align-items:flex-start; gap:14px; padding:16px 0; border-bottom:1px solid var(--rule-soft); }
+  .review-row .rr-mark { width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:14px; flex-shrink:0; margin-top:2px; }
+  .review-row .rr-mark.ok { background:var(--ok-tint); color:var(--ok); }
+  .review-row .rr-mark.bad { background:var(--bad-tint); color:var(--bad); }
+  .review-row .rr-q { font-family:var(--read); font-size:16px; color:var(--ink); margin:0 0 3px; line-height:1.4; }
+  .review-row .rr-meta { font-size:12.5px; color:var(--ink-faint); }
+  .review-row .rr-meta a { color:var(--accent-deep); text-decoration:none; font-weight:500; }
+  .review-row .rr-review { margin-left:auto; font-size:12.5px; color:var(--accent-deep); font-weight:500; white-space:nowrap; align-self:center; cursor:pointer; }
+  .res-cta { display:flex; gap:12px; justify-content:center; margin-top:36px; }
+  .weak { margin-top:36px; padding:20px 22px; background:var(--accent-tint); border-radius:var(--r-lg); }
+  .weak .w-l { font-family:var(--sans); font-size:11.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; color:var(--accent-deep); margin-bottom:10px; }
+  .weak p { font-family:var(--read); font-size:15.5px; color:var(--accent-deep); margin:0; line-height:1.55; }
+  .weak a { color:var(--accent-deep); font-weight:600; }
+</style>
+</head>
+<body>
+
+<!-- ========= 1. GENERATE MODAL ========= -->
+<div class="lbl"><span class="tag">Moment 1</span><span class="name">Generate a quiz</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button><button>&#9679;</button><button>&#9632;</button>
+    <button class="active">&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> 24 materials</div></div></div>
+      <div class="spacer"></div>
+      <div class="scope"><span>Generate from:</span> <b>Unit 3 — Metabolism</b> <span>&#9662;</span></div>
+      <button class="btn btn-primary"><span>&#43;</span> Upload</button>
+    </div>
+    <div class="modal-stage">
+      <div class="modal">
+        <div class="modal-head">
+          <div class="mh-eyebrow">New quiz</div>
+          <h3>Generate a quiz</h3>
+          <p>Questions are drawn only from the materials you scope below.</p>
+        </div>
+        <div class="modal-body">
+          <div class="fg">
+            <span class="fl">Scoped to</span>
+            <div class="scope-inline"><span class="si-l">Generating from</span><span class="si-v">Unit 3 — Metabolism &#9662;</span></div>
+          </div>
+          <div class="fg">
+            <span class="fl">Number of questions</span>
+            <div class="count-row">
+              <div class="count-chip">5</div>
+              <div class="count-chip on">10</div>
+              <div class="count-chip">15</div>
+              <div class="count-chip">20</div>
+            </div>
+          </div>
+          <div class="fg">
+            <span class="fl">Focus topics (optional)</span>
+            <input class="field" placeholder="Glycolysis, feedback inhibition" />
+          </div>
+        </div>
+        <div class="modal-foot">
+          <button class="btn btn-secondary">Cancel</button>
+          <button class="btn btn-primary">Generate quiz</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ========= 2. ANSWERING ========= -->
+<div class="lbl"><span class="tag">Moment 2</span><span class="name">Answering</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button><button>&#9679;</button><button>&#9632;</button>
+    <button class="active">&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> Metabolism quiz</div></div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost">Save &amp; exit</button>
+    </div>
+    <div class="qstrip">
+      <span class="qcount"><b>3</b> / 10</span>
+      <div class="qbar"><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="qscope"><span>from</span> <b>Unit 3</b></span>
+    </div>
+    <div class="stage">
+      <div class="qwrap">
+        <div class="q-eyebrow">Question 3</div>
+        <h2 class="q-prompt">Which enzyme catalyzes the first committed step of glycolysis and is the pathway's main regulatory point?</h2>
+        <div class="opts">
+          <div class="opt"><span class="key">A</span> Hexokinase</div>
+          <div class="opt selected"><span class="key">B</span> Phosphofructokinase-1</div>
+          <div class="opt"><span class="key">C</span> Pyruvate kinase</div>
+          <div class="opt"><span class="key">D</span> Aldolase</div>
+        </div>
+        <div class="qfoot">
+          <span class="hint">Select an answer to see the explanation</span>
+          <div class="spacer"></div>
+          <button class="btn btn-primary">Check answer</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ========= 3a. CORRECT ========= -->
+<div class="lbl"><span class="tag">Moment 3a</span><span class="name">Answered correctly</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button><button>&#9679;</button><button>&#9632;</button>
+    <button class="active">&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> Metabolism quiz</div></div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost">Save &amp; exit</button>
+    </div>
+    <div class="qstrip">
+      <span class="qcount"><b>3</b> / 10</span>
+      <div class="qbar"><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="qscope"><span>from</span> <b>Unit 3</b></span>
+    </div>
+    <div class="stage">
+      <div class="qwrap">
+        <div class="q-eyebrow">Question 3</div>
+        <h2 class="q-prompt">Which enzyme catalyzes the first committed step of glycolysis and is the pathway's main regulatory point?</h2>
+        <div class="opts">
+          <div class="opt muted"><span class="key">A</span> Hexokinase</div>
+          <div class="opt correct"><span class="key">B</span> Phosphofructokinase-1 <span class="mark">&#10003;</span></div>
+          <div class="opt muted"><span class="key">C</span> Pyruvate kinase</div>
+          <div class="opt muted"><span class="key">D</span> Aldolase</div>
+        </div>
+        <div class="explain ok">
+          <div class="ex-l"><span>&#10003;</span> Correct</div>
+          <p>Phosphofructokinase-1 (PFK-1) catalyzes the first <em>committed</em> step — once fructose-6-phosphate is phosphorylated, the molecule is locked into glycolysis. Hexokinase acts earlier, but its product can still be diverted elsewhere, so it isn't the committed step.</p>
+          <span class="src">&#9635; From: Lecture 04 — Metabolism, p.7</span>
+        </div>
+        <div class="qfoot">
+          <div class="spacer"></div>
+          <button class="btn btn-primary">Next question &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ========= 3b. WRONG ========= -->
+<div class="lbl"><span class="tag">Moment 3b</span><span class="name">Answered incorrectly</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button><button>&#9679;</button><button>&#9632;</button>
+    <button class="active">&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> Metabolism quiz</div></div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost">Save &amp; exit</button>
+    </div>
+    <div class="qstrip">
+      <span class="qcount"><b>3</b> / 10</span>
+      <div class="qbar"><i class="done"></i><i class="done"></i><i class="done"></i><i class="cur"></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
+      <span class="qscope"><span>from</span> <b>Unit 3</b></span>
+    </div>
+    <div class="stage">
+      <div class="qwrap">
+        <div class="q-eyebrow">Question 3</div>
+        <h2 class="q-prompt">Which enzyme catalyzes the first committed step of glycolysis and is the pathway's main regulatory point?</h2>
+        <div class="opts">
+          <div class="opt wrong"><span class="key">A</span> Hexokinase <span class="mark">&#10007;</span></div>
+          <div class="opt correct"><span class="key">B</span> Phosphofructokinase-1 <span class="mark">&#10003;</span></div>
+          <div class="opt muted"><span class="key">C</span> Pyruvate kinase</div>
+          <div class="opt muted"><span class="key">D</span> Aldolase</div>
+        </div>
+        <div class="explain bad">
+          <div class="ex-l"><span>&#10007;</span> Not quite — you chose Hexokinase</div>
+          <p>Hexokinase does catalyze the <em>first</em> reaction of glycolysis, so it's a natural pick — but its product (glucose-6-phosphate) can still branch into other pathways, so the step isn't committed. The committed step is <strong>phosphofructokinase-1</strong>, which is also the pathway's key regulatory valve.</p>
+          <span class="src">&#9635; From: Lecture 04 — Metabolism, p.7</span>
+        </div>
+        <div class="qfoot">
+          <div class="spacer"></div>
+          <button class="btn btn-primary">Next question &#8594;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<hr class="divider">
+
+<!-- ========= 4. RESULTS ========= -->
+<div class="lbl"><span class="tag">Moment 4</span><span class="name">Results &amp; review</span></div>
+<div class="frame">
+  <nav class="rail">
+    <div class="logo">S</div>
+    <button>&#8592;</button><button>&#9679;</button><button>&#9632;</button>
+    <button class="active">&#9633;</button><button>&#9635;</button>
+    <div class="spacer"></div><button>&#9881;</button>
+  </nav>
+  <div class="content">
+    <div class="topbar">
+      <div class="course-id"><div class="course-avatar">B</div><div><div class="course-name">Biochemistry 301</div><div class="course-meta"><span class="cm-dot"></span> Metabolism quiz</div></div></div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost">Save quiz</button>
+    </div>
+    <div class="stage">
+      <div class="results">
+        <div class="res-hero">
+          <div class="res-ring">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#EFEBE1" stroke-width="10"></circle>
+              <circle cx="60" cy="60" r="52" fill="none" stroke="#5E7185" stroke-width="10" stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="65.3"></circle>
+            </svg>
+            <div class="score"><b>8/10</b><span>80% correct</span></div>
+          </div>
+          <h2>Nice work on metabolism</h2>
+          <p>You're solid on the pathway steps. Two enzymes tripped you up — worth a second look.</p>
+        </div>
+
+        <div class="weak">
+          <div class="w-l">Worth revisiting</div>
+          <p>Both misses were about <strong>enzyme regulation</strong> — which step is "committed" and what controls it. <a href="#">Open the study guide on glycolysis regulation &#8594;</a></p>
+        </div>
+
+        <div style="margin-top:36px">
+          <div class="res-section-label">Review all 10 questions</div>
+          <div class="review-row">
+            <div class="rr-mark ok">&#10003;</div>
+            <div><p class="rr-q">What is the net ATP yield of glycolysis per glucose?</p><div class="rr-meta">Your answer: 2 ATP</div></div>
+            <span class="rr-review">Review</span>
+          </div>
+          <div class="review-row">
+            <div class="rr-mark ok">&#10003;</div>
+            <div><p class="rr-q">Where in the cell does glycolysis occur?</p><div class="rr-meta">Your answer: Cytoplasm</div></div>
+            <span class="rr-review">Review</span>
+          </div>
+          <div class="review-row">
+            <div class="rr-mark bad">&#10007;</div>
+            <div><p class="rr-q">Which enzyme catalyzes the first committed step of glycolysis?</p><div class="rr-meta">You chose Hexokinase · correct: <a href="#">Phosphofructokinase-1</a></div></div>
+            <span class="rr-review">Review</span>
+          </div>
+          <div class="review-row">
+            <div class="rr-mark ok">&#10003;</div>
+            <div><p class="rr-q">What coenzyme is reduced during the payoff phase?</p><div class="rr-meta">Your answer: NAD⁺ → NADH</div></div>
+            <span class="rr-review">Review</span>
+          </div>
+          <div class="review-row">
+            <div class="rr-mark bad">&#10007;</div>
+            <div><p class="rr-q">Which molecule allosterically inhibits phosphofructokinase-1?</p><div class="rr-meta">You chose AMP · correct: <a href="#">ATP</a></div></div>
+            <span class="rr-review">Review</span>
+          </div>
+        </div>
+
+        <div class="res-cta">
+          <button class="btn btn-secondary">Retake quiz</button>
+          <button class="btn btn-primary">Save quiz</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div style="height:60px"></div>
+</body>
+</html>

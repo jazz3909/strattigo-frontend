@@ -1,16 +1,20 @@
-import type { Metadata } from "next";
-import { Fraunces, Outfit, JetBrains_Mono, Geist } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { Fraunces, Newsreader, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { ToastProvider } from "./providers/ToastProvider";
 import { ThemeProvider } from "./providers/ThemeProvider";
-import { MeshBackground } from "./components/MeshBackground";
 import { cn } from "@/lib/utils";
-
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
 
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
+  axes: ["opsz"],
+});
+
+const newsreader = Newsreader({
+  subsets: ["latin"],
+  variable: "--font-newsreader",
+  style: ["normal", "italic"],
   axes: ["opsz"],
 });
 
@@ -24,7 +28,18 @@ const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   weight: ["400", "500"],
+  // Mono is only used for code spans (error page, inline code) — never in the
+  // above-the-fold text of the pages Lighthouse measures. Skip preloading it so
+  // it doesn't compete for bandwidth on first paint; it still loads on demand
+  // via font-display swap wherever code actually renders.
+  preload: false,
 });
+
+// viewport-fit=cover lets the mobile shell pad into the notch / home-indicator
+// safe areas (env(safe-area-inset-*)); width/scale defaults are merged in.
+export const viewport: Viewport = {
+  viewportFit: "cover",
+};
 
 export const metadata: Metadata = {
   title: "Strattigo — Your AI Study Partner",
@@ -40,10 +55,9 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn(fraunces.variable, outfit.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
+      className={cn(fraunces.variable, newsreader.variable, outfit.variable, jetbrainsMono.variable, "font-sans")}
     >
-      <body className="min-h-full flex flex-col" style={{ color: "var(--text-primary)" }}>
-        <MeshBackground />
+      <body className="min-h-full flex flex-col text-ink">
         <ThemeProvider>
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>

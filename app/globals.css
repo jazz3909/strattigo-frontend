@@ -10,27 +10,20 @@
   --surface: #111825;
   --surface-2: #151D2B;
   --surface-3: #1C2638;
-  --accent: oklch(0.97 0 0);
+  --accent: #E19485;
   --accent-hover: #C1726F;
   --accent-dim: rgba(225, 148, 133, 0.12);
   --accent-dim-hover: rgba(225, 148, 133, 0.2);
   --text-primary: #F2EDE8;
   --text-secondary: #8A9AB5;
   --text-tertiary: #4A5568;
-  --border: oklch(0.922 0 0);
+  --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.12);
   --danger: #E57373;
   --success: #6BCEAA;
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
   --gradient-hero: linear-gradient(135deg, #0D1018 0%, #111825 30%, #1A2D45 60%, #2A1F35 85%, #3D1E28 100%);
   --gradient-brand: linear-gradient(135deg, #E19485 0%, #C1726F 100%);
   --gradient-brand-soft: linear-gradient(135deg, rgba(225,148,133,0.15) 0%, rgba(193,114,111,0.05) 100%);
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
-  --shadow-md: 0 4px 12px rgba(0,0,0,0.3);
-  --shadow-lg: 0 10px 30px rgba(0,0,0,0.4);
   --shadow-xl: 0 20px 50px rgba(0,0,0,0.5);
   --shadow-brand: 0 8px 32px rgba(225,148,133,0.2);
   --shadow-brand-lg: 0 20px 40px rgba(225,148,133,0.25);
@@ -74,14 +67,14 @@
   --surface: #111825;
   --surface-2: #151D2B;
   --surface-3: #1C2638;
-  --accent: oklch(0.269 0 0);
+  --accent: #E19485;
   --accent-hover: #C1726F;
   --accent-dim: rgba(225, 148, 133, 0.12);
   --accent-dim-hover: rgba(225, 148, 133, 0.2);
   --text-primary: #F2EDE8;
   --text-secondary: #8A9AB5;
   --text-tertiary: #4A5568;
-  --border: oklch(1 0 0 / 10%);
+  --border: rgba(255, 255, 255, 0.08);
   --border-hover: rgba(255, 255, 255, 0.12);
   --danger: #E57373;
   --success: #6BCEAA;
@@ -118,9 +111,13 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--text-primary);
-  --font-sans: var(--font-sans);
+  /* Font roles — the three families of the design system (see token block below).
+     Inline so utilities resolve through the next/font variables on <html>. */
+  --font-sans: var(--font-outfit), system-ui, sans-serif;
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-read: var(--font-newsreader), Georgia, serif;
   --font-mono: var(--font-mono);
-  --font-heading: var(--font-sans);
+  --font-heading: var(--font-fraunces), Georgia, serif;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -138,8 +135,6 @@
   --color-input: var(--input);
   --color-border: var(--border);
   --color-destructive: var(--destructive);
-  --color-accent-foreground: var(--accent-foreground);
-  --color-accent: var(--accent);
   --color-muted-foreground: var(--muted-foreground);
   --color-muted: var(--muted);
   --color-secondary-foreground: var(--secondary-foreground);
@@ -150,13 +145,165 @@
   --color-popover: var(--popover);
   --color-card-foreground: var(--card-foreground);
   --color-card: var(--card);
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
-  --radius-3xl: calc(var(--radius) * 2.2);
-  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESIGN TOKENS — single source of truth (ui-rebuild)
+   Reference: design-system.html (+ course-colors.html for subject hues).
+   Components read ONLY from these tokens — no hardcoded hexes downstream.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+@theme {
+  /* ── Surfaces (warm cream lineage) ── */
+  --color-page: #F4F1E9;      /* app canvas */
+  --color-sheet: #FBFAF6;     /* document / panel */
+  --color-raised: #FFFFFF;    /* cards, inputs */
+  --color-sunk: #EFEBE1;      /* tracks, wells, icon tiles */
+
+  /* ── Ink ── */
+  --color-ink: #23211C;       /* body text, headings */
+  --color-ink-soft: #4A4740;  /* secondary text */
+  --color-ink-faint: #86827A; /* metadata, captions */
+
+  /* ── Rules / separation ── */
+  --color-rule: #E3DED2;        /* default hairline */
+  --color-rule-soft: #EDE9DF;
+  --color-rule-strong: #D6D0C2;
+
+  /* ── Accent — Dusk Blue (THE functional accent: actions, active states, links) ── */
+  --color-accent: #5E7185;
+  --color-accent-hover: #4E6072;
+  --color-accent-deep: #3B4A5A;   /* text on tint, links, terms */
+  --color-accent-tint: #E5EAF0;
+  --color-accent-tint2: #D9E1EA;
+
+  /* ── Semantic — states ONLY, never brand/decoration ── */
+  /* Role color for short labels on a tint; -deep for body-length text on a tint. */
+  --color-success: #4E7A57;
+  --color-success-deep: #2C4A33;  /* quiz-view.html .explain.ok body text */
+  --color-success-tint: #E6EEE4;
+  --color-caution: #9A7B2A;
+  --color-caution-deep: #7C5C1E;  /* design-system.html .pill-warn */
+  --color-caution-tint: #F3EAD5;
+  --color-error: #A6503F;
+  --color-error-deep: #5E2C22;    /* quiz-view.html .explain.bad body text */
+  --color-error-tint: #F2E1DA;
+
+  /* ── Subject / course colors — COURSE IDENTITY ONLY ──
+     Shelf spines, course tiles, the picker in the Add Course modal.
+     Never for buttons, states, or links — that is accent's job.
+     Tints for dusk/sage/ochre/clay/plum come from dashboard.html;
+     the remaining five are derived at the same lightness/wash. */
+  --color-subject-dusk: #5E7185;
+  --color-subject-dusk-tint: #E5EAF0;
+  --color-subject-sage: #6E7F5E;
+  --color-subject-sage-tint: #E9EDE1;
+  --color-subject-ochre: #A07A34;
+  --color-subject-ochre-tint: #F1E9D6;
+  --color-subject-clay: #9E5847;
+  --color-subject-clay-tint: #F1E0DA;
+  --color-subject-plum: #6E5A7A;
+  --color-subject-plum-tint: #EAE4EE;
+  --color-subject-pine: #4E7A6E;
+  --color-subject-pine-tint: #E2EDE8;
+  --color-subject-slate: #38607A;
+  --color-subject-slate-tint: #DFE8EE;
+  --color-subject-terracotta: #B06A50;
+  --color-subject-terracotta-tint: #F3E3DA;
+  --color-subject-moss: #8A7B4A;
+  --color-subject-moss-tint: #EDE9D9;
+  --color-subject-cocoa: #7A5E5A;
+  --color-subject-cocoa-tint: #ECE4E2;
+
+  /* ── File-type badge colors — MATERIALS ONLY ──
+     The solid tile behind a file's PDF/DOC/PPT/TXT label (materials-tab.html).
+     Their OWN category, like subject colors: never for buttons, states, or
+     links — that is accent's job. Values from the reference mock; text on these
+     is always white. Anything unrecognized falls back to the sunk/ink tile. */
+  --color-filetype-pdf: #B0503F;
+  --color-filetype-doc: #3B6FA5;
+  --color-filetype-ppt: #C67A2E;
+  --color-filetype-txt: #6E7F5E;
+
+  /* ── Elevation — warm ink-based shadows, restrained.
+       sm = subtle lift (toggle thumb, card hover) · popover = dropdowns,
+       menus · lg = modals/dialogs. Values follow the mock shadows
+       (rgba(35,33,28,…) = ink at low alpha). ── */
+  --shadow-sm: 0 1px 2px rgb(35 33 28 / 0.04), 0 2px 6px rgb(35 33 28 / 0.04);
+  --shadow-popover: 0 2px 8px rgb(35 33 28 / 0.06), 0 10px 26px rgb(35 33 28 / 0.10);
+  --shadow-lg: 0 4px 12px rgb(35 33 28 / 0.06), 0 20px 50px rgb(35 33 28 / 0.12);
+  /* Hover lift for interactive cards/rows — shadow-sm with a touch more depth.
+     Pairs with a -translate-y; never applied to static containers. */
+  --shadow-lift: 0 2px 4px rgb(35 33 28 / 0.05), 0 6px 16px rgb(35 33 28 / 0.07);
+
+  /* ── Motion — sparkle pass. Fast, eased, interruptible; meaning over
+       decoration. All app motion draws from these four so it stays uniform
+       and tunable. --ease-* become `ease-*` utilities; durations are read
+       via duration-(--duration-*). A global prefers-reduced-motion block
+       (end of file) neutralizes everything. ── */
+  --ease-out-soft: cubic-bezier(0.25, 0.6, 0.3, 1);  /* default UI ease */
+  --ease-spring: cubic-bezier(0.3, 1.25, 0.45, 1);   /* delight peaks only */
+  --duration-fast: 130ms;  /* press feedback, color hovers */
+  --duration-base: 180ms;  /* state changes, indicators, lifts */
+  --duration-slow: 260ms;  /* popovers, entrances */
+
+  /* ── Radii ── */
+  --radius-sm: 8px;   /* controls, small elements */
+  --radius-md: 10px;
+  --radius-lg: 12px;  /* cards */
+  --radius-xl: 16px;  /* modals, large panels */
+  --radius-2xl: 20px; /* hero panels, feature cards */
+
+  /* ── Type scale — nine roles across the three families.
+       Pair each role with its family utility:
+       display-* → font-display · read-* → font-read · ui/eyebrow → font-sans.
+       eyebrow additionally pairs with `uppercase`. ── */
+  --text-display-xl: 46px;
+  --text-display-xl--line-height: 1.05;
+  --text-display-xl--font-weight: 600;
+  --text-display-xl--letter-spacing: -0.015em;
+  --text-display-l: 34px;
+  --text-display-l--line-height: 1.1;
+  --text-display-l--font-weight: 600;
+  --text-display-l--letter-spacing: -0.012em;
+  --text-display-m: 25px;
+  --text-display-m--line-height: 1.2;
+  --text-display-m--font-weight: 600;
+  --text-display-m--letter-spacing: -0.008em;
+  --text-display-s: 19px;
+  --text-display-s--line-height: 1.25;
+  --text-display-s--font-weight: 500;
+  --text-read: 18.5px;
+  --text-read--line-height: 1.72;
+  --text-read-s: 16px;
+  --text-read-s--line-height: 1.5;
+  --text-ui: 14px;
+  --text-ui--line-height: 1.5;
+  --text-ui-s: 13px;
+  --text-ui-s--line-height: 1.5;
+  --text-eyebrow: 12.5px;
+  --text-eyebrow--line-height: 1.3;
+  --text-eyebrow--font-weight: 600;
+  --text-eyebrow--letter-spacing: 0.09em;
+}
+
+/* ── The two densities — a mode set on a surface, not per element.
+     App density is the default (materials, chat, lists, dashboard).
+     Apply data-density="document" to reading surfaces only: the study-guide
+     reader article and the quiz review view. Document wrappers also constrain
+     reading width with max-w-(--density-measure). ── */
+:root,
+[data-density="app"] {
+  --density-body: 14px;
+  --density-leading: 1.5;
+  --density-space: 12px;   /* vertical rhythm between blocks */
+  --density-pad: 14px;     /* component internal padding */
+}
+[data-density="document"] {
+  --density-body: 18.5px;
+  --density-leading: 1.72;
+  --density-space: 22px;
+  --density-measure: 780px; /* max reading width (body prose; headings run wider) */
 }
 
 /* ─── Base ───────────────────────────────────────────────────────────────── */
@@ -170,13 +317,15 @@ html {
   scroll-behavior: smooth;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color: var(--text-primary);
+  color: var(--color-ink);
 }
 
 body {
-  background: #0D1420;
+  /* Cream, not the old #0D1420: this is what shows on first paint, overscroll,
+     and route transitions before a page paints its own bg-page. */
+  background: var(--color-page);
   min-height: 100vh;
-  color: var(--text-primary);
+  color: var(--color-ink);
   font-family: var(--font-outfit), system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
@@ -186,27 +335,34 @@ body {
   width: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--surface);
+  /* Transparent, not var(--surface): that dark-theme value painted a dark
+     strip down the right edge of cream surfaces wherever a classic (non-
+     overlay) scrollbar shows. Transparent reads identically on the dark
+     surfaces it was matching. */
+  background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--surface-3);
+  background: var(--color-rule-strong);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--accent);
+  background: var(--color-accent);
 }
 
 /* ─── Focus Ring ─────────────────────────────────────────────────────────── */
+/* Dusk Blue (cream token), not the legacy salmon var(--accent): this
+   unlayered rule out-cascades component `outline-none` utilities, so its
+   color shows on every focused control app-wide. */
 *:focus-visible {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--color-accent);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 /* ─── Selection ──────────────────────────────────────────────────────────── */
 ::selection {
-  background: rgba(225,148,133,0.3);
-  color: var(--text-primary);
+  background: var(--color-accent-tint2);
+  color: var(--color-ink);
 }
 
 /* ─── Keyframes ──────────────────────────────────────────────────────────── */
@@ -401,6 +557,15 @@ body {
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
+/* Cream companion to .animate-shimmer — same motion, accent tokens. Needed
+   because this file is unlayered, so .animate-shimmer's dark gradient would
+   out-cascade any bg-* utility set on the same element. */
+.animate-shimmer-accent {
+  background: linear-gradient(90deg, var(--color-accent-tint2) 25%, var(--color-accent) 50%, var(--color-accent-tint2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.8s ease-in-out infinite;
+}
+
 .animate-fade-in-up {
   animation: fadeInUp 0.5s ease-out both;
 }
@@ -476,9 +641,8 @@ body {
 .animation-delay-700 { animation-delay: 700ms; }
 .animation-delay-800 { animation-delay: 800ms; }
 
-/* ─── Font Utilities ─────────────────────────────────────────────────────── */
-.font-display { font-family: var(--font-fraunces), serif; }
-.font-mono { font-family: var(--font-mono), monospace; }
+/* Font utilities (font-display / font-read / font-sans / font-mono) are
+   generated by Tailwind from the token block above. */
 
 /* ─── Gradient Text ──────────────────────────────────────────────────────── */
 .gradient-text {
@@ -740,6 +904,311 @@ body {
   font-style: italic;
 }
 
+/* ─── Reader Document (study-guide reading view) ─────────────────────────────
+   Styles the GuideMarkdown output (react-markdown + remark-gfm/-math +
+   rehype-katex) inside the document-density reader
+   (app/dashboard/[courseId]/guide/[guideId]). Cream-and-ink + Dusk Blue accent,
+   matching reading-view-variants.html Variant B. The renderer emits real block
+   elements (<p>, <ul>, <h2>, …), so their own margins govern the reading rhythm.
+   A separate class from .study-guide-content, which backs the dark app-density
+   surfaces. */
+.reader-doc {
+  font-family: var(--font-newsreader), Georgia, serif;
+  font-size: var(--text-read);
+  line-height: 1.72;
+  color: #2E2B25;
+  letter-spacing: 0.003em;
+}
+.reader-doc > :first-child {
+  margin-top: 0;
+}
+/* No reading-measure cap: body copy, headings and title all span the full
+   content width between the symmetric page gutters (set on the article). */
+.reader-doc p {
+  margin: 0 0 22px;
+}
+.reader-doc h1,
+.reader-doc h2,
+.reader-doc h3,
+.reader-doc h4 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  color: var(--color-ink);
+}
+.reader-doc h1 {
+  font-size: 34px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.012em;
+  margin: 44px 0 14px;
+}
+.reader-doc h2 {
+  font-size: var(--text-display-m);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.008em;
+  margin: 52px 0 18px;
+}
+.reader-doc h2::after {
+  content: "";
+  display: block;
+  width: 34px;
+  height: 3px;
+  background: var(--color-accent);
+  border-radius: 2px;
+  margin-top: 14px;
+}
+.reader-doc h3 {
+  font-size: var(--text-display-s);
+  font-weight: 500;
+  margin: 36px 0 12px;
+}
+.reader-doc h4 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 28px 0 10px;
+}
+.reader-doc strong {
+  color: var(--color-accent-deep);
+  font-weight: 500;
+}
+.reader-doc em {
+  font-style: italic;
+  color: var(--color-ink-soft);
+}
+.reader-doc a {
+  color: var(--color-accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
+}
+.reader-doc code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.86em;
+  background: var(--color-accent-tint);
+  color: var(--color-accent-deep);
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+}
+.reader-doc pre {
+  margin: 26px 0;
+  padding: 18px 20px;
+  border-radius: var(--radius-lg);
+  background: var(--color-sunk);
+  border: 1px solid var(--color-rule);
+  overflow-x: auto;
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+.reader-doc pre code {
+  background: transparent;
+  color: var(--color-ink);
+  padding: 0;
+  font-size: inherit;
+}
+/* Tailwind's preflight strips list markers/padding — restore them for prose. */
+.reader-doc ul,
+.reader-doc ol {
+  margin: 0 0 22px;
+  padding-left: 28px;
+}
+.reader-doc ul {
+  list-style: disc;
+}
+.reader-doc ol {
+  list-style: decimal;
+}
+.reader-doc li {
+  margin-bottom: 8px;
+  padding-left: 4px;
+}
+.reader-doc li::marker {
+  color: var(--color-accent);
+}
+.reader-doc li > ul,
+.reader-doc li > ol {
+  margin: 8px 0 0;
+}
+.reader-doc blockquote {
+  border-radius: var(--radius-lg);
+  background: var(--color-accent-tint);
+  color: var(--color-accent-deep);
+  padding: 20px 24px;
+  margin: 34px 0;
+  font-size: 17.5px;
+  line-height: 1.6;
+}
+.reader-doc blockquote p:last-child {
+  margin-bottom: 0;
+}
+.reader-doc hr {
+  border: 0;
+  border-top: 1px solid var(--color-rule);
+  margin: 40px 0;
+}
+.reader-doc table {
+  display: block;
+  width: 100%;
+  overflow-x: auto;
+  border-collapse: collapse;
+  margin: 28px 0;
+  font-size: 16px;
+  font-family: var(--font-outfit), system-ui, sans-serif;
+}
+.reader-doc th {
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-ink);
+  background: var(--color-sunk);
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-rule-strong);
+}
+.reader-doc td {
+  padding: 9px 14px;
+  color: var(--color-ink-soft);
+  border-bottom: 1px solid var(--color-rule);
+}
+/* Display math ($$…$$) inherits the worked-formula block treatment (Variant B) —
+   the same visual as the FormulaBlock component, applied to real rendered math. */
+.reader-doc .katex-display {
+  white-space: normal;
+  background: var(--color-page);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-lg);
+  padding: 22px 26px;
+  margin: 30px 0;
+  color: var(--color-ink);
+}
+.reader-doc .katex {
+  color: var(--color-ink);
+}
+
+/* ─── App-density markdown (.app-md) ─────────────────────────────────────────
+   Styles AppMarkdown output — the same react-markdown pipeline as the reader,
+   at app density for compact working surfaces (quiz prompts/options/
+   explanations, chat). Typography (family, size, color) is deliberately
+   INHERITED from the surrounding component, so the same content reads as a
+   display-scale prompt inside a font-display heading and as body copy inside a
+   tinted callout. This class only supplies block rhythm and inline treatments;
+   never document typography — that stays in .reader-doc. */
+.app-md > :first-child {
+  margin-top: 0;
+}
+.app-md > :last-child {
+  margin-bottom: 0;
+}
+.app-md p {
+  margin: 0 0 var(--density-space);
+}
+.app-md ul,
+.app-md ol {
+  margin: 0 0 var(--density-space);
+  padding-left: 22px;
+}
+.app-md ul {
+  list-style: disc;
+}
+.app-md ol {
+  list-style: decimal;
+}
+.app-md li {
+  margin-bottom: 4px;
+}
+.app-md li::marker {
+  color: var(--color-accent);
+}
+.app-md strong {
+  font-weight: 600;
+  color: inherit; /* stays legible on success/error tints */
+}
+.app-md em {
+  font-style: italic;
+}
+.app-md a {
+  color: var(--color-accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.app-md code {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-size: 0.88em;
+}
+/* Math inherits the surrounding text color/size; display math gets rhythm
+   only — no formula-block chrome at app density. */
+.app-md .katex {
+  color: inherit;
+  font-size: 1.04em;
+}
+.app-md .katex-display {
+  margin: var(--density-space) 0;
+}
+
+/* ─── Legal Pages (/terms, /privacy) ─────────────────────────────────────────
+   Cream legal-doc typography — auth-public.html `.legal-doc`: serif body in
+   ink, accent-deep underlined links, accent-dot lists. */
+.legal-prose p {
+  font-family: var(--font-read);
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--color-ink);
+  margin-bottom: 16px;
+}
+
+.legal-prose p:last-child {
+  margin-bottom: 0;
+}
+
+.legal-prose ul {
+  list-style: none;
+  padding-left: 0;
+  margin-bottom: 16px;
+}
+
+.legal-prose ul li {
+  position: relative;
+  padding-left: 1.375rem;
+  margin-bottom: 0.5rem;
+  font-family: var(--font-read);
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--color-ink);
+}
+
+.legal-prose ul li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.6rem;
+  width: 5px;
+  height: 5px;
+  background: var(--color-accent);
+  border-radius: 50%;
+}
+
+.legal-prose strong {
+  font-weight: 600;
+  color: var(--color-ink);
+}
+
+.legal-prose a {
+  color: var(--color-accent-deep);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s ease;
+}
+
+.legal-prose a:hover {
+  color: var(--color-accent);
+}
+
+.legal-placeholder {
+  font-family: var(--font-mono), monospace;
+  font-size: 0.85em;
+  background: var(--color-caution-tint);
+  color: var(--color-caution-deep);
+  padding: 0.1rem 0.4rem;
+  border-radius: 4px;
+}
+
 /* ─── Chat Markdown ──────────────────────────────────────────────────────── */
 .chat-markdown p { margin-bottom: 0.5rem; }
 .chat-markdown p:last-child { margin-bottom: 0; }
@@ -897,8 +1366,8 @@ input:-webkit-autofill:focus {
 
 /* ─── Celebration Sparkle Pulse ─────────────────────────────────────────── */
 @keyframes sparkle-pulse {
-  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px rgba(255,176,117,0.4)); }
-  50% { transform: scale(1.1); filter: drop-shadow(0 0 20px rgba(255,176,117,0.7)); }
+  0%, 100% { transform: scale(1); filter: drop-shadow(0 0 8px var(--color-accent-tint2)); }
+  50% { transform: scale(1.1); filter: drop-shadow(0 0 20px var(--color-accent-tint2)); }
 }
 
 .animate-sparkle-pulse {
@@ -906,8 +1375,151 @@ input:-webkit-autofill:focus {
 }
 
 /* ─── Micro: Button Active Press ────────────────────────────────────────── */
+/* Sparkle pass: every button shares one tokenized transition set (colors,
+   shadow, opacity, press scale) so hover/press feel uniform app-wide. This
+   is unlayered, so it outranks per-button Tailwind transition utilities by
+   design — a button needing bespoke motion opts out with .no-btn-press. */
+button:not(.no-btn-press) {
+  transition:
+    color var(--duration-fast) var(--ease-out-soft),
+    background-color var(--duration-fast) var(--ease-out-soft),
+    border-color var(--duration-fast) var(--ease-out-soft),
+    box-shadow var(--duration-base) var(--ease-out-soft),
+    opacity var(--duration-base) var(--ease-out-soft),
+    translate var(--duration-base) var(--ease-out-soft),
+    scale var(--duration-fast) var(--ease-out-soft);
+}
 button:not(.no-btn-press):active {
-  transform: scale(0.97);
+  scale: 0.98;
+}
+
+/* ─── Sparkle pass — motion utilities ───────────────────────────────────────
+   All durations/easings come from the motion tokens. Everything here is
+   neutralized by the prefers-reduced-motion block at the end of the file. */
+
+/* Interactive lift — clickable cards/rows only, never static containers.
+   Hover-capable pointers only (no sticky-hover on touch). */
+@media (hover: hover) {
+  .lift-hover {
+    transition:
+      translate var(--duration-base) var(--ease-out-soft),
+      box-shadow var(--duration-base) var(--ease-out-soft),
+      border-color var(--duration-base) var(--ease-out-soft),
+      background-color var(--duration-base) var(--ease-out-soft);
+  }
+  .lift-hover:hover {
+    translate: 0 -1px;
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+/* Modal / scrim entrance — gentle fade + scale from 0.97, fast, not bouncy. */
+@keyframes panel-in {
+  from { opacity: 0; transform: scale(0.97); }
+  to { opacity: 1; transform: scale(1); }
+}
+.panel-enter { animation: panel-in var(--duration-base) var(--ease-out-soft) both; }
+.backdrop-enter { animation: fadeIn var(--duration-base) var(--ease-out-soft) both; }
+
+/* One-shot entrance for content that arrives (greeting, results sections,
+   explanation callouts, streamed quiz questions). Fill both = no flash. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.rise-in { animation: rise-in 320ms var(--ease-out-soft) both; }
+.rise-in-fast { animation: rise-in var(--duration-base) var(--ease-out-soft) both; }
+
+/* Resolve-icon pop — the small satisfying flourish on a correct answer. */
+@keyframes check-pop {
+  from { opacity: 0; transform: scale(0.4); }
+  to { opacity: 1; transform: scale(1); }
+}
+.check-pop { animation: check-pop 220ms var(--ease-spring) both; }
+
+/* Cream skeleton sheen — a slow soft sweep, transform-only (GPU friendly).
+   Apply to individual bg-sunk skeleton bars. */
+@keyframes sheen-sweep {
+  to { transform: translateX(250%); }
+}
+.skeleton-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-sheen::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: -80%;
+  width: 80%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.45), transparent);
+  animation: sheen-sweep 2.2s ease-in-out infinite;
+}
+
+/* Streaming markdown (.stream-md — set by GuideMarkdown/AppMarkdown while a
+   stream is open, all three AI surfaces share that pipeline):
+   1. A soft accent caret rides the end of the last text block — eased pulse,
+      not a hard step-blink.
+   2. Each newly arrived block fades in (opacity only — no translate, so the
+      column never shifts). React keeps existing blocks' DOM nodes across
+      stream re-renders, so this fires once per block, not per token. */
+@keyframes caret-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.15; }
+}
+.stream-md > :last-child:not(ul):not(ol):not(pre):not(table)::after,
+.stream-md > :is(ul, ol):last-child > li:last-child::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1em;
+  margin-left: 3px;
+  vertical-align: -0.15em;
+  border-radius: 1px;
+  background: var(--color-accent);
+  animation: caret-pulse 1.1s var(--ease-out-soft) infinite;
+}
+@keyframes stream-block-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.stream-md > * {
+  animation: stream-block-in 240ms var(--ease-out-soft) both;
+}
+
+/* Eased spinner — rotation gently speeds/slows within each turn instead of
+   the uniform linear spin; reads softer at small sizes. */
+@keyframes spin-eased {
+  to { transform: rotate(360deg); }
+}
+.spinner-eased {
+  animation: spin-eased 0.9s cubic-bezier(0.55, 0.2, 0.45, 0.8) infinite;
+}
+
+/* Success-toast check draw — pathLength=1 on the check path. */
+@keyframes check-draw {
+  to { stroke-dashoffset: 0; }
+}
+.toast-check-path {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: check-draw 340ms var(--ease-out-soft) 120ms both;
+}
+
+/* Quiz-results confetti — muted subject-palette pieces, one burst, then gone.
+   Per-piece trajectory via --cf-* custom props; transform/opacity only. */
+@keyframes confetti-fly {
+  0% { transform: translate(0, 0) rotate(0deg); opacity: 1; }
+  70% { opacity: 1; }
+  100% { transform: translate(var(--cf-x), var(--cf-y)) rotate(var(--cf-r)); opacity: 0; }
+}
+.confetti-piece {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  animation: confetti-fly var(--cf-t, 1.3s) var(--ease-out-soft) var(--cf-d, 0s) both;
 }
 
 /* ─── Text rendering ─────────────────────────────────────────────────────── */
@@ -934,5 +1546,42 @@ body {
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* ─── Mobile pass — markdown overflow guards (< md only) ─────────────────────
+   KaTeX never reflows and .app-md has no pre/table rules, so wide equations,
+   code, or GFM tables force horizontal scroll in a phone-width column. Scoped
+   to max-width so desktop rendering stays untouched. */
+@media (max-width: 47.9375rem) {
+  .reader-doc .katex-display,
+  .app-md .katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .app-md pre {
+    overflow-x: auto;
+  }
+  .app-md table {
+    display: block;
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+/* ─── Reduced motion — the master off-switch (sparkle pass) ──────────────────
+   Neutralizes every animation and transition in the app (including the
+   legacy keyframes above). JS-driven motion (confetti, score count-up)
+   checks the same media query before running. Keep this LAST in the file. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    scroll-behavior: auto !important;
   }
 }

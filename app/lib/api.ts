@@ -5,24 +5,34 @@ export function getToken(): string | null {
   return localStorage.getItem("strattigo_token");
 }
 
-export function setToken(token: string): void {
-  localStorage.setItem("strattigo_token", token);
-}
-
 export function clearToken(): void {
   localStorage.removeItem("strattigo_token");
+  localStorage.removeItem("strattigo_refresh_token");
   localStorage.removeItem("strattigo_user_id");
   localStorage.removeItem("strattigo_email");
-}
-
-export function setUser(userId: string, email: string): void {
-  localStorage.setItem("strattigo_user_id", userId);
-  localStorage.setItem("strattigo_email", email);
 }
 
 export function getEmail(): string | null {
   if (typeof window === "undefined") return null;
   return localStorage.getItem("strattigo_email");
+}
+
+/**
+ * Persist a full auth session: the access token in localStorage (API calls)
+ * and in the cookie proxy.ts gates on, PLUS the refresh token. The refresh
+ * token is what lets the session outlive the ~1h Supabase access-JWT expiry —
+ * without it, the first 401 (e.g. the subscription poll right after the
+ * Stripe checkout round-trip) hard-logged a paying user out to /login.
+ */
+export function persistSession(session: AuthResponse): void {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("strattigo_token", session.access_token);
+  if (session.refresh_token) {
+    localStorage.setItem("strattigo_refresh_token", session.refresh_token);
+  }
+  if (session.user_id) localStorage.setItem("strattigo_user_id", session.user_id);
+  if (session.email) localStorage.setItem("strattigo_email", session.email);
+  document.cookie = `strattigo_token=${session.access_token}; path=/; max-age=604800; SameSite=Lax`;
 }
 
 function handle401(): never {
@@ -32,6 +42,62 @@ function handle401(): never {
     window.location.href = "/login";
   }
   throw new Error("Session expired. Please log in again.");
+}
+
+// Supabase rotates refresh tokens (each is single-use), so concurrent 401s
+// must share one in-flight /auth/refresh exchange instead of racing.
+let refreshInFlight: Promise<string | null> | null = null;
+
+async function tryRefreshSession(): Promise<string | null> {
+  if (typeof window === "undefined") return null;
+  const refreshToken = localStorage.getItem("strattigo_refresh_token");
+  if (!refreshToken) return null;
+  if (!refreshInFlight) {
+    refreshInFlight = (async () => {
+      try {
+        const res = await fetch(`${API_BASE}/auth/refresh`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refresh_token: refreshToken }),
+        });
+        if (!res.ok) return null;
+        const session: AuthResponse = await res.json();
+        persistSession(session);
+        return session.access_token;
+      } catch {
+        return null;
+      } finally {
+        refreshInFlight = null;
+      }
+    })();
+  }
+  return refreshInFlight;
+}
+
+/**
+ * fetch with Bearer auth and automatic session renewal: on a 401, exchange
+ * the stored refresh token for a new session and retry the request once.
+ * Only when that fails too (no refresh token, or it was revoked/expired)
+ * does handle401 log the user out.
+ */
+async function authFetch(
+  path: string,
+  init: RequestInit = {},
+  auth = true
+): Promise<Response> {
+  const doFetch = (token: string | null) => {
+    const headers = new Headers(init.headers);
+    if (auth && token) headers.set("Authorization", `Bearer ${token}`);
+    return fetch(`${API_BASE}${path}`, { ...init, headers });
+  };
+
+  let res = await doFetch(auth ? getToken() : null);
+  if (res.status === 401 && auth) {
+    const freshToken = await tryRefreshSession();
+    if (freshToken) res = await doFetch(freshToken);
+    if (res.status === 401) handle401();
+  }
+  return res;
 }
 
 async function request<T>(
@@ -44,16 +110,7 @@ async function request<T>(
     ...(options.headers as Record<string, string>),
   };
 
-  if (auth) {
-    const token = getToken();
-    if (token) headers["Authorization"] = `Bearer ${token}`;
-  }
-
-  const res = await fetch(`${API_BASE}${path}`, { ...options, headers });
-
-  if (res.status === 401) {
-    handle401();
-  }
+  const res = await authFetch(path, { ...options, headers }, auth);
 
   if (!res.ok) {
     let message = `Request failed: ${res.status}`;
@@ -74,8 +131,12 @@ async function request<T>(
   return res.json();
 }
 
-export async function apiGet<T>(path: string, auth = true): Promise<T> {
-  return request<T>(path, { method: "GET" }, auth);
+export async function apiGet<T>(
+  path: string,
+  auth = true,
+  init: RequestInit = {}
+): Promise<T> {
+  return request<T>(path, { method: "GET", ...init }, auth);
 }
 
 export async function apiPost<T>(
@@ -90,19 +151,7 @@ export async function apiPostForm<T>(
   path: string,
   formData: FormData
 ): Promise<T> {
-  const token = getToken();
-  const headers: Record<string, string> = {};
-  if (token) headers["Authorization"] = `Bearer ${token}`;
-
-  const res = await fetch(`${API_BASE}${path}`, {
-    method: "POST",
-    body: formData,
-    headers,
-  });
-
-  if (res.status === 401) {
-    handle401();
-  }
+  const res = await authFetch(path, { method: "POST", body: formData });
 
   if (!res.ok) {
     let message = `Upload failed: ${res.status}`;
@@ -213,25 +262,77 @@ export interface Collection {
   course_id: string;
   user_id?: string;
   name: string;
+  /** null for a top-level collection; the parent's id for a sub-folder. */
+  parent_id: string | null;
   created_at: string;
+  /** OWN direct file count (does NOT include sub-folders' files). */
   material_count?: number;
+  /** Number of direct child sub-folders. */
+  subfolder_count?: number;
 }
 
-export async function getCollections(courseId: string): Promise<Collection[]> {
+/**
+ * Shape returned by GET /collections/course/{course_id}: a flat list of every
+ * collection in the course, each carrying parent_id (used to build the tree)
+ * plus its OWN direct material_count and direct subfolder_count. Structurally
+ * identical to Collection — aliased for clarity where the flat list is meant.
+ */
+export type CollectionSummary = Collection;
+
+export async function getCollections(courseId: string): Promise<CollectionSummary[]> {
   try {
-    return await apiGet<Collection[]>(`/collections/course/${courseId}`);
+    return await apiGet<CollectionSummary[]>(`/collections/course/${courseId}`);
   } catch (err) {
     if (err instanceof Error && /404|not found/i.test(err.message)) return [];
     throw err;
   }
 }
 
-export async function createCollection(courseId: string, name: string): Promise<Collection> {
-  return apiPost<Collection>("/collections", { course_id: courseId, name });
+/**
+ * Create a collection. Omit parentId (or pass null) for a top-level collection;
+ * pass a parent's id to create a sub-folder under it.
+ */
+export async function createCollection(courseId: string, name: string, parentId?: string | null): Promise<Collection> {
+  const body: Record<string, unknown> = { course_id: courseId, name };
+  if (parentId) body.parent_id = parentId;
+  return apiPost<Collection>("/collections", body);
 }
 
-export async function deleteCollection(collectionId: string): Promise<void> {
-  return apiDelete<void>(`/collections/${collectionId}`);
+/** Rename a collection. PATCH /collections/{id} { name }. */
+export async function renameCollection(collectionId: string, name: string): Promise<Collection> {
+  return apiPatch<Collection>(`/collections/${collectionId}`, { name });
+}
+
+/**
+ * Move/reparent a collection. PATCH /collections/{id}/parent { parent_id }.
+ * Pass null to promote to top-level. (Wired for Phase 4 drag-and-drop; the
+ * helper exists now but the Phase 3 UI does not call it.)
+ */
+export async function moveCollection(collectionId: string, parentId: string | null): Promise<Collection> {
+  return apiPatch<Collection>(`/collections/${collectionId}/parent`, { parent_id: parentId });
+}
+
+/** GET /collections/{id}/delete-preview — what a cascade delete would remove. */
+export interface DeleteCollectionPreview {
+  collection_id: string;
+  /** Number of descendant sub-folders that would also be deleted. */
+  descendant_count: number;
+  /** Names of the descendant collections that would be deleted. */
+  affected_collection_names: string[];
+}
+
+export async function deleteCollectionPreview(collectionId: string): Promise<DeleteCollectionPreview> {
+  return apiGet<DeleteCollectionPreview>(`/collections/${collectionId}/delete-preview`);
+}
+
+export interface DeleteCollectionResult {
+  deleted_collection_id: string;
+  deleted_descendant_count: number;
+  total_deleted: number;
+}
+
+export async function deleteCollection(collectionId: string): Promise<DeleteCollectionResult> {
+  return apiDelete<DeleteCollectionResult>(`/collections/${collectionId}`);
 }
 
 export async function addMaterialToCollection(collectionId: string, materialId: string): Promise<void> {
@@ -497,27 +598,25 @@ async function* readSseStream(response: Response): AsyncGenerator<string> {
   }
 }
 
-export async function* streamQuiz(courseId: string, collectionId?: string): AsyncGenerator<string> {
-  const token = getToken();
+export type QuizDifficulty = "easy" | "medium" | "hard";
+
+export async function* streamQuiz(
+  courseId: string,
+  collectionId?: string,
+  numQuestions?: number,
+  difficulty?: QuizDifficulty,
+): AsyncGenerator<string> {
   const body: Record<string, unknown> = { course_id: courseId };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
-  const response = await fetch(`${API_BASE}/ai/quiz/stream`, {
+  // QuizRequest accepts num_questions (1–50, default 10) and difficulty
+  // (easy|medium|hard, default medium); omitting keeps the backend defaults.
+  if (numQuestions != null) body.num_questions = numQuestions;
+  if (difficulty != null) body.difficulty = difficulty;
+  const response = await authFetch(`/ai/quiz/stream`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (response.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined") {
-      document.cookie = "strattigo_token=; path=/; max-age=0";
-      window.location.href = "/login";
-    }
-    throw new Error("Session expired. Please log in again.");
-  }
 
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
   yield* readSseStream(response);
@@ -530,53 +629,27 @@ export async function* streamStudyGuide(
   focusTopics?: string,
   style: "detailed" | "bullet" = "detailed",
 ): AsyncGenerator<string> {
-  const token = getToken();
   const body: Record<string, unknown> = { course_id: courseId, title, style };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   if (focusTopics && focusTopics.trim()) body.focus_topics = focusTopics.trim();
-  const response = await fetch(`${API_BASE}/ai/study-guide/stream`, {
+  const response = await authFetch(`/ai/study-guide/stream`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (response.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined") {
-      document.cookie = "strattigo_token=; path=/; max-age=0";
-      window.location.href = "/login";
-    }
-    throw new Error("Session expired. Please log in again.");
-  }
 
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
   yield* readSseStream(response);
 }
 
 export async function* streamChat(courseId: string, question: string, history: ChatHistoryMessage[] = [], collectionId?: string): AsyncGenerator<string> {
-  const token = getToken();
   const body: Record<string, unknown> = { course_id: courseId, question, history };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
-  const response = await fetch(`${API_BASE}/ai/chat/stream`, {
+  const response = await authFetch(`/ai/chat/stream`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (response.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined") {
-      document.cookie = "strattigo_token=; path=/; max-age=0";
-      window.location.href = "/login";
-    }
-    throw new Error("Session expired. Please log in again.");
-  }
 
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
   yield* readSseStream(response);
@@ -745,27 +818,14 @@ export async function* streamEventPlan(
   hoursPerDay: number,
   collectionId?: string,
 ): AsyncGenerator<string> {
-  const token = getToken();
   const body: Record<string, unknown> = { event_id: eventId, hours_per_day: hoursPerDay };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
 
-  const response = await fetch(`${API_BASE}/study-plan/events/${eventId}/generate`, {
+  const response = await authFetch(`/study-plan/events/${eventId}/generate`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (response.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined") {
-      document.cookie = "strattigo_token=; path=/; max-age=0";
-      window.location.href = "/login";
-    }
-    throw new Error("Session expired. Please log in again.");
-  }
 
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
   yield* readSseStream(response);
@@ -809,27 +869,14 @@ export async function* streamGenerateFlashcards(
   title: string,
   collectionId?: string,
 ): AsyncGenerator<string> {
-  const token = getToken();
   const body: Record<string, unknown> = { course_id: courseId, title };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
 
-  const response = await fetch(`${API_BASE}/flashcards/generate`, {
+  const response = await authFetch(`/flashcards/generate`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    },
+    headers: { "Content-Type": "application/json" },
     body: JSON.stringify(body),
   });
-
-  if (response.status === 401) {
-    clearToken();
-    if (typeof window !== "undefined") {
-      document.cookie = "strattigo_token=; path=/; max-age=0";
-      window.location.href = "/login";
-    }
-    throw new Error("Session expired. Please log in again.");
-  }
 
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
   yield* readSseStream(response);
