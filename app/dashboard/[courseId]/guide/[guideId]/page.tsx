@@ -168,7 +168,7 @@ export default function GuidePage({
         router.push("/dashboard");
         break;
       case "chat":
-        router.push(`/dashboard/${courseId}?tab=chat`);
+        router.push(`/dashboard/${courseId}/chat`);
         break;
       case "guides":
         router.push(`/dashboard/${courseId}?tab=study-guide`);
