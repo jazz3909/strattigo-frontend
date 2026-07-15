@@ -85,11 +85,17 @@ export default function MaterialsPage({
     setCollections,
     materials,
     setMaterials,
+    materialsReady,
     loading,
     error: loadError,
     reloadAll,
     uploadActionRef,
   } = useWorkspace();
+
+  // The other surfaces only need the count and paint before materials load, but
+  // Materials shows the full file list — so it keeps its skeleton until the
+  // background materials fetch resolves. (Frame `loading` clears first now.)
+  const frameLoading = loading || !materialsReady;
 
   // ── Membership maps (files ↔ collections; many-to-many) ──
   const [collectionMaterialIds, setCollectionMaterialIds] = useState<Record<string, string[]>>({});
@@ -489,9 +495,7 @@ export default function MaterialsPage({
 
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1040px] px-10 py-8 max-md:px-4">
-            {loading ? (
-              <ListSkeleton />
-            ) : loadError ? (
+            {loadError ? (
               <div className="max-w-md">
                 <p className="font-read text-read-s text-error-deep">{loadError}</p>
                 <div className="mt-6">
@@ -500,6 +504,8 @@ export default function MaterialsPage({
                   </Button>
                 </div>
               </div>
+            ) : frameLoading ? (
+              <ListSkeleton />
             ) : subTab === "all" ? (
               <AllFilesView
                 uploading={uploading}

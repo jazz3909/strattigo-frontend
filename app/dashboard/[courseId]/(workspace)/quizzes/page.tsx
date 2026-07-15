@@ -33,6 +33,7 @@ export default function QuizzesPage({
   // ── Workspace-frame data — shared, fetched once by the (workspace) layout ──
   const {
     materialCount,
+    materialsReady,
     scopedId,
     loading: frameLoading,
     error: frameError,
@@ -65,7 +66,9 @@ export default function QuizzesPage({
     load();
   }, [load]);
 
-  const canGenerate = materialCount > 0;
+  // Optimistic until the background materials count lands (see chat) — a truly
+  // empty course is still gated once materialsReady && count === 0.
+  const canGenerate = !materialsReady || materialCount > 0;
   // The current scope rides along as ?scope= so the quiz view's ScopePicker
   // opens on the real selected collection. (Saved quizzes store only the
   // questions — no attempt answers/score — so rows show title/date/count;

@@ -200,15 +200,30 @@ export interface Course {
   description?: string;
 }
 
+// Client-session cache of course identities, keyed by id. The backend has no
+// GET /courses/{id}, so getCourse would otherwise re-scan the whole /courses
+// list on every workspace entry — even though the dashboard just fetched it.
+// getCourses() (run by the dashboard) warms this, so dashboard → workspace
+// navigation reads the course instantly instead of a redundant round-trip.
+// On a cold direct/deep-link entry the cache is empty and getCourse falls back
+// to the list scan, so behavior is identical — just not repeated.
+const courseCache = new Map<string, Course>();
+
 export async function getCourses(): Promise<Course[]> {
-  return apiGet<Course[]>("/courses");
+  const courses = await apiGet<Course[]>("/courses");
+  for (const c of courses) courseCache.set(c.id, c);
+  return courses;
 }
 
 export async function createCourse(name: string, description?: string): Promise<Course> {
-  return apiPost<Course>("/courses", { name, description });
+  const course = await apiPost<Course>("/courses", { name, description });
+  courseCache.set(course.id, course);
+  return course;
 }
 
 export async function getCourse(courseId: string): Promise<Course> {
+  const cached = courseCache.get(courseId);
+  if (cached) return cached;
   const courses = await getCourses();
   const course = courses.find((c) => c.id === courseId);
   if (!course) throw new Error(`Course not found: ${courseId}`);

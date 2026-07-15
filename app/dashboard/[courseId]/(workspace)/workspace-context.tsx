@@ -49,6 +49,13 @@ interface WorkspaceContextValue {
   collections: Collection[];
   materials: Material[];
   materialCount: number;
+  /**
+   * Whether the (heavy, background) materials fetch has resolved at least once.
+   * `materialCount` is only meaningful once this is true — before then the
+   * count is not yet known, and the surfaces gate optimistically so entering a
+   * course paints immediately instead of waiting on the full-text payload.
+   */
+  materialsReady: boolean;
   loading: boolean;
   error: string;
   /** Full refetch of course + collections + materials (retry after error). */
@@ -75,6 +82,7 @@ export function WorkspaceProvider({
   const [course, setCourse] = useState<Course | null>(null);
   const [collections, setCollections] = useState<Collection[]>([]);
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [materialsReady, setMaterialsReady] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [scopedId, setScopedId] = useState<string | null>(null);
@@ -93,15 +101,28 @@ export function WorkspaceProvider({
   const reloadAll = useCallback(async () => {
     setLoading(true);
     setError("");
+
+    // Materials carry every upload's full extracted text — a 2–4s payload that
+    // chat / guides / quizzes only read a count from. Fetch it in the
+    // BACKGROUND so it never gates the skeleton; the count populates (and
+    // `materialsReady` flips) whenever it lands. The materials surface reads
+    // the full list from here once it arrives.
+    setMaterialsReady(false);
+    void getMaterials(courseId)
+      .catch(() => [])
+      .then((mats) => setMaterials(mats))
+      .finally(() => setMaterialsReady(true));
+
+    // Only the two LIGHT fetches gate `loading` (and thus the skeleton), so the
+    // workspace paints as soon as course + collections resolve. getCourse is
+    // served from the client cache when arriving from the dashboard.
     try {
-      const [c, cols, mats] = await Promise.all([
+      const [c, cols] = await Promise.all([
         getCourse(courseId),
         getCollections(courseId),
-        getMaterials(courseId).catch(() => []),
       ]);
       setCourse(c);
       setCollections(cols);
-      setMaterials(mats);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load workspace.");
     } finally {
@@ -122,6 +143,7 @@ export function WorkspaceProvider({
     collections,
     materials,
     materialCount: materials.length,
+    materialsReady,
     loading,
     error,
     reloadAll,

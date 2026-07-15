@@ -36,6 +36,7 @@ export default function ChatPage({
     course,
     collections,
     materialCount,
+    materialsReady,
     scopedId,
     loading,
     error: loadError,
@@ -58,7 +59,11 @@ export default function ChatPage({
   const tree = useMemo(() => buildCollectionTree(collections), [collections]);
   const scopeName =
     (scopedId != null && findNode(tree, scopedId)?.name) || course?.name || "";
-  const canChat = materialCount > 0;
+  // Optimistic gate: the materials count loads in the background, so until it's
+  // known we allow chatting rather than flashing the "upload materials" gate on
+  // a course that almost certainly has materials. Once the count resolves, a
+  // genuinely empty course (materialsReady && count === 0) is correctly gated.
+  const canChat = !materialsReady || materialCount > 0;
 
   // The chat stream carries no source refs (backend yields plain text chunks
   // only), so the designed citation chips are omitted. Logged per spec.

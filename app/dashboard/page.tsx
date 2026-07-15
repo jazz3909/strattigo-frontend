@@ -82,6 +82,12 @@ function CourseCard({ course }: { course: Course }) {
   return (
     <Link
       href={`/dashboard/${course.id}/chat`}
+      // Force a FULL-route prefetch. The workspace is a dynamic segment with a
+      // loading.tsx, so the default ("auto") prefetch stops at the skeleton
+      // boundary and the ~409KB markdown/KaTeX chat chunk downloads cold on
+      // click — stacking in front of the data fetch. prefetch warms that chunk
+      // while the card sits in the viewport, so the click is chunk-warm.
+      prefetch
       className="lift-hover group flex overflow-hidden rounded-lg border border-rule bg-raised hover:border-rule-strong"
     >
       <span className="w-[5px] shrink-0" style={{ background: hue.color }} />

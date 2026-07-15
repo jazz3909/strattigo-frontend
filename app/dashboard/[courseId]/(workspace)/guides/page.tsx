@@ -35,6 +35,7 @@ export default function GuidesPage({
   // ── Workspace-frame data — shared, fetched once by the (workspace) layout ──
   const {
     materialCount,
+    materialsReady,
     scopedId,
     loading: frameLoading,
     error: frameError,
@@ -67,7 +68,9 @@ export default function GuidesPage({
     load();
   }, [load]);
 
-  const canGenerate = materialCount > 0;
+  // Optimistic until the background materials count lands (see chat) — a truly
+  // empty course is still gated once materialsReady && count === 0.
+  const canGenerate = !materialsReady || materialCount > 0;
   const atLimit = guides.length >= GUIDE_LIMIT;
   // The current scope rides along as ?scope= so the generation view's
   // ScopePicker opens on the real selected collection.
