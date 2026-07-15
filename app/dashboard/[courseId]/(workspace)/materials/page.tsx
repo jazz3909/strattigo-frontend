@@ -1,7 +1,6 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import { Menu } from "@base-ui/react/menu";
 import {
   Check,
@@ -15,16 +14,12 @@ import {
   Upload,
 } from "lucide-react";
 
-import { WorkspaceRail, type RailView } from "@/components/shell/workspace-rail";
-import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/app/components/ui/Spinner";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
-  getCourse,
   getCollections,
-  getMaterials,
   getCollectionMaterials,
   uploadMaterial,
   renameMaterial,
@@ -32,7 +27,6 @@ import {
   getMaterialWithDownload,
   addMaterialToCollection,
   removeMaterialFromCollection,
-  type Course,
   type Collection,
   type Material,
 } from "@/app/lib/api";
@@ -40,6 +34,7 @@ import { buildCollectionTree, flattenTree } from "@/app/lib/collectionTree";
 import { FileTypeBadge, fileCategory } from "./fileType";
 import { CollectionsView } from "./CollectionsView";
 import { ConfirmScrim } from "./scrim";
+import { useWorkspace } from "../workspace-context";
 
 // ── Local helpers ──────────────────────────────────────────────────────────
 // Split "notes v2.pdf" → ["notes v2", ".pdf"]; the rename UI edits only the
@@ -79,16 +74,22 @@ export default function MaterialsPage({
   params: Promise<{ courseId: string }>;
 }) {
   const { courseId } = use(params);
-  const router = useRouter();
   const { addToast } = useToast();
 
-  // ── Workspace-frame data ──
-  const [course, setCourse] = useState<Course | null>(null);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [materials, setMaterials] = useState<Material[]>([]);
-  const [scopedId, setScopedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  // ── Workspace-frame data — shared, fetched once by the (workspace) layout.
+  //    Materials is the only writer: upload / rename / delete / collection
+  //    edits go through these setters so the shared copy (and the top bar's
+  //    count) stay live across surface switches. ──
+  const {
+    collections,
+    setCollections,
+    materials,
+    setMaterials,
+    loading,
+    error: loadError,
+    reloadAll,
+    uploadActionRef,
+  } = useWorkspace();
 
   // ── Membership maps (files ↔ collections; many-to-many) ──
   const [collectionMaterialIds, setCollectionMaterialIds] = useState<Record<string, string[]>>({});
@@ -128,40 +129,25 @@ export default function MaterialsPage({
   const flatCollections = useMemo(() => flattenTree(tree), [tree]);
 
   // Initial deep-link support: ?tab=all&filter=unfiled (the Collections view's
-  // "Review unfiled →" link, wired in Stage 2).
+  // "Review unfiled →" link, wired in Stage 2). (?scope= is seeded by the
+  // shared workspace layout.)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const p = new URLSearchParams(window.location.search);
-    const scope = p.get("scope");
-    if (scope) setScopedId(scope);
     if (p.get("tab") === "all") setSubTab("all");
     const f = p.get("filter");
     if (f && FILTER_CHIPS.some((c) => c.key === f)) setFilterKey(f as FilterKey);
   }, []);
 
-  // Load the frame + the file/collection lists.
-  const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError("");
-    try {
-      const [c, cols, mats] = await Promise.all([
-        getCourse(courseId),
-        getCollections(courseId),
-        getMaterials(courseId).catch(() => []),
-      ]);
-      setCourse(c);
-      setCollections(cols);
-      setMaterials(mats);
-    } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load materials.");
-    } finally {
-      setLoading(false);
-    }
-  }, [courseId]);
-
+  // The top-bar Upload button lives in the shared layout; register this
+  // surface's file-dialog opener so it triggers an upload while on Materials
+  // (elsewhere the button routes here instead).
   useEffect(() => {
-    load();
-  }, [load]);
+    uploadActionRef.current = () => fileInputRef.current?.click();
+    return () => {
+      uploadActionRef.current = null;
+    };
+  }, [uploadActionRef]);
 
   // Rebuild the membership maps whenever the set of collections changes. Stores
   // ids only; rows resolve them against the live `materials` list, so a rename
@@ -195,31 +181,6 @@ export default function MaterialsPage({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [collectionIdString]);
-
-  const scopeName =
-    (scopedId != null && flatCollections.find((n) => n.id === scopedId)?.name) || course?.name || "";
-
-  function navTab(view: RailView) {
-    switch (view) {
-      case "courses":
-        router.push("/dashboard");
-        break;
-      case "chat":
-        router.push(`/dashboard/${courseId}/chat`);
-        break;
-      case "guides":
-        router.push(`/dashboard/${courseId}/guides`);
-        break;
-      case "quizzes":
-        router.push(`/dashboard/${courseId}/quizzes`);
-        break;
-      case "materials":
-        break; // already here
-      case "settings":
-        router.push("/settings/billing");
-        break;
-    }
-  }
 
   // ── Upload (ported: sequential, per-file honest toasts, ≤50MB) ──
   async function handleFileUpload(files: FileList | null) {
@@ -502,19 +463,10 @@ export default function MaterialsPage({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-page text-ink max-md:h-dvh max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <WorkspaceRail activeView="materials" onNavigate={navTab} />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <WorkspaceTopBar
-          course={{ name: course?.name ?? "…", materialCount }}
-          tree={tree}
-          scopedNodeId={scopedId}
-          onScopeChange={setScopedId}
-          onUpload={() => fileInputRef.current?.click()}
-        />
-
-        {/* Hidden input backing the top-bar Upload button + the dropzone. */}
+    <>
+        {/* Hidden input backing the shared top-bar Upload button + the dropzone.
+            Materials registers its opener via uploadActionRef (see effect above),
+            so the layout's Upload button triggers this while on this surface. */}
         <input
           ref={fileInputRef}
           type="file"
@@ -543,7 +495,7 @@ export default function MaterialsPage({
               <div className="max-w-md">
                 <p className="font-read text-read-s text-error-deep">{loadError}</p>
                 <div className="mt-6">
-                  <Button variant="secondary" onClick={load}>
+                  <Button variant="secondary" onClick={reloadAll}>
                     Try again
                   </Button>
                 </div>
@@ -601,7 +553,6 @@ export default function MaterialsPage({
             )}
           </div>
         </div>
-      </div>
 
       {/* Single-file "Add to collection" checklist (toggle membership) */}
       {singleAddFile && (
@@ -701,7 +652,7 @@ export default function MaterialsPage({
           </div>
         </ConfirmScrim>
       )}
-    </div>
+    </>
   );
 }
 

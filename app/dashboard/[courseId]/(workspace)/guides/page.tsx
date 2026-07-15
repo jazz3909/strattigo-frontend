@@ -1,27 +1,20 @@
 "use client";
 
-import { use, useCallback, useEffect, useMemo, useState } from "react";
+import { use, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, FileText, Plus, Sparkles, Trash2 } from "lucide-react";
 
-import { WorkspaceRail, type RailView } from "@/components/shell/workspace-rail";
-import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/app/components/ui/Spinner";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
-  getCourse,
-  getCollections,
-  getMaterials,
   getSavedStudyGuides,
   deleteStudyGuide,
-  type Course,
-  type Collection,
   type StudyGuideSaved,
 } from "@/app/lib/api";
-import { buildCollectionTree } from "@/app/lib/collectionTree";
 import { ConfirmScrim } from "../materials/scrim";
+import { useWorkspace } from "../workspace-context";
 
 // Ported from the monolith StudyGuideTab: 5 saved guides per course.
 const GUIDE_LIMIT = 5;
@@ -39,71 +32,40 @@ export default function GuidesPage({
   const router = useRouter();
   const { addToast } = useToast();
 
-  // ── Workspace-frame data ──
-  const [course, setCourse] = useState<Course | null>(null);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [materialCount, setMaterialCount] = useState(0);
-  const [scopedId, setScopedId] = useState<string | null>(null);
+  // ── Workspace-frame data — shared, fetched once by the (workspace) layout ──
+  const {
+    materialCount,
+    scopedId,
+    loading: frameLoading,
+    error: frameError,
+    reloadAll,
+  } = useWorkspace();
 
-  // ── The list ──
+  // ── The list (surface-specific) ──
   const [guides, setGuides] = useState<StudyGuideSaved[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<StudyGuideSaved | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const tree = useMemo(() => buildCollectionTree(collections), [collections]);
+  const loading = frameLoading || listLoading;
+  const loadError = frameError || listError;
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError("");
+    setListLoading(true);
+    setListError("");
     try {
-      const [c, cols, mats, saved] = await Promise.all([
-        getCourse(courseId),
-        getCollections(courseId),
-        getMaterials(courseId).catch(() => []),
-        getSavedStudyGuides(courseId),
-      ]);
-      setCourse(c);
-      setCollections(cols);
-      setMaterialCount(mats.length);
-      setGuides(saved);
+      setGuides(await getSavedStudyGuides(courseId));
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load study guides.");
+      setListError(err instanceof Error ? err.message : "Failed to load study guides.");
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
   }, [courseId]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const q = new URLSearchParams(window.location.search).get("scope");
-      if (q) setScopedId(q);
-    }
     load();
   }, [load]);
-
-  function navTab(view: RailView) {
-    switch (view) {
-      case "courses":
-        router.push("/dashboard");
-        break;
-      case "chat":
-        router.push(`/dashboard/${courseId}/chat`);
-        break;
-      case "guides":
-        break; // already here
-      case "quizzes":
-        router.push(`/dashboard/${courseId}/quizzes`);
-        break;
-      case "materials":
-        router.push(`/dashboard/${courseId}/materials`);
-        break;
-      case "settings":
-        router.push("/settings/billing");
-        break;
-    }
-  }
 
   const canGenerate = materialCount > 0;
   const atLimit = guides.length >= GUIDE_LIMIT;
@@ -128,18 +90,7 @@ export default function GuidesPage({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-page text-ink max-md:h-dvh max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <WorkspaceRail activeView="guides" onNavigate={navTab} />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <WorkspaceTopBar
-          course={{ name: course?.name ?? "…", materialCount }}
-          tree={tree}
-          scopedNodeId={scopedId}
-          onScopeChange={setScopedId}
-          onUpload={() => router.push(`/dashboard/${courseId}/materials`)}
-        />
-
+    <>
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1040px] px-10 py-8 max-md:px-4">
             {/* Header: title + usage meta + the view's one primary action */}
@@ -169,7 +120,7 @@ export default function GuidesPage({
               <div className="max-w-md">
                 <p className="font-read text-read-s text-error-deep">{loadError}</p>
                 <div className="mt-6">
-                  <Button variant="secondary" onClick={load}>
+                  <Button variant="secondary" onClick={() => { reloadAll(); load(); }}>
                     Try again
                   </Button>
                 </div>
@@ -256,7 +207,6 @@ export default function GuidesPage({
             )}
           </div>
         </div>
-      </div>
 
       {/* Delete-guide confirm */}
       {confirmDelete && (
@@ -276,7 +226,7 @@ export default function GuidesPage({
           </div>
         </ConfirmScrim>
       )}
-    </div>
+    </>
   );
 }
 

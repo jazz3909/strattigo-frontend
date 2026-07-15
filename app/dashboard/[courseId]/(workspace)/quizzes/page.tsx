@@ -5,24 +5,17 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Plus, Sparkles, SquareCheck, Trash2 } from "lucide-react";
 
-import { WorkspaceRail, type RailView } from "@/components/shell/workspace-rail";
-import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/app/components/ui/Spinner";
 import { useToast } from "@/app/providers/ToastProvider";
 import {
-  getCourse,
-  getCollections,
-  getMaterials,
   getSavedQuizzes,
   deleteSavedQuiz,
   parseQuizMarkdown,
-  type Course,
-  type Collection,
   type QuizSaved,
 } from "@/app/lib/api";
-import { buildCollectionTree } from "@/app/lib/collectionTree";
 import { ConfirmScrim } from "../materials/scrim";
+import { useWorkspace } from "../workspace-context";
 
 function shortDate(iso: string): string {
   return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
@@ -37,71 +30,40 @@ export default function QuizzesPage({
   const router = useRouter();
   const { addToast } = useToast();
 
-  // ── Workspace-frame data ──
-  const [course, setCourse] = useState<Course | null>(null);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [materialCount, setMaterialCount] = useState(0);
-  const [scopedId, setScopedId] = useState<string | null>(null);
+  // ── Workspace-frame data — shared, fetched once by the (workspace) layout ──
+  const {
+    materialCount,
+    scopedId,
+    loading: frameLoading,
+    error: frameError,
+    reloadAll,
+  } = useWorkspace();
 
-  // ── The list ──
+  // ── The list (surface-specific) ──
   const [quizzes, setQuizzes] = useState<QuizSaved[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [listLoading, setListLoading] = useState(true);
+  const [listError, setListError] = useState("");
   const [confirmDelete, setConfirmDelete] = useState<QuizSaved | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  const tree = useMemo(() => buildCollectionTree(collections), [collections]);
+  const loading = frameLoading || listLoading;
+  const loadError = frameError || listError;
 
   const load = useCallback(async () => {
-    setLoading(true);
-    setLoadError("");
+    setListLoading(true);
+    setListError("");
     try {
-      const [c, cols, mats, saved] = await Promise.all([
-        getCourse(courseId),
-        getCollections(courseId),
-        getMaterials(courseId).catch(() => []),
-        getSavedQuizzes(courseId),
-      ]);
-      setCourse(c);
-      setCollections(cols);
-      setMaterialCount(mats.length);
-      setQuizzes(saved);
+      setQuizzes(await getSavedQuizzes(courseId));
     } catch (err) {
-      setLoadError(err instanceof Error ? err.message : "Failed to load quizzes.");
+      setListError(err instanceof Error ? err.message : "Failed to load quizzes.");
     } finally {
-      setLoading(false);
+      setListLoading(false);
     }
   }, [courseId]);
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const q = new URLSearchParams(window.location.search).get("scope");
-      if (q) setScopedId(q);
-    }
     load();
   }, [load]);
-
-  function navTab(view: RailView) {
-    switch (view) {
-      case "courses":
-        router.push("/dashboard");
-        break;
-      case "chat":
-        router.push(`/dashboard/${courseId}/chat`);
-        break;
-      case "guides":
-        router.push(`/dashboard/${courseId}/guides`);
-        break;
-      case "quizzes":
-        break; // already here
-      case "materials":
-        router.push(`/dashboard/${courseId}/materials`);
-        break;
-      case "settings":
-        router.push("/settings/billing");
-        break;
-    }
-  }
 
   const canGenerate = materialCount > 0;
   // The current scope rides along as ?scope= so the quiz view's ScopePicker
@@ -127,18 +89,7 @@ export default function QuizzesPage({
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-page text-ink max-md:h-dvh max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <WorkspaceRail activeView="quizzes" onNavigate={navTab} />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <WorkspaceTopBar
-          course={{ name: course?.name ?? "…", materialCount }}
-          tree={tree}
-          scopedNodeId={scopedId}
-          onScopeChange={setScopedId}
-          onUpload={() => router.push(`/dashboard/${courseId}/materials`)}
-        />
-
+    <>
         <div className="flex-1 overflow-y-auto">
           <div className="mx-auto w-full max-w-[1040px] px-10 py-8 max-md:px-4">
             {/* Header: title + usage meta + the view's one primary action */}
@@ -163,7 +114,7 @@ export default function QuizzesPage({
               <div className="max-w-md">
                 <p className="font-read text-read-s text-error-deep">{loadError}</p>
                 <div className="mt-6">
-                  <Button variant="secondary" onClick={load}>
+                  <Button variant="secondary" onClick={() => { reloadAll(); load(); }}>
                     Try again
                   </Button>
                 </div>
@@ -217,7 +168,6 @@ export default function QuizzesPage({
             )}
           </div>
         </div>
-      </div>
 
       {/* Delete-quiz confirm */}
       {confirmDelete && (
@@ -237,7 +187,7 @@ export default function QuizzesPage({
           </div>
         </ConfirmScrim>
       )}
-    </div>
+    </>
   );
 }
 

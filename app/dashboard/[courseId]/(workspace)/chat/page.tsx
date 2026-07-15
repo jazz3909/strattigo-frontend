@@ -4,24 +4,12 @@ import { use, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { FolderTree, Send, Sparkles } from "lucide-react";
 
-import {
-  WorkspaceRail,
-  type RailView,
-} from "@/components/shell/workspace-rail";
-import { WorkspaceTopBar } from "@/components/shell/workspace-top-bar";
 import { Button } from "@/components/ui/button";
 import { AppMarkdown } from "@/app/components/ui/GuideMarkdown";
 import { useToast } from "@/app/providers/ToastProvider";
-import {
-  getCourse,
-  getCollections,
-  getMaterials,
-  streamChat,
-  type ChatMessage,
-  type Course,
-  type Collection,
-} from "@/app/lib/api";
+import { streamChat, type ChatMessage } from "@/app/lib/api";
 import { buildCollectionTree, findNode } from "@/app/lib/collectionTree";
+import { useWorkspace } from "../workspace-context";
 
 // Ported from the monolith ChatTab — same four starters.
 const SUGGESTED_QUESTIONS = [
@@ -42,13 +30,17 @@ export default function ChatPage({
   const router = useRouter();
   const { addToast } = useToast();
 
-  // ── Workspace-frame data (course identity + scope tree) ──
-  const [course, setCourse] = useState<Course | null>(null);
-  const [collections, setCollections] = useState<Collection[]>([]);
-  const [materialCount, setMaterialCount] = useState(0);
-  const [scopedId, setScopedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  // ── Workspace-frame data — fetched once per course by the shared
+  //    (workspace) layout and read here (no per-surface refetch). ──
+  const {
+    course,
+    collections,
+    materialCount,
+    scopedId,
+    loading,
+    error: loadError,
+    reloadAll,
+  } = useWorkspace();
 
   // ── Conversation (ephemeral — the backend has no thread persistence; the
   //    last 10 messages ride along as `history` on each request) ──
@@ -76,38 +68,6 @@ export default function ChatPage({
     );
   }, []);
 
-  useEffect(() => {
-    let cancelled = false;
-    if (typeof window !== "undefined") {
-      const q = new URLSearchParams(window.location.search).get("scope");
-      if (q) setScopedId(q);
-    }
-    async function load() {
-      setLoading(true);
-      setLoadError("");
-      try {
-        const [c, cols, mats] = await Promise.all([
-          getCourse(courseId),
-          getCollections(courseId),
-          getMaterials(courseId).catch(() => []),
-        ]);
-        if (cancelled) return;
-        setCourse(c);
-        setCollections(cols);
-        setMaterialCount(mats.length);
-      } catch (err) {
-        if (!cancelled)
-          setLoadError(err instanceof Error ? err.message : "Failed to load.");
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [courseId]);
-
   // Follow the conversation while attached. Runs on every appended chunk
   // (messages is replaced per chunk) — direct scrollTop assignment, no smooth
   // behavior, so a fast stream never janks or queues animations.
@@ -120,28 +80,6 @@ export default function ChatPage({
     const el = threadRef.current;
     if (!el) return;
     stickRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
-  }
-
-  function navTab(view: RailView) {
-    switch (view) {
-      case "courses":
-        router.push("/dashboard");
-        break;
-      case "chat":
-        break; // already here
-      case "guides":
-        router.push(`/dashboard/${courseId}/guides`);
-        break;
-      case "quizzes":
-        router.push(`/dashboard/${courseId}/quizzes`);
-        break;
-      case "materials":
-        router.push(`/dashboard/${courseId}/materials`);
-        break;
-      case "settings":
-        router.push("/settings/billing");
-        break;
-    }
   }
 
   // Ported verbatim from the monolith's handleChat — send + stream logic is
@@ -215,31 +153,18 @@ export default function ChatPage({
 
   const busy = chatLoading || chatStreaming;
 
-  return (
-    <div className="flex h-screen overflow-hidden bg-page text-ink max-md:h-dvh max-md:pb-[calc(3.5rem+env(safe-area-inset-bottom))]">
-      <WorkspaceRail activeView="chat" onNavigate={navTab} />
-
-      <div className="flex min-w-0 flex-1 flex-col">
-        <WorkspaceTopBar
-          course={{ name: course?.name ?? "…", materialCount }}
-          tree={tree}
-          scopedNodeId={scopedId}
-          onScopeChange={setScopedId}
-          onUpload={() => router.push(`/dashboard/${courseId}/materials`)}
-        />
-
-        {loading ? (
-          <ChatSkeleton />
-        ) : loadError ? (
-          <div className="mt-24 max-w-md px-14 max-md:px-5">
-            <p className="font-read text-read-s text-error-deep">{loadError}</p>
-            <div className="mt-6">
-              <Button variant="secondary" onClick={() => router.refresh()}>
-                Try again
-              </Button>
-            </div>
-          </div>
-        ) : (
+  return loading ? (
+    <ChatSkeleton />
+  ) : loadError ? (
+    <div className="mt-24 max-w-md px-14 max-md:px-5">
+      <p className="font-read text-read-s text-error-deep">{loadError}</p>
+      <div className="mt-6">
+        <Button variant="secondary" onClick={() => reloadAll()}>
+          Try again
+        </Button>
+      </div>
+    </div>
+  ) : (
           <div className="flex min-h-0 flex-1 flex-col">
             {/* Thread — the conversation owns the screen */}
             <div
@@ -358,9 +283,6 @@ export default function ChatPage({
               </div>
             </div>
           </div>
-        )}
-      </div>
-    </div>
   );
 }
 
