@@ -57,29 +57,36 @@ const SETTINGS_ITEM: RailItemConfig = {
 function RailButton({
   item,
   active,
+  expanded,
   onNavigate,
 }: {
   item: RailItemConfig
   active: boolean
+  /** Rail is hover/focus-expanded — reveal the text label beside the icon. */
+  expanded: boolean
   onNavigate: (view: RailView) => void
 }) {
   const Icon = item.icon
   return (
     <button
       type="button"
+      // aria-label is kept regardless of expand state so keyboard / SR users
+      // always have the name; the visible label is a purely visual enhancement.
       aria-label={item.label}
       aria-current={active ? "page" : undefined}
       title={item.label}
       onClick={() => onNavigate(item.id)}
       className={cn(
-        "relative grid size-[42px] cursor-pointer place-items-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page",
+        "relative flex h-[42px] w-full cursor-pointer items-center rounded-md outline-none transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-page",
         active
           ? "bg-accent-tint text-accent-deep"
           : "text-ink-faint hover:bg-rule-soft hover:text-ink-soft"
       )}
     >
       {/* Always in the tree so the active marker can ease in/out (grow from
-          center) instead of hard-snapping between views. */}
+          center) instead of hard-snapping between views. Anchored to the rail's
+          left edge, so it reads identically at both collapsed and expanded
+          widths. */}
       <span
         aria-hidden="true"
         className={cn(
@@ -87,7 +94,19 @@ function RailButton({
           active ? "opacity-100 scale-y-100" : "opacity-0 scale-y-50"
         )}
       />
-      <Icon className="size-[19px]" />
+      {/* Fixed 42px icon cell keeps the icon at the same x in both widths, so
+          expansion never nudges the icons. */}
+      <span className="grid size-[42px] shrink-0 place-items-center">
+        <Icon className="size-[19px]" />
+      </span>
+      <span
+        className={cn(
+          "whitespace-nowrap pr-3 font-sans text-[13.5px] font-medium transition-opacity duration-(--duration-base) ease-out-soft",
+          expanded ? "opacity-100" : "opacity-0"
+        )}
+      >
+        {item.label}
+      </span>
     </button>
   )
 }
@@ -99,34 +118,94 @@ interface WorkspaceRailProps {
 }
 
 function WorkspaceRail({ activeView, onNavigate, className }: WorkspaceRailProps) {
+  // Expand on genuine hover (with a small open-delay so a near-miss along the
+  // screen edge doesn't flicker it open) OR on keyboard focus landing inside
+  // the rail (so keyboard users get the same label affordance). Collapse is
+  // immediate on leave. The width/opacity transitions are neutralized by the
+  // global prefers-reduced-motion block, so reduced-motion users get an
+  // instant, non-animated expand.
+  const [hoverOpen, setHoverOpen] = React.useState(false)
+  const [focusOpen, setFocusOpen] = React.useState(false)
+  const openTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null)
+  const expanded = hoverOpen || focusOpen
+
+  const clearOpenTimer = () => {
+    if (openTimer.current) {
+      clearTimeout(openTimer.current)
+      openTimer.current = null
+    }
+  }
+  const handleMouseEnter = () => {
+    clearOpenTimer()
+    openTimer.current = setTimeout(() => setHoverOpen(true), 110)
+  }
+  const handleMouseLeave = () => {
+    clearOpenTimer()
+    setHoverOpen(false)
+  }
+  const handleBlur = (e: React.FocusEvent<HTMLElement>) => {
+    // Only collapse once focus leaves the rail entirely (not while tabbing
+    // between its own buttons).
+    if (!e.currentTarget.contains(e.relatedTarget as Node | null)) {
+      setFocusOpen(false)
+    }
+  }
+  React.useEffect(() => () => clearOpenTimer(), [])
+
   return (
     <>
       <WorkspaceTabBar activeView={activeView} onNavigate={onNavigate} />
-      <nav
-        aria-label="Workspace"
-        className={cn(
-          "hidden w-[66px] shrink-0 flex-col items-center gap-1.5 border-r border-rule bg-page py-4 md:flex",
-          className
-        )}
-      >
-        <div className="mb-3.5 grid size-[34px] place-items-center rounded-md bg-accent font-display text-lg font-semibold text-white">
-          S
-        </div>
-        {RAIL_VIEWS.map((item) => (
+      {/* Desktop rail. The outer element reserves a fixed 66px gutter in the
+          flex row; the nav is absolutely positioned within it and expands OVER
+          the page content on hover/focus, so the page never reflows. */}
+      <div className="relative hidden w-[66px] shrink-0 md:block">
+        <nav
+          aria-label="Workspace"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+          onFocus={() => setFocusOpen(true)}
+          onBlur={handleBlur}
+          className={cn(
+            "absolute inset-y-0 left-0 z-30 flex flex-col gap-1.5 overflow-hidden border-r border-rule bg-page px-3 py-4 transition-[width] duration-(--duration-base) ease-out-soft",
+            expanded
+              ? "w-[232px] shadow-[6px_0_24px_-10px_rgba(15,23,42,0.18)]"
+              : "w-[66px]",
+            className
+          )}
+        >
+          <div className="mb-3.5 flex h-[34px] items-center">
+            <span className="grid size-[42px] shrink-0 place-items-center">
+              <span className="grid size-[34px] place-items-center rounded-md bg-accent font-display text-lg font-semibold text-white">
+                S
+              </span>
+            </span>
+            <span
+              className={cn(
+                "whitespace-nowrap font-display text-[17px] font-semibold text-ink transition-opacity duration-(--duration-base) ease-out-soft",
+                expanded ? "opacity-100" : "opacity-0"
+              )}
+            >
+              Strattigo
+            </span>
+          </div>
+          {RAIL_VIEWS.map((item) => (
+            <RailButton
+              key={item.id}
+              item={item}
+              active={activeView === item.id}
+              expanded={expanded}
+              onNavigate={onNavigate}
+            />
+          ))}
+          <div className="flex-1" />
           <RailButton
-            key={item.id}
-            item={item}
-            active={activeView === item.id}
+            item={SETTINGS_ITEM}
+            active={activeView === "settings"}
+            expanded={expanded}
             onNavigate={onNavigate}
           />
-        ))}
-        <div className="flex-1" />
-        <RailButton
-          item={SETTINGS_ITEM}
-          active={activeView === "settings"}
-          onNavigate={onNavigate}
-        />
-      </nav>
+        </nav>
+      </div>
     </>
   )
 }
