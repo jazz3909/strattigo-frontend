@@ -3,10 +3,13 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { AlertTriangle, Trash2 } from "lucide-react";
 import {
   getCourses,
   createCourse,
+  deleteCourse,
   Course,
+  CourseDeleteSummary,
   getToken,
   getEmail,
 } from "../lib/api";
@@ -19,6 +22,7 @@ import {
   type SubjectColor,
   resolveCourseColor,
   setStoredCourseColor,
+  removeStoredCourseColor,
 } from "@/components/shell/course-color";
 import { cn } from "@/lib/utils";
 
@@ -77,22 +81,50 @@ function ButtonSpinner() {
   );
 }
 
-function CourseCard({ course }: { course: Course }) {
+/**
+ * "3 materials, 2 study guides, 1 quiz" — the meaningful counts from a
+ * CourseDeleteSummary, largest-signal categories first, at most three so the
+ * toast stays a toast. Empty string when the course was empty.
+ */
+function deletedCountsLabel(deleted: CourseDeleteSummary["deleted"]): string {
+  const parts: string[] = [];
+  const add = (n: number, singular: string, plural = `${singular}s`) => {
+    if (n > 0) parts.push(`${n} ${n === 1 ? singular : plural}`);
+  };
+  add(deleted.materials, "material");
+  add(deleted.study_guides, "study guide");
+  add(deleted.quizzes, "quiz", "quizzes");
+  add(deleted.flashcards, "flashcard");
+  add(deleted.chats, "chat");
+  return parts.slice(0, 3).join(", ");
+}
+
+function CourseCard({
+  course,
+  onDelete,
+}: {
+  course: Course;
+  onDelete: (course: Course) => void;
+}) {
   const hue = resolveCourseColor(course.id);
+  // The delete trigger is a SIBLING of the Link (absolutely positioned over
+  // it), not a child — a <button> inside an <a> is invalid HTML and a click
+  // would have to fight the navigation.
   return (
-    <Link
-      href={`/dashboard/${course.id}/chat`}
-      // Force a FULL-route prefetch. The workspace is a dynamic segment with a
-      // loading.tsx, so the default ("auto") prefetch stops at the skeleton
-      // boundary and the ~409KB markdown/KaTeX chat chunk downloads cold on
-      // click — stacking in front of the data fetch. prefetch warms that chunk
-      // while the card sits in the viewport, so the click is chunk-warm.
-      prefetch
-      className="lift-hover group flex overflow-hidden rounded-lg border border-rule bg-raised hover:border-rule-strong"
-    >
+    <div className="lift-hover group relative rounded-lg">
+      <Link
+        href={`/dashboard/${course.id}/chat`}
+        // Force a FULL-route prefetch. The workspace is a dynamic segment with a
+        // loading.tsx, so the default ("auto") prefetch stops at the skeleton
+        // boundary and the ~409KB markdown/KaTeX chat chunk downloads cold on
+        // click — stacking in front of the data fetch. prefetch warms that chunk
+        // while the card sits in the viewport, so the click is chunk-warm.
+        prefetch
+        className="flex h-full overflow-hidden rounded-lg border border-rule bg-raised group-hover:border-rule-strong"
+      >
       <span className="w-[5px] shrink-0" style={{ background: hue.color }} />
       <div className="flex min-w-0 flex-1 flex-col p-[18px] pb-4">
-        <div className="mb-3.5 flex items-center gap-3">
+        <div className="mb-3.5 flex items-center gap-3 pr-6">
           <span
             className="grid size-10 shrink-0 place-items-center rounded-[10px] font-display text-[19px] font-semibold text-white"
             style={{ background: hue.color }}
@@ -118,7 +150,19 @@ function CourseCard({ course }: { course: Course }) {
           </span>
         </div>
       </div>
-    </Link>
+      </Link>
+      {/* Quiet delete — hover-revealed on desktop, always visible (but faint)
+          on touch, where there is no hover to reveal it. Never deletes
+          directly; opens the confirm modal. */}
+      <button
+        type="button"
+        aria-label={`Delete course "${course.name}"`}
+        onClick={() => onDelete(course)}
+        className="absolute top-2.5 right-2.5 z-10 grid size-7 cursor-pointer place-items-center rounded-md text-ink-faint transition-[color,background-color,opacity] duration-150 hover:bg-error-tint hover:text-error focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-accent md:opacity-0 md:group-hover:opacity-100"
+      >
+        <Trash2 className="size-[15px]" />
+      </button>
+    </div>
   );
 }
 
@@ -166,6 +210,11 @@ export default function DashboardPage() {
   const [greeting, setGreeting] = useState("");
   const [dateline, setDateline] = useState("");
   const [newColor, setNewColor] = useState<SubjectColor>(SUBJECT_COLORS[0]);
+  // Delete-course confirm
+  const [deleteTarget, setDeleteTarget] = useState<Course | null>(null);
+  const [deleteChecked, setDeleteChecked] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   useEffect(() => {
     if (!getToken()) {
@@ -214,6 +263,51 @@ export default function DashboardPage() {
     }
   }
 
+  function openDeleteModal(course: Course) {
+    setDeleteTarget(course);
+    setDeleteChecked(false);
+    setDeleteError("");
+  }
+
+  async function handleDeleteCourse() {
+    if (!deleteTarget || deleting) return;
+    // Capture the target: Cancel stays enabled during the request, so
+    // deleteTarget may be nulled while the DELETE is still in flight.
+    const target = deleteTarget;
+    setDeleting(true);
+    setDeleteError("");
+    try {
+      const summary = await deleteCourse(target.id);
+      removeStoredCourseColor(target.id);
+      setCourses((prev) => prev.filter((c) => c.id !== target.id));
+      setDeleteTarget(null);
+      const counts = deletedCountsLabel(summary.deleted);
+      addToast(
+        counts
+          ? `Deleted "${target.name}" — ${counts} removed`
+          : `Deleted "${target.name}"`,
+        "success",
+        6000
+      );
+    } catch (err: unknown) {
+      const message =
+        err instanceof Error ? err.message : "Failed to delete the course.";
+      if (/404|not found/i.test(message)) {
+        // Already gone (deleted elsewhere) — reconcile the shelf quietly.
+        removeStoredCourseColor(target.id);
+        setCourses((prev) => prev.filter((c) => c.id !== target.id));
+        setDeleteTarget(null);
+        addToast(`"${target.name}" was already deleted.`, "info");
+      } else {
+        // 500 = cascade failed, course intact and retryable — keep the modal
+        // open so Delete can be pressed again.
+        setDeleteError(message);
+      }
+    } finally {
+      setDeleting(false);
+    }
+  }
+
   function openModal() {
     setNewName("");
     setNewDesc("");
@@ -233,6 +327,17 @@ export default function DashboardPage() {
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [showModal]);
+
+  // Same for the delete confirm (like Cancel, it stays available mid-request;
+  // an in-flight DELETE still resolves and reconciles the shelf + toasts).
+  useEffect(() => {
+    if (!deleteTarget) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDeleteTarget(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [deleteTarget]);
 
   const displayName = email.split("@")[0] || email;
 
@@ -315,11 +420,110 @@ export default function DashboardPage() {
           </div>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => (
-              <CourseCard key={course.id} course={course} />
+              <CourseCard key={course.id} course={course} onDelete={openDeleteModal} />
             ))}
             <AddCourseTile onClick={openModal} />
           </div>
         </>
+      )}
+
+      {/* Delete-course confirm — checkbox-gated, error semantics throughout.
+          The backend cascade is real and total, so the copy names everything
+          that goes with the course. */}
+      {deleteTarget && (
+        <div
+          className="backdrop-enter fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-[rgba(35,33,28,0.32)] p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-course-title"
+          onMouseDown={(e) => {
+            if (e.target === e.currentTarget) setDeleteTarget(null);
+          }}
+        >
+          <div className="panel-enter w-full max-w-[480px] overflow-hidden rounded-xl border border-rule bg-sheet shadow-lg">
+            <div className="px-7 pt-6">
+              <div className="mb-2.5 font-sans text-eyebrow font-semibold tracking-[0.08em] text-error uppercase">
+                Delete course
+              </div>
+              <h3
+                id="delete-course-title"
+                className="mb-1.5 font-display text-[23px] font-semibold text-ink"
+              >
+                Delete “{deleteTarget.name}”?
+              </h3>
+              <p className="font-read text-[14.5px] leading-normal text-ink-soft">
+                This permanently deletes the course and everything in it.
+              </p>
+            </div>
+
+            <div className="space-y-4 px-7 py-5">
+              {deleteError && (
+                <Callout variant="error" label="Couldn't delete the course">
+                  {deleteError} — the course is untouched. You can try again.
+                </Callout>
+              )}
+
+              <div className="flex items-start gap-3 rounded-lg bg-error-tint px-3.5 py-3">
+                <AlertTriangle className="mt-0.5 size-5 shrink-0 text-error" />
+                <p className="font-read text-read-s leading-relaxed text-error-deep">
+                  All materials, collections, study guides, quizzes, chats,
+                  study plans, and flashcards in{" "}
+                  <span className="font-semibold">“{deleteTarget.name}”</span>{" "}
+                  will be permanently deleted. This can’t be undone.
+                </p>
+              </div>
+
+              <label className="flex cursor-pointer items-start gap-3 select-none">
+                <input
+                  type="checkbox"
+                  className="peer sr-only"
+                  checked={deleteChecked}
+                  onChange={(e) => setDeleteChecked(e.target.checked)}
+                />
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "mt-[3px] grid size-[18px] shrink-0 place-items-center rounded-[5px] border-[1.5px] transition-colors peer-focus-visible:ring-2 peer-focus-visible:ring-accent peer-focus-visible:ring-offset-2 peer-focus-visible:ring-offset-sheet",
+                    deleteChecked
+                      ? "border-error bg-error"
+                      : "border-rule-strong bg-raised"
+                  )}
+                >
+                  {deleteChecked && (
+                    <svg
+                      className="size-3 text-white"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth={3.5}
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  )}
+                </span>
+                <span className="font-read text-[14px] leading-snug text-ink-soft">
+                  I understand this permanently deletes this course and
+                  everything in it.
+                </span>
+              </label>
+            </div>
+
+            <div className="flex justify-end gap-2.5 border-t border-rule-soft px-7 py-4">
+              <Button type="button" variant="secondary" onClick={() => setDeleteTarget(null)}>
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                variant="danger"
+                onClick={handleDeleteCourse}
+                disabled={!deleteChecked || deleting}
+              >
+                {deleting && <ButtonSpinner />}
+                {deleting ? "Deleting…" : "Delete course"}
+              </Button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* Add-course modal */}

@@ -71,6 +71,15 @@ export function setStoredCourseColor(courseId: string, key: string): void {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
 }
 
+/** Drop a course's stored color (course deleted — don't let the map grow stale). */
+export function removeStoredCourseColor(courseId: string): void {
+  if (typeof window === "undefined") return
+  const map = readMap()
+  if (!(courseId in map)) return
+  delete map[courseId]
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
+}
+
 /** User-chosen color if one was picked on this browser, else the stable default. */
 export function resolveCourseColor(courseId: string): SubjectColor {
   const stored = readMap()[courseId]

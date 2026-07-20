@@ -221,6 +221,34 @@ export async function createCourse(name: string, description?: string): Promise<
   return course;
 }
 
+/**
+ * Shape returned by DELETE /courses/{course_id}. The cascade is total: the
+ * backend deletes every child row (child-first, single transaction) and
+ * reports per-table counts. 404 = not the owner / already gone; 500 = cascade
+ * failed with the course intact (safe to retry).
+ */
+export interface CourseDeleteSummary {
+  message: string;
+  deleted: {
+    materials: number;
+    collections: number;
+    study_guides: number;
+    quizzes: number;
+    chats: number;
+    study_plans: number;
+    flashcard_sets: number;
+    flashcards: number;
+    study_events: number;
+    study_event_plans: number;
+  };
+}
+
+export async function deleteCourse(courseId: string): Promise<CourseDeleteSummary> {
+  const summary = await apiDelete<CourseDeleteSummary>(`/courses/${courseId}`);
+  courseCache.delete(courseId);
+  return summary;
+}
+
 export async function getCourse(courseId: string): Promise<Course> {
   const cached = courseCache.get(courseId);
   if (cached) return cached;
