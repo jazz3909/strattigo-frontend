@@ -8,14 +8,14 @@ import { cn } from "@/lib/utils";
 import { getToken } from "./lib/api";
 
 /**
- * Landing page — Duna-structure redesign ("Dawn" direction).
+ * Landing page — Duna-structure redesign ("Dusk" direction).
  *
  * Massive centered type, huge whitespace, near-monochrome sections with four
- * deliberate color moments (the filetype row + step numerals), and a warm
- * all-CSS dawn gradient bookending the page (hero + final band). No images —
+ * deliberate color moments (the filetype row + step numerals), and a cool
+ * all-CSS dusk gradient bookending the page (hero + final band). No images —
  * the gradient IS the artwork, with a static film-grain overlay on top.
  *
- * Landing-only styles on purpose: the dark ink pill CTA and the dawn palette
+ * Landing-only styles on purpose: the dark ink pill CTA and the dusk palette
  * exist nowhere else in the app — do NOT promote them to globals.css or the
  * shared Button. The landing also carries its own hero nav and footer variant
  * (ink brand tile, single-row footer); PublicNav/PublicFooter stay untouched
@@ -31,22 +31,23 @@ const darkPillNav = "px-[26px] py-[13px] text-[14.5px]";
 /* Static film grain — inline SVG feTurbulence, multiplied over the gradients. */
 const GRAIN_BG = `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`;
 
-/* Dawn gradients — gold at the top dissolving into page cream (hero), and a
-   contained sunrise for the final band. Exact stops per the design spec. */
-const DAWN_HERO = [
-  "radial-gradient(90% 60% at 50% 0%, #F6D9A8 0%, rgba(246,217,168,0) 60%)",
-  "radial-gradient(70% 55% at 18% 12%, #F3E3C2 0%, rgba(243,227,194,0) 55%)",
-  "radial-gradient(75% 60% at 84% 14%, #EFC9A6 0%, rgba(239,201,166,0) 58%)",
-  "radial-gradient(85% 55% at 70% 46%, #EAC2B4 0%, rgba(234,194,180,0) 60%)",
-  "radial-gradient(80% 50% at 26% 52%, #E8CBB2 0%, rgba(232,203,178,0) 58%)",
-  "linear-gradient(180deg,#F4DDB6 0%,#F1D6BC 34%,#F3E2CE 62%,#F4F1E9 100%)",
+/* Dusk gradients — the app palette's cool blue sky at the top dissolving into
+   page cream (hero), and a contained dusk for the final band. Exact stops per
+   the design spec; the warm numerals/filetype hues stay as counterpoint. */
+const DUSK_HERO = [
+  "radial-gradient(90% 60% at 50% 0%, #AFC0D2 0%, rgba(175,192,210,0) 60%)",
+  "radial-gradient(70% 55% at 18% 12%, #D9E1EA 0%, rgba(217,225,234,0) 55%)",
+  "radial-gradient(75% 60% at 84% 14%, #9FB2C6 0%, rgba(159,178,198,0) 58%)",
+  "radial-gradient(85% 55% at 70% 46%, #C4D0DC 0%, rgba(196,208,220,0) 60%)",
+  "radial-gradient(80% 50% at 26% 52%, #CBD5DE 0%, rgba(203,213,222,0) 58%)",
+  "linear-gradient(180deg,#B9C8D6 0%,#CDD7E0 34%,#E3E6E5 62%,#F4F1E9 100%)",
 ].join(",");
 
-const DAWN_BAND = [
-  "radial-gradient(80% 70% at 50% 0%,#F6D9A8 0%,rgba(246,217,168,0) 60%)",
-  "radial-gradient(70% 60% at 20% 80%,#EAC2B4 0%,rgba(234,194,180,0) 60%)",
-  "radial-gradient(70% 60% at 82% 78%,#E8CBB2 0%,rgba(232,203,178,0) 58%)",
-  "linear-gradient(165deg,#F6E4C4 0%,#F2DAC4 55%,#EFD6CA 100%)",
+const DUSK_BAND = [
+  "radial-gradient(80% 70% at 50% 0%,#AFC0D2 0%,rgba(175,192,210,0) 60%)",
+  "radial-gradient(70% 60% at 20% 80%,#C4D0DC 0%,rgba(196,208,220,0) 60%)",
+  "radial-gradient(70% 60% at 82% 78%,#D9E1EA 0%,rgba(217,225,234,0) 58%)",
+  "linear-gradient(165deg,#C2CFDC 0%,#CFD9E2 55%,#DDE2E4 100%)",
 ].join(",");
 
 const container = "mx-auto w-full max-w-[1240px] px-6 sm:px-10";
@@ -131,10 +132,10 @@ export default function HomePage() {
         }
       `}</style>
 
-      {/* ── 1 · HERO — dawn gradient, everything centered ── */}
+      {/* ── 1 · HERO — dusk gradient, everything centered ── */}
       <header
         className="relative flex min-h-[780px] flex-col overflow-hidden"
-        style={{ background: DAWN_HERO }}
+        style={{ background: DUSK_HERO }}
       >
         <Grain />
 
@@ -259,10 +260,10 @@ export default function HomePage() {
           </p>
           {/* Structural testimonial slot — honestly labeled, no fake person. */}
           <figure
-            className="mx-auto max-w-[820px] rounded-[18px] border border-[#EBD9BE] px-8 py-10 text-left min-[861px]:px-12"
+            className="mx-auto max-w-[820px] rounded-[18px] border border-[#C9D5DF] px-8 py-10 text-left min-[861px]:px-12"
             style={{
               background:
-                "linear-gradient(140deg,#FBF0DC 0%,#F8E7D6 55%,#F6E3D8 100%)",
+                "linear-gradient(140deg,#EAF0F5 0%,#E0E8EF 55%,#DCE4EB 100%)",
             }}
           >
             <blockquote className="font-display text-[clamp(22px,2.6vw,29px)] leading-[1.35] font-medium">
@@ -276,11 +277,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── 5 · FINAL CTA — dawn band bookending the hero ── */}
+      {/* ── 5 · FINAL CTA — dusk band bookending the hero ── */}
       <div className="px-4 py-[90px] sm:px-12">
         <div
           className="relative mx-auto max-w-[1240px] overflow-hidden rounded-[24px] px-6 py-[70px] text-center min-[861px]:py-[110px]"
-          style={{ background: DAWN_BAND }}
+          style={{ background: DUSK_BAND }}
         >
           <Grain />
           <div className="relative z-10">
