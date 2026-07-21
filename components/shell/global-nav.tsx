@@ -5,6 +5,7 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { Brand } from "@/components/public/brand"
+import { FeedbackModal } from "@/components/shell/feedback-modal"
 import { UserMenu } from "@/components/shell/user-menu"
 import { clearToken, getEmail } from "@/app/lib/api"
 import { cn } from "@/lib/utils"
@@ -34,6 +35,7 @@ function initials(email: string): string {
 function GlobalNav() {
   const pathname = usePathname()
   const [email, setEmail] = React.useState("")
+  const [feedbackOpen, setFeedbackOpen] = React.useState(false)
 
   React.useEffect(() => {
     const e = getEmail()
@@ -72,6 +74,15 @@ function GlobalNav() {
               </Link>
             )
           })}
+          {/* Not a route — opens the feedback modal, so it never gets an
+              active state. */}
+          <button
+            type="button"
+            onClick={() => setFeedbackOpen(true)}
+            className="cursor-pointer font-sans text-ui font-medium text-ink-faint transition-colors hover:text-ink-soft"
+          >
+            Feedback
+          </button>
         </nav>
 
         <div className="flex-1" />
@@ -103,6 +114,8 @@ function GlobalNav() {
           </button>
         </div>
       </div>
+
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </header>
   )
 }
