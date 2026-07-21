@@ -7,7 +7,7 @@ import { FolderTree, Send, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AppMarkdown } from "@/app/components/ui/GuideMarkdown";
 import { useToast } from "@/app/providers/ToastProvider";
-import { streamChat, type ChatMessage } from "@/app/lib/api";
+import { streamChat, type ChatMessage, type ChatSource } from "@/app/lib/api";
 import { buildCollectionTree, findNode } from "@/app/lib/collectionTree";
 import { useWorkspace } from "../workspace-context";
 
@@ -65,14 +65,6 @@ export default function ChatPage({
   // genuinely empty course (materialsReady && count === 0) is correctly gated.
   const canChat = !materialsReady || materialCount > 0;
 
-  // The chat stream carries no source refs (backend yields plain text chunks
-  // only), so the designed citation chips are omitted. Logged per spec.
-  useEffect(() => {
-    console.info(
-      "[chat] backend /ai/chat/stream returns no source references — citation chips omitted.",
-    );
-  }, []);
-
   // Follow the conversation while attached. Runs on every appended chunk
   // (messages is replaced per chunk) — direct scrollTop assignment, no smooth
   // behavior, so a fast stream never janks or queues animations.
@@ -104,11 +96,17 @@ export default function ChatPage({
 
     try {
       let firstChunk = true;
+      // The sources event (if any) arrives after the last content chunk, so
+      // the callback has fired by the time the loop below finishes.
+      let sources: ChatSource[] | null = null;
       for await (const chunk of streamChat(
         courseId,
         question,
         historyToSend,
         scopedId ?? undefined,
+        (s) => {
+          sources = s;
+        },
       )) {
         if (firstChunk) {
           firstChunk = false;
@@ -135,6 +133,14 @@ export default function ChatPage({
           ...prev,
           { role: "assistant", content: "No response received." },
         ]);
+      } else if (sources) {
+        // Attach after the stream completes — chips render under the
+        // finished response, never mid-stream.
+        const attach = sources;
+        setMessages((prev) => {
+          const last = prev[prev.length - 1];
+          return [...prev.slice(0, -1), { ...last, sources: attach }];
+        });
       }
     } catch (err: unknown) {
       setChatLoading(false);
@@ -208,6 +214,23 @@ export default function ChatPage({
                         <div className="font-read text-[17px] leading-[1.66] text-ink">
                           <AppMarkdown content={msg.content} isStreaming={isLastAssistant} />
                         </div>
+                        {/* Source chips — which materials grounded this answer.
+                            Quiet metadata; absent entirely when the stream
+                            reported no sources. */}
+                        {msg.sources && msg.sources.length > 0 && (
+                          <div className="mt-2.5 flex flex-wrap gap-1.5">
+                            {msg.sources.map((s) => (
+                              <span
+                                key={s.id}
+                                className="inline-flex max-w-full items-center rounded-full bg-accent-tint px-[11px] py-1 font-sans text-ui-s text-accent-deep"
+                              >
+                                <span className="truncate">
+                                  📎 {s.file_name || "Untitled material"}
+                                </span>
+                              </span>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     );
                   })}

@@ -583,16 +583,25 @@ export async function generateQuiz(courseId: string, forceRegenerate = false, co
 
 // Chat
 // Spec: body {course_id, question} — field is "question" NOT "message"
-// Spec: returns {content, cached, content_id}
+// Spec: returns {content, cached, content_id, sources?}
+/** A material that grounded a tutor response (per-response, not per-claim). */
+export interface ChatSource {
+  id: string;
+  file_name: string | null;
+}
+
 export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
+  /** Attached client-side after a stream completes; never sent as history. */
+  sources?: ChatSource[];
 }
 
 export interface ChatResponse {
   content: string;
   cached: boolean;
   content_id: string;
+  sources?: ChatSource[] | null;
 }
 
 export interface ChatHistoryMessage {
@@ -614,7 +623,10 @@ export async function chatWithCourse(
   return response;
 }
 
-async function* readSseStream(response: Response): AsyncGenerator<string> {
+async function* readSseStream(
+  response: Response,
+  onSources?: (sources: ChatSource[]) => void,
+): AsyncGenerator<string> {
   const reader = response.body!.getReader();
   const decoder = new TextDecoder();
 
@@ -629,13 +641,19 @@ async function* readSseStream(response: Response): AsyncGenerator<string> {
       if (!line.startsWith("data: ")) continue;
       const data = line.slice(6);
       if (data === "[DONE]") return;
-      let parsed: { chunk?: string; error?: string } | null = null;
+      let parsed: { chunk?: string; error?: string; sources?: ChatSource[] } | null = null;
       try {
         parsed = JSON.parse(data);
       } catch {
         continue;
       }
       if (parsed?.error) throw new Error(parsed.error);
+      // Chat streams emit one sources event after the last content chunk;
+      // absent on older backends / no-retrieval scopes — then this never fires.
+      if (onSources && Array.isArray(parsed?.sources)) {
+        const valid = parsed.sources.filter((s) => s && typeof s.id === "string");
+        if (valid.length > 0) onSources(valid);
+      }
       if (parsed?.chunk) yield parsed.chunk;
     }
   }
@@ -685,7 +703,13 @@ export async function* streamStudyGuide(
   yield* readSseStream(response);
 }
 
-export async function* streamChat(courseId: string, question: string, history: ChatHistoryMessage[] = [], collectionId?: string): AsyncGenerator<string> {
+export async function* streamChat(
+  courseId: string,
+  question: string,
+  history: ChatHistoryMessage[] = [],
+  collectionId?: string,
+  onSources?: (sources: ChatSource[]) => void,
+): AsyncGenerator<string> {
   const body: Record<string, unknown> = { course_id: courseId, question, history };
   if (isRealCollectionId(collectionId)) body.collection_id = collectionId;
   const response = await authFetch(`/ai/chat/stream`, {
@@ -695,7 +719,7 @@ export async function* streamChat(courseId: string, question: string, history: C
   });
 
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
-  yield* readSseStream(response);
+  yield* readSseStream(response, onSources);
 }
 
 export async function saveStudyGuide(courseId: string, title: string, content: string): Promise<StudyGuideSaved> {
