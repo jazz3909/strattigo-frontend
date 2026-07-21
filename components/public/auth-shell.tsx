@@ -22,7 +22,7 @@ function AuthShell({
     <div className="flex min-h-screen flex-col items-center justify-center bg-page px-4 py-12 text-ink">
       <div className="w-full max-w-[400px]">
         <div className="mb-6 text-center">
-          <Brand size="lg" />
+          <Brand size="lg" tile="ink" />
         </div>
         <div className="mb-7 text-center">
           <h1 className="mb-1.5 font-display text-[27px] font-semibold text-ink">

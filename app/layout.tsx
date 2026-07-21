@@ -8,6 +8,9 @@ import { cn } from "@/lib/utils";
 const fraunces = Fraunces({
   subsets: ["latin"],
   variable: "--font-fraunces",
+  // Real italics: the landing hero sets its key phrase in Fraunces italic —
+  // without this the browser slants the roman, which reads cheap at 82px.
+  style: ["normal", "italic"],
   axes: ["opsz"],
 });
 
