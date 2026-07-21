@@ -130,11 +130,18 @@ export default function HomePage() {
         @media (prefers-reduced-motion: no-preference) {
           html { scroll-behavior: smooth; }
         }
+        /* Hero fills the viewport (svh so mobile URL bars don't overshoot),
+           vh fallback for browsers without svh; 640px floor for short
+           landscape screens. Duplicate declaration IS the fallback. */
+        .hero-viewport {
+          min-height: max(640px, 100vh);
+          min-height: max(640px, 100svh);
+        }
       `}</style>
 
       {/* ── 1 · HERO — dusk gradient, everything centered ── */}
       <header
-        className="relative flex min-h-[780px] flex-col overflow-hidden"
+        className="hero-viewport relative flex flex-col overflow-hidden"
         style={{ background: DUSK_HERO }}
       >
         <Grain />
