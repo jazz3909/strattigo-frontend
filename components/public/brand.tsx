@@ -9,12 +9,15 @@ import { cn } from "@/lib/utils"
 function Brand({
   href = "/",
   size = "md",
+  tile = "accent",
   className,
 }: {
   /** Where the lockup links; pass null to render a non-link. */
   href?: string | null
   /** md = nav (32px mark), lg = auth card head (34px mark). */
   size?: "md" | "lg"
+  /** ink = the landing lockup's dark tile; auth pages use it. */
+  tile?: "accent" | "ink"
   className?: string
 }) {
   const mark = size === "lg" ? "size-[34px] text-lg" : "size-8 text-[17px]"
@@ -24,7 +27,8 @@ function Brand({
     <>
       <span
         className={cn(
-          "grid place-items-center rounded-[9px] bg-accent font-display font-semibold text-white",
+          "grid place-items-center rounded-[9px] font-display font-semibold",
+          tile === "ink" ? "bg-ink text-page" : "bg-accent text-white",
           mark
         )}
       >

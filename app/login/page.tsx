@@ -144,7 +144,12 @@ export default function LoginPage() {
           />
         </div>
 
-        <Button type="submit" variant="primary" className="mt-5 w-full" disabled={loading}>
+        <Button
+          type="submit"
+          variant="primary"
+          className="mt-5 w-full rounded-full bg-ink text-page hover:bg-ink-soft"
+          disabled={loading}
+        >
           {loading && <Spinner />}
           Log in
         </Button>

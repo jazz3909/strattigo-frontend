@@ -254,7 +254,12 @@ export default function SignupPage() {
           .
         </p>
 
-        <Button type="submit" variant="primary" className="w-full" disabled={loading}>
+        <Button
+          type="submit"
+          variant="primary"
+          className="w-full rounded-full bg-ink text-page hover:bg-ink-soft"
+          disabled={loading}
+        >
           {loading && <Spinner />}
           Create account
         </Button>
