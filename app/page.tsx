@@ -265,39 +265,113 @@ export default function HomePage() {
             Not the internet. Not a generic textbook. Your professor’s slides,
             your readings, your notes — scoped to exactly what’s on the exam.
           </p>
-          {/* Structural testimonial slot — honestly labeled, no fake person. */}
-          <figure
-            className="mx-auto max-w-[820px] rounded-[18px] border border-[#C9D5DF] px-8 py-10 text-left min-[861px]:px-12"
-            style={{
-              background:
-                "linear-gradient(140deg,#EAF0F5 0%,#E0E8EF 55%,#DCE4EB 100%)",
-            }}
-          >
-            <blockquote className="font-display text-[clamp(22px,2.6vw,29px)] leading-[1.35] font-medium">
-              “The quiz asked me about the exact diagram from Lecture 12.
-              That’s when it clicked — this thing actually read my slides.”
-            </blockquote>
-            <figcaption className="mt-5 font-sans text-[13px] text-ink-faint">
-              The moment Strattigo makes sense
-            </figcaption>
-          </figure>
+          {/* Two proof cards — a tutor exchange and the scope tree. Both echo
+              real product surfaces (chat bubbles; collection spines shipped
+              with the materials tree), so the mockups stay truthful. */}
+          <div className="mx-auto grid max-w-[1060px] gap-5 text-left min-[861px]:grid-cols-[1.15fr_.85fr]">
+            {/* Tutor exchange */}
+            <div className="rounded-[18px] border border-rule bg-sheet p-6 min-[861px]:p-7">
+              <div className="mb-5 flex flex-wrap items-center gap-2.5">
+                <span className="font-sans text-[11px] font-semibold tracking-[0.08em] text-ink-faint">
+                  SCOPED TO
+                </span>
+                <span className="rounded-full bg-accent-tint px-3 py-1 font-sans text-[12.5px] font-medium text-accent-deep">
+                  Lecture 12 — Glycolysis
+                </span>
+              </div>
+              <div className="space-y-3.5">
+                <div className="flex justify-end">
+                  <div className="max-w-[85%] rounded-[14px] rounded-br-[4px] bg-accent-tint px-4 py-2.5 font-sans text-[14px] leading-normal text-accent-deep">
+                    Why is PFK-1 called the committed step?
+                  </div>
+                </div>
+                <div className="max-w-[92%] rounded-[14px] rounded-bl-[4px] border border-rule bg-white px-4 py-3 font-read text-[15px] leading-[1.6] text-ink">
+                  Once fructose-6-phosphate becomes F1,6BP, the cell can’t back
+                  out — that’s why PFK-1 is the key regulated step your
+                  professor starred.
+                </div>
+                <div className="flex justify-end">
+                  <div className="max-w-[85%] rounded-[14px] rounded-br-[4px] bg-accent-tint px-4 py-2.5 font-sans text-[14px] leading-normal text-accent-deep">
+                    Quiz me on this before Friday’s exam →
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Scope tree */}
+            <div className="rounded-[18px] bg-sheet p-6 min-[861px]:p-7">
+              <div className="mb-5 font-sans text-[11px] font-semibold tracking-[0.08em] text-ink-faint">
+                SCOPE IT TO ANYTHING
+              </div>
+              <div className="space-y-2.5">
+                <div className="flex items-center gap-2.5 rounded-md px-3 py-2.5">
+                  <span
+                    className="w-1 shrink-0 self-stretch rounded-full"
+                    style={{ background: "var(--color-subject-plum)" }}
+                  />
+                  <span className="truncate font-sans text-[14px] font-medium text-ink">
+                    BIO 301 · whole course
+                  </span>
+                </div>
+                <div className="ml-5 flex items-center gap-2.5 rounded-md px-3 py-2.5">
+                  <span
+                    className="w-1 shrink-0 self-stretch rounded-full"
+                    style={{ background: "var(--color-subject-sage)" }}
+                  />
+                  <span className="truncate font-sans text-[14px] font-medium text-ink">
+                    Unit 3 — Metabolism
+                  </span>
+                </div>
+                <div className="ml-10 flex items-center gap-2.5 rounded-md bg-accent-tint px-3 py-2.5">
+                  <span
+                    className="w-1 shrink-0 self-stretch rounded-full"
+                    style={{ background: "var(--color-subject-ochre)" }}
+                  />
+                  <span className="truncate font-sans text-[14px] font-medium text-accent-deep">
+                    Lecture 12 — Glycolysis
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
       {/* ── 5 · FINAL CTA — dusk band bookending the hero ── */}
       <div className="px-4 py-[90px] sm:px-12">
         <div
-          className="relative mx-auto max-w-[1240px] overflow-hidden rounded-[24px] px-6 py-[70px] text-center min-[861px]:py-[110px]"
+          className="relative mx-auto max-w-[1240px] overflow-hidden rounded-[24px] px-6 py-[72px] text-center"
           style={{ background: DUSK_BAND }}
         >
           <Grain />
           <div className="relative z-10">
-            <h2 className="mx-auto mb-10 max-w-[760px] font-display text-[clamp(38px,5.6vw,64px)] leading-[1.05] font-semibold tracking-[-0.02em]">
-              Ready for your next exam?
+            <h2 className="mx-auto mb-7 max-w-[760px] font-display text-[clamp(38px,5.6vw,64px)] leading-[1.05] font-semibold tracking-[-0.02em]">
+              Ready for your <em className="italic">next exam</em>?
             </h2>
+            {/* What you get — cream chips, one dot per surface. */}
+            <div className="mb-9 flex flex-wrap items-center justify-center gap-2.5">
+              {[
+                { label: "Study guides", color: "var(--color-subject-ochre)" },
+                { label: "Quizzes", color: "var(--color-subject-clay)" },
+                { label: "AI tutor", color: "var(--color-accent)" },
+              ].map((c) => (
+                <span
+                  key={c.label}
+                  className="inline-flex items-center gap-2 rounded-full bg-page px-3.5 py-1.5 font-sans text-[13.5px] font-medium text-ink-soft"
+                >
+                  <span
+                    className="size-2 rounded-full"
+                    style={{ background: c.color }}
+                  />
+                  {c.label}
+                </span>
+              ))}
+            </div>
             <Link href={ctaHref} className={cn(darkPill, darkPillHero)}>
               Start free
             </Link>
+            <div className="mt-4 text-[13px] text-ink-faint">
+              Free to start · {PRICE_MONTHLY}/mo for Pro · no card required
+            </div>
           </div>
         </div>
       </div>
