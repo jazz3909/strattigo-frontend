@@ -3,8 +3,9 @@ import Link from "next/link"
 import { Brand } from "@/components/public/brand"
 
 /**
- * Public-page footer — landing.html `footer`. Shared by the landing page,
- * /pricing, and the legal pages so the public surfaces end identically.
+ * Public-page footer — landing.html `footer`. Used by /contact; the landing
+ * page carries its own single-row footer variant, and /pricing + the legal
+ * pages close inside their framed sheet instead.
  */
 function PublicFooter() {
   return (
@@ -16,6 +17,9 @@ function PublicFooter() {
           <nav className="flex gap-5 font-sans text-ui-s text-ink-faint">
             <Link href="/pricing" className="hover:text-ink-soft">
               Pricing
+            </Link>
+            <Link href="/contact" className="hover:text-ink-soft">
+              Contact
             </Link>
             <Link href="/login" className="hover:text-ink-soft">
               Log in

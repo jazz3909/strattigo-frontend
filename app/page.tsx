@@ -390,6 +390,9 @@ export default function HomePage() {
             <Link href="/pricing" className="hover:text-ink-soft">
               Pricing
             </Link>
+            <Link href="/contact" className="hover:text-ink-soft">
+              Contact
+            </Link>
             <Link href="/terms" className="hover:text-ink-soft">
               Terms
             </Link>

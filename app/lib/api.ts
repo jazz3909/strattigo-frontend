@@ -948,3 +948,14 @@ export async function* streamGenerateFlashcards(
   if (!response.ok) throw new Error(`Stream failed: ${response.status}`);
   yield* readSseStream(response);
 }
+
+// Contact (public — no auth)
+export async function sendContactMessage(body: {
+  name?: string;
+  email?: string;
+  message: string;
+  /** Honeypot — hidden on the form; real users never fill it. */
+  website?: string;
+}): Promise<{ message: string }> {
+  return apiPost<{ message: string }>("/contact", body, false);
+}
