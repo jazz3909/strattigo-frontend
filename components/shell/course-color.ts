@@ -46,6 +46,10 @@ export function courseColor(courseId: string): SubjectColor {
   return SUBJECT_COLORS[hashIndex(courseId)]
 }
 
+/** Stable hue for a collection spine — the exact courses pattern (id-hash
+    into the ten subject hues); no picker, no persistence. */
+export const collectionColor = courseColor
+
 /* ── User-chosen colors ──────────────────────────────────────────────────────
    There is no backend column to store a choice (see FUTURE-ENHANCEMENTS.md),
    so a picked color is persisted as a presentation preference in

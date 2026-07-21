@@ -29,6 +29,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Spinner } from "@/app/components/ui/Spinner";
+import { collectionColor } from "@/components/shell/course-color";
 import { useToast } from "@/app/providers/ToastProvider";
 import { cn } from "@/lib/utils";
 import {
@@ -347,6 +348,8 @@ export function CollectionsView({
     const isDeleting = deletingId === node.id;
     const hasContent = subCount > 0 || files.length > 0;
     const tile = isRoot ? "size-9" : "size-7";
+    // Spine hue — the dashboard course-card language, scaled to a tree row.
+    const hue = collectionColor(node.id);
 
     // Drop-target state for THIS folder given what's dragging:
     //  file drag → every folder valid; folder drag → only validFolderTargets.
@@ -388,6 +391,14 @@ export function CollectionsView({
                             : ""
               )}
             >
+              {/* Collection spine — same visual language as the dashboard
+                  course spines, row-scaled. Purely decorative; no listeners,
+                  so dnd/selection behavior is untouched. */}
+              <span
+                aria-hidden
+                className="w-1 shrink-0 self-stretch rounded-full"
+                style={{ background: hue.color }}
+              />
               <button
                 onClick={() => toggleExpand(node.id)}
                 {...STOP_CARD_DRAG}
