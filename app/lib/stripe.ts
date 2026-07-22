@@ -1,12 +1,13 @@
 import { apiGet, apiPost } from "./api";
 
-// The only live Stripe price ($7.99/month, verified active 2026-07-12).
-// Replaced the leftover $2.00 beta price. Annual was removed for beta — its
-// ID was a never-configured placeholder ("price_annual") that failed
-// checkout with resource_missing whenever selected. Must stay in sync with
+// The only sellable Stripe price ($4.99/month promotional pricing since
+// 2026-07-22; replaced the $7.99 price, which stays active in Stripe for
+// existing subscriptions). Annual was removed for beta — its ID was a
+// never-configured placeholder ("price_annual") that failed checkout with
+// resource_missing whenever selected. Must stay in sync with
 // MONTHLY_PRICE_ID in the backend's stripe_routes.py (its allowlist rejects
 // anything else).
-export const MONTHLY_PRICE_ID = "price_1TsD19Gm99mbwFrzu0uWwOLK";
+export const MONTHLY_PRICE_ID = "price_1Tw8iBGm99mbwFrzan191GJt";
 
 // Checkout and the billing portal both run through server-generated hosted
 // URLs (see checkoutSession / openBillingPortal), so the browser never needs

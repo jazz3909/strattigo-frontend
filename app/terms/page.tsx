@@ -161,7 +161,7 @@ export default function TermsPage() {
           <li>
             <strong>Billing.</strong> Paid subscriptions are billed on a recurring monthly basis
             through our payment processor, Stripe. By subscribing, you authorize us (via Stripe) to
-            charge your payment method the applicable subscription fee (currently $7.99/month) until
+            charge your payment method the applicable subscription fee (currently $4.99/month) until
             you cancel.
           </li>
           <li>

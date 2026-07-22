@@ -8,7 +8,7 @@
  * even though the backend enforces generous caps (200/300/1000).
  */
 
-export const PRICE_MONTHLY = "$7.99"
+export const PRICE_MONTHLY = "$4.99"
 
 export const FREE_FEATURES = [
   "Up to 3 courses",
