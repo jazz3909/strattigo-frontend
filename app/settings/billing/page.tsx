@@ -6,9 +6,11 @@ import Link from "next/link";
 import { getToken } from "../../lib/api";
 import {
   getSubscriptionStatus,
+  isBetaProvisionedSub,
   openBillingPortal,
   SubscriptionStatus,
 } from "../../lib/stripe";
+import { BETA_MODE } from "@/components/public/plans";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Pill } from "@/components/ui/pill";
@@ -59,6 +61,9 @@ export default function BillingSettingsPage() {
 
   const isPro =
     status?.is_pro === true || status?.plan === "pro" || status?.plan === "annual";
+  // Beta-provisioned Pro (2099 sentinel) has no Stripe customer behind it —
+  // the portal button would error, and "period ends 2099" would read as a bug.
+  const isBetaAccess = status !== null && isBetaProvisionedSub(status);
 
   return (
     <div className="mx-auto w-full max-w-[620px]">
@@ -74,6 +79,26 @@ export default function BillingSettingsPage() {
           <div className="skeleton-sheen mb-3 h-5 w-40 rounded bg-sunk" />
           <div className="skeleton-sheen mb-6 h-4 w-64 rounded bg-sunk" />
           <div className="skeleton-sheen h-9 w-44 rounded-sm bg-sunk" />
+        </Card>
+      ) : isPro && isBetaAccess ? (
+        <Card>
+          <div className="mb-2 flex items-center gap-3">
+            <h2 className="font-display text-[17px] font-medium text-ink">
+              Strattigo Pro
+            </h2>
+            <Pill variant="success">
+              <span aria-hidden="true" className="size-[6px] rounded-full bg-current" />
+              Beta access
+            </Pill>
+          </div>
+          <p className="mb-5 font-read text-read-s text-ink-soft">
+            Full Pro access is on us for the entire beta — no subscription,
+            nothing to bill, nothing to cancel. Paid plans return after the
+            beta.
+          </p>
+          <Link href="/pricing" className={buttonVariants({ variant: "secondary" })}>
+            See beta details
+          </Link>
         </Card>
       ) : isPro ? (
         <Card>
@@ -108,6 +133,21 @@ export default function BillingSettingsPage() {
           >
             {portalLoading ? "Opening…" : "Manage subscription"}
           </Button>
+        </Card>
+      ) : BETA_MODE ? (
+        // No subscription row during beta (legacy pre-beta account, or the
+        // status call failed): nothing to sell — point at the beta card.
+        <Card>
+          <h2 className="mb-2 font-display text-[17px] font-medium text-ink">
+            Strattigo is free during the beta
+          </h2>
+          <p className="mb-5 font-read text-read-s text-ink-soft">
+            There&apos;s nothing to subscribe to right now — the whole platform
+            is free while the beta runs. Paid plans return after the beta.
+          </p>
+          <Link href="/pricing" className={buttonVariants({ variant: "secondary" })}>
+            See beta details
+          </Link>
         </Card>
       ) : (
         <Card>

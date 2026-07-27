@@ -6,7 +6,14 @@ import { useRouter } from "next/navigation";
 import { checkoutSession, getSubscriptionStatus, MONTHLY_PRICE_ID } from "../lib/stripe";
 import { getToken } from "../lib/api";
 import { PublicNav, PublicBody, PublicHead } from "@/components/public/public-shell";
-import { FREE_FEATURES, PRO_FEATURES, PRICE_MONTHLY } from "@/components/public/plans";
+import {
+  BETA_FEATURES,
+  BETA_FOOTNOTE,
+  BETA_MODE,
+  FREE_FEATURES,
+  PRO_FEATURES,
+  PRICE_MONTHLY,
+} from "@/components/public/plans";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Callout } from "@/components/ui/callout";
 import { cn } from "@/lib/utils";
@@ -78,6 +85,8 @@ export default function PricingPage() {
   useEffect(() => {
     if (!getToken()) return;
     setAuthed(true);
+    // BETA MODE: the beta card never reads subscription state — skip the call.
+    if (BETA_MODE) return;
     getSubscriptionStatus()
       .then(({ plan }) => setSubscribed(plan === "pro" || plan === "annual"))
       .catch(() => {
@@ -141,53 +150,83 @@ export default function PricingPage() {
       </PublicNav>
 
       <PublicBody>
-        <PublicHead eyebrow="Pricing" title="Simple pricing, no decoding">
-          Start free. Go Pro when you&apos;re taking on the whole semester.
-        </PublicHead>
+        {BETA_MODE ? (
+          <PublicHead eyebrow="Pricing" title="Simple pricing, no decoding">
+            One plan while we&apos;re in beta: everything, free.
+          </PublicHead>
+        ) : (
+          <PublicHead eyebrow="Pricing" title="Simple pricing, no decoding">
+            Start free. Go Pro when you&apos;re taking on the whole semester.
+          </PublicHead>
+        )}
 
-        <div className="mx-auto grid max-w-[720px] items-start gap-[22px] sm:grid-cols-2">
-          {/* Free */}
-          <div className="rounded-xl border border-rule bg-raised p-[30px]">
-            <h2 className="mb-1.5 font-display text-[21px] font-semibold text-ink">Free</h2>
-            <PlanPrice amount="$0" per="forever" />
-            <PlanFeatures features={FREE_FEATURES} />
-            <Link
-              href={authed ? "/dashboard" : "/signup"}
-              className={cn(buttonVariants({ variant: "secondary" }), "w-full")}
-            >
-              Get Started Free
-            </Link>
-          </div>
-
-          {/* Pro — highlighted */}
-          <div className="relative rounded-xl border-[2.5px] border-accent bg-raised p-[30px]">
-            <span className="absolute -top-[13px] left-[30px] rounded-full bg-accent px-[13px] py-[5px] text-xs font-semibold text-white">
-              For serious semesters
-            </span>
-            <h2 className="mb-1.5 font-display text-[21px] font-semibold text-ink">Pro</h2>
-            <PlanPrice amount={PRICE_MONTHLY} per="/ month" />
-            <PlanFeatures features={PRO_FEATURES} />
-            {subscribed ? (
+        {/* BETA MODE: the single founding-access card. The Free/Pro cards
+            below are hidden, not deleted — they return when beta ends. */}
+        {BETA_MODE && (
+          <div className="mx-auto max-w-[400px]">
+            <div className="relative rounded-xl border-[2.5px] border-accent bg-raised p-[30px]">
+              <span className="absolute -top-[13px] left-[30px] rounded-full bg-accent px-[13px] py-[5px] text-xs font-semibold text-white">
+                Founding access
+              </span>
+              <h2 className="mb-1.5 font-display text-[21px] font-semibold text-ink">BETA</h2>
+              <PlanPrice amount="$0" per="during beta" />
+              <PlanFeatures features={BETA_FEATURES} />
+              <p className="mb-6 text-ui-s leading-normal text-ink-faint">{BETA_FOOTNOTE}</p>
               <Link
-                href="/dashboard"
+                href={authed ? "/dashboard" : "/signup"}
+                className={cn(buttonVariants({ variant: "primary" }), "w-full")}
+              >
+                Get started
+              </Link>
+            </div>
+          </div>
+        )}
+
+        {!BETA_MODE && (
+          <div className="mx-auto grid max-w-[720px] items-start gap-[22px] sm:grid-cols-2">
+            {/* Free */}
+            <div className="rounded-xl border border-rule bg-raised p-[30px]">
+              <h2 className="mb-1.5 font-display text-[21px] font-semibold text-ink">Free</h2>
+              <PlanPrice amount="$0" per="forever" />
+              <PlanFeatures features={FREE_FEATURES} />
+              <Link
+                href={authed ? "/dashboard" : "/signup"}
                 className={cn(buttonVariants({ variant: "secondary" }), "w-full")}
               >
-                <CheckIcon className="size-4 text-success" />
-                You&apos;re on Pro
+                Get Started Free
               </Link>
-            ) : (
-              <Button
-                variant="primary"
-                className="w-full"
-                disabled={proLoading}
-                onClick={() => startCheckout(MONTHLY_PRICE_ID, setProLoading)}
-              >
-                {proLoading && <Spinner />}
-                Upgrade to Pro
-              </Button>
-            )}
+            </div>
+
+            {/* Pro — highlighted */}
+            <div className="relative rounded-xl border-[2.5px] border-accent bg-raised p-[30px]">
+              <span className="absolute -top-[13px] left-[30px] rounded-full bg-accent px-[13px] py-[5px] text-xs font-semibold text-white">
+                For serious semesters
+              </span>
+              <h2 className="mb-1.5 font-display text-[21px] font-semibold text-ink">Pro</h2>
+              <PlanPrice amount={PRICE_MONTHLY} per="/ month" />
+              <PlanFeatures features={PRO_FEATURES} />
+              {subscribed ? (
+                <Link
+                  href="/dashboard"
+                  className={cn(buttonVariants({ variant: "secondary" }), "w-full")}
+                >
+                  <CheckIcon className="size-4 text-success" />
+                  You&apos;re on Pro
+                </Link>
+              ) : (
+                <Button
+                  variant="primary"
+                  className="w-full"
+                  disabled={proLoading}
+                  onClick={() => startCheckout(MONTHLY_PRICE_ID, setProLoading)}
+                >
+                  {proLoading && <Spinner />}
+                  Upgrade to Pro
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {checkoutError && (
           <Callout variant="error" className="mx-auto mt-6 max-w-[720px]">
@@ -205,7 +244,9 @@ export default function PricingPage() {
             </p>
           )}
           <p className="text-ui-s text-ink-faint">
-            No credit card required for free plan · Cancel anytime · Secure checkout via Stripe
+            {BETA_MODE
+              ? "No credit card required · Paid plans return after the beta"
+              : "No credit card required for free plan · Cancel anytime · Secure checkout via Stripe"}
           </p>
         </div>
       </PublicBody>

@@ -62,6 +62,14 @@ export interface SubscriptionStatus {
   expires_at: string | null;
 }
 
+// BETA MODE: subscriptions auto-provisioned at signup (api/routes/auth.py)
+// carry a far-future expires_at sentinel (2099-01-01) and no Stripe customer,
+// so the billing portal would 4xx for them. Real Stripe rows always have a
+// near-term or null expires_at — the year test is unambiguous.
+export function isBetaProvisionedSub(status: SubscriptionStatus): boolean {
+  return !!status.expires_at && new Date(status.expires_at).getUTCFullYear() >= 2099;
+}
+
 export async function getSubscriptionStatus(): Promise<SubscriptionStatus> {
   // `cache: "no-store"` guarantees every call is a real network round-trip. The
   // post-checkout grace-period poll re-requests this same URL every 2s and must

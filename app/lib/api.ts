@@ -191,6 +191,17 @@ export async function signup(email: string, password: string): Promise<AuthRespo
   return apiPost<AuthResponse>("/auth/signup", { email, password }, false);
 }
 
+// First-login welcome popup flag — server-side (Supabase auth app_metadata),
+// so a dismissal holds across devices. See dashboard/layout.tsx for the
+// localStorage fast-path that skips this round-trip once seen.
+export async function getWelcomeSeen(): Promise<{ seen: boolean }> {
+  return apiGet<{ seen: boolean }>("/auth/welcome-seen");
+}
+
+export async function markWelcomeSeen(): Promise<void> {
+  await apiPost("/auth/welcome-seen", {});
+}
+
 // Courses
 export interface Course {
   id: string;

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { login, persistSession } from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
+import { BETA_MODE } from "@/components/public/plans";
 import { useToast } from "../providers/ToastProvider";
 import { AuthShell } from "@/components/public/auth-shell";
 import { Button } from "@/components/ui/button";
@@ -87,8 +88,14 @@ export default function LoginPage() {
       const data = await login(email, password);
       persistSession(data);
       addToast("Welcome back! Redirecting…", "success");
-      const { plan } = await getSubscriptionStatus();
-      router.push(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
+      // BETA MODE: everyone lands on the dashboard — no plan-based routing
+      // through /pricing (and no status round-trip). Revert when beta ends.
+      if (BETA_MODE) {
+        router.push("/dashboard");
+      } else {
+        const { plan } = await getSubscriptionStatus();
+        router.push(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
+      }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed. Please try again.";
       setShake(true);

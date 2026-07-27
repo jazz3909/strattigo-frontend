@@ -1,11 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { getCourses } from "../lib/api";
+import { getCourses, getWelcomeSeen, markWelcomeSeen } from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
 import { useEffect, useState } from "react";
 import { OnboardingModal } from "../components/OnboardingModal";
 import { GlobalNav } from "@/components/shell/global-nav";
+import { WelcomeModal } from "@/components/shell/welcome-modal";
+import { BETA_MODE } from "@/components/public/plans";
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -23,6 +25,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const [confirmingCheckout, setConfirmingCheckout] = useState(false);
   const [confirmTimedOut, setConfirmTimedOut] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(false);
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -38,6 +41,17 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       new URLSearchParams(window.location.search).get("checkout") === "success";
 
     async function gate() {
+      // BETA MODE: every account has full access, so the free→/pricing bounce
+      // below is disabled — during beta the pricing page's only CTA routes
+      // logged-in users back to /dashboard, which would loop a legacy free
+      // account forever. Skipping the status fetch also shaves a round-trip
+      // off every dashboard load. Revert when beta ends.
+      if (BETA_MODE) {
+        setSubChecked(true);
+        checkWelcomeThenOnboarding();
+        return;
+      }
+
       if (fromCheckout) {
         // Returning from Stripe: the webhook that records the subscription can
         // lag the browser redirect by several seconds, so poll instead of
@@ -52,7 +66,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               router.replace(window.location.pathname);
               setConfirmingCheckout(false);
               setSubChecked(true);
-              checkOnboarding();
+              checkWelcomeThenOnboarding();
               return;
             }
           } catch {
@@ -75,7 +89,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
             router.replace("/pricing");
           } else {
             setSubChecked(true);
-            checkOnboarding();
+            checkWelcomeThenOnboarding();
           }
           return;
         } catch {
@@ -86,7 +100,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       // enforces plan limits regardless of what this client-side gate decides.
       if (!cancelled) {
         setSubChecked(true);
-        checkOnboarding();
+        checkWelcomeThenOnboarding();
       }
     }
 
@@ -95,6 +109,37 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       cancelled = true;
     };
   }, [router]);
+
+  // First-login welcome popup: the server-side flag (Supabase auth
+  // app_metadata via /auth/welcome-seen) is the source of truth, so one
+  // dismissal holds across devices; localStorage is only a fast-path cache
+  // that skips the round-trip on later loads. Errors count as "seen" — a
+  // blip must never re-show the popup to someone who already dismissed it.
+  // The onboarding wizard is deferred until the welcome popup is out of the
+  // way so a brand-new account never gets two stacked modals.
+  async function checkWelcomeThenOnboarding() {
+    const cached = localStorage.getItem("strattigo_welcome_seen") === "true";
+    if (!cached) {
+      const seen = await getWelcomeSeen()
+        .then((r) => r.seen)
+        .catch(() => true);
+      if (!seen) {
+        setShowWelcome(true);
+        return; // onboarding continues from handleWelcomeDismiss
+      }
+      localStorage.setItem("strattigo_welcome_seen", "true");
+    }
+    checkOnboarding();
+  }
+
+  function handleWelcomeDismiss() {
+    setShowWelcome(false);
+    localStorage.setItem("strattigo_welcome_seen", "true");
+    // Best-effort: if the write fails, localStorage still guards this device
+    // and the server flag gets another chance from the next device.
+    markWelcomeSeen().catch(() => {});
+    checkOnboarding();
+  }
 
   async function checkOnboarding() {
     if (typeof window === "undefined") return;
@@ -156,13 +201,21 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   }
 
   // Workspace routes bring their own full-bleed cream frame — render them
-  // without the global header (the gate above has already run).
+  // without the global header (the gate above has already run). The welcome
+  // popup still overlays them: a first load can just as well land on a
+  // deep-linked course page as on the shelf.
   if (isWorkspaceReader) {
-    return <>{children}</>;
+    return (
+      <>
+        <WelcomeModal open={showWelcome} onDismiss={handleWelcomeDismiss} />
+        {children}
+      </>
+    );
   }
 
   return (
     <div className="min-h-screen flex flex-col bg-page text-ink">
+      <WelcomeModal open={showWelcome} onDismiss={handleWelcomeDismiss} />
       <OnboardingModal
         isOpen={showOnboarding}
         onComplete={handleOnboardingComplete}

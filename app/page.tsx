@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { PRICE_MONTHLY } from "@/components/public/plans";
+import { LANDING_PRICE_LINE } from "@/components/public/plans";
 import { cn } from "@/lib/utils";
 import { getToken } from "./lib/api";
 
@@ -198,7 +198,7 @@ export default function HomePage() {
             Start free
           </Link>
           <div className="mt-4 text-[13px] text-ink-faint">
-            Free to start · {PRICE_MONTHLY}/mo for Pro · no card required
+            {LANDING_PRICE_LINE}
           </div>
         </div>
       </header>
@@ -370,7 +370,7 @@ export default function HomePage() {
               Start free
             </Link>
             <div className="mt-4 text-[13px] text-ink-faint">
-              Free to start · {PRICE_MONTHLY}/mo for Pro · no card required
+              {LANDING_PRICE_LINE}
             </div>
           </div>
         </div>
