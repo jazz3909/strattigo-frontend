@@ -1,7 +1,13 @@
 "use client";
 
 import { usePathname, useRouter } from "next/navigation";
-import { getCourses, getWelcomeSeen, markWelcomeSeen } from "../lib/api";
+import {
+  getCourses,
+  getWelcomeSeen,
+  markWelcomeSeen,
+  onboardingCompleteKey,
+  welcomeSeenKey,
+} from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
 import { useEffect, useState } from "react";
 import { OnboardingModal } from "../components/OnboardingModal";
@@ -112,29 +118,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   // First-login welcome popup: the server-side flag (Supabase auth
   // app_metadata via /auth/welcome-seen) is the source of truth, so one
-  // dismissal holds across devices; localStorage is only a fast-path cache
-  // that skips the round-trip on later loads. Errors count as "seen" — a
-  // blip must never re-show the popup to someone who already dismissed it.
-  // The onboarding wizard is deferred until the welcome popup is out of the
-  // way so a brand-new account never gets two stacked modals.
+  // dismissal holds across devices; localStorage is only a per-account
+  // fast-path cache that skips the round-trip on later loads. An error still
+  // fails closed for THIS load (never re-show to a dismisser on a blip), but
+  // only a successful response or an explicit dismissal may write the cache —
+  // persisting an error (e.g. the 401 of a dead session right before the
+  // /login bounce) would permanently suppress the popup for whoever uses
+  // this browser next. The onboarding wizard is deferred until the welcome
+  // popup is out of the way so a brand-new account never gets two stacked
+  // modals.
   async function checkWelcomeThenOnboarding() {
-    const cached = localStorage.getItem("strattigo_welcome_seen") === "true";
+    const cached = localStorage.getItem(welcomeSeenKey()) === "true";
     if (!cached) {
-      const seen = await getWelcomeSeen()
-        .then((r) => r.seen)
-        .catch(() => true);
-      if (!seen) {
+      const res = await getWelcomeSeen().catch(() => null);
+      if (res && !res.seen) {
         setShowWelcome(true);
         return; // onboarding continues from handleWelcomeDismiss
       }
-      localStorage.setItem("strattigo_welcome_seen", "true");
+      if (res?.seen) localStorage.setItem(welcomeSeenKey(), "true");
     }
     checkOnboarding();
   }
 
   function handleWelcomeDismiss() {
     setShowWelcome(false);
-    localStorage.setItem("strattigo_welcome_seen", "true");
+    localStorage.setItem(welcomeSeenKey(), "true");
     // Best-effort: if the write fails, localStorage still guards this device
     // and the server flag gets another chance from the next device.
     markWelcomeSeen().catch(() => {});
@@ -143,13 +151,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   async function checkOnboarding() {
     if (typeof window === "undefined") return;
-    const done = localStorage.getItem("strattigo_onboarding_complete");
+    const done = localStorage.getItem(onboardingCompleteKey());
     if (done) return;
 
     try {
       const courses = await getCourses();
       if (courses.length > 0) {
-        localStorage.setItem("strattigo_onboarding_complete", "true");
+        localStorage.setItem(onboardingCompleteKey(), "true");
         return;
       }
     } catch {
@@ -160,7 +168,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   function handleOnboardingComplete() {
     setShowOnboarding(false);
-    localStorage.setItem("strattigo_onboarding_complete", "true");
+    localStorage.setItem(onboardingCompleteKey(), "true");
   }
 
   if (confirmTimedOut) {

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
-import { createCourse, uploadMaterial, canvasConnect } from "../lib/api";
+import { createCourse, uploadMaterial, canvasConnect, onboardingCompleteKey } from "../lib/api";
 import { Spinner } from "./ui/Spinner";
 
 interface OnboardingModalProps {
@@ -635,12 +635,12 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
   const TOTAL_STEPS = 4;
 
   function handleSkipAll() {
-    localStorage.setItem("strattigo_onboarding_complete", "true");
+    localStorage.setItem(onboardingCompleteKey(), "true");
     onComplete();
   }
 
   function handleDone(goToCourse = false) {
-    localStorage.setItem("strattigo_onboarding_complete", "true");
+    localStorage.setItem(onboardingCompleteKey(), "true");
     onComplete();
     if (goToCourse && createdCourseId) {
       router.push(`/dashboard/${createdCourseId}`);

@@ -10,6 +10,36 @@ export function clearToken(): void {
   localStorage.removeItem("strattigo_refresh_token");
   localStorage.removeItem("strattigo_user_id");
   localStorage.removeItem("strattigo_email");
+  // First-run flags go too — every variant (legacy unscoped and per-user),
+  // so a session change never leaves a stale "seen"/"complete" behind for
+  // whoever logs in next on this browser.
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const key = localStorage.key(i);
+    if (
+      key?.startsWith("strattigo_welcome_seen") ||
+      key?.startsWith("strattigo_onboarding_complete")
+    ) {
+      localStorage.removeItem(key);
+    }
+  }
+}
+
+// First-run UI flags (welcome popup, onboarding wizard) are cached per
+// account — a shared browser must never bleed one user's dismissal into the
+// next account's first load. clearToken() removes every variant on logout /
+// session death as the second line of defense.
+function firstRunKey(base: string): string {
+  const uid =
+    typeof window === "undefined" ? null : localStorage.getItem("strattigo_user_id");
+  return uid ? `${base}:${uid}` : base;
+}
+
+export function welcomeSeenKey(): string {
+  return firstRunKey("strattigo_welcome_seen");
+}
+
+export function onboardingCompleteKey(): string {
+  return firstRunKey("strattigo_onboarding_complete");
 }
 
 export function getEmail(): string | null {
