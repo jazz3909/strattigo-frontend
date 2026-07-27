@@ -16,6 +16,7 @@ import { Card } from "../../components/ui/Card";
 import { Badge } from "../../components/ui/Badge";
 import { Skeleton } from "../../components/ui/Skeleton";
 import { useToast } from "../../providers/ToastProvider";
+import { BETA_MODE } from "@/components/public/plans";
 
 interface Assignment {
   id?: string | number;
@@ -39,7 +40,20 @@ interface Grade {
   [key: string]: unknown;
 }
 
-export default function CanvasSettingsPage() {
+// BETA MODE: Canvas import is out of beta scope. This page was already
+// dormant (unlinked everywhere), but during beta even a direct URL must not
+// expose Canvas UI — the gate bounces to /dashboard. Flipping BETA_MODE
+// makes the page reachable again; CanvasSettingsPage itself is untouched.
+export default function CanvasSettingsGate() {
+  const router = useRouter();
+  useEffect(() => {
+    if (BETA_MODE) router.replace("/dashboard");
+  }, [router]);
+  if (BETA_MODE) return null;
+  return <CanvasSettingsPage />;
+}
+
+function CanvasSettingsPage() {
   const router = useRouter();
   const { addToast } = useToast();
   const [domain, setDomain] = useState("");

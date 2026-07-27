@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { createCourse, uploadMaterial, canvasConnect, onboardingCompleteKey } from "../lib/api";
+import { BETA_MODE } from "@/components/public/plans";
 import { Spinner } from "./ui/Spinner";
 
 interface OnboardingModalProps {
@@ -632,7 +633,12 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
     setStep(n);
   }, []);
 
-  const TOTAL_STEPS = 4;
+  // BETA MODE: Canvas import is out of beta scope, so the wizard runs
+  // Welcome → Course → Materials → Complete (3 counted steps; the Complete
+  // screen stays id 5 and shows no indicator). Step4Canvas and its plumbing
+  // stay intact and type-checked — flipping BETA_MODE restores the 4-step
+  // flow with the Canvas step.
+  const TOTAL_STEPS = BETA_MODE ? 3 : 4;
 
   function handleSkipAll() {
     localStorage.setItem(onboardingCompleteKey(), "true");
@@ -657,7 +663,7 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
       aria-label="Welcome to Strattigo"
     >
       <div className="animate-scale-in max-h-[90vh] w-[90vw] max-w-[560px] overflow-y-auto rounded-xl border border-rule bg-sheet p-10 shadow-lg">
-        {/* Step indicator only for steps 1-4 */}
+        {/* Step indicator only for the counted steps (not the Complete screen) */}
         {step <= TOTAL_STEPS && (
           <StepIndicator current={step} total={TOTAL_STEPS} />
         )}
@@ -689,9 +695,9 @@ export function OnboardingModal({ isOpen, onComplete }: OnboardingModalProps) {
             <Step3Upload
               courseId={createdCourseId}
               courseName={createdCourseName}
-              onNext={() => goToStep(4)}
+              onNext={() => goToStep(BETA_MODE ? 5 : 4)}
               onBack={() => goToStep(2)}
-              onSkip={() => goToStep(4)}
+              onSkip={() => goToStep(BETA_MODE ? 5 : 4)}
               onFileUploaded={(fileName) => setUploadedFileName(fileName)}
             />
           )}
