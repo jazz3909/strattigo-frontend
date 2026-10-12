@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { login, persistSession } from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
 import { BETA_MODE } from "@/components/public/plans";
@@ -70,7 +69,6 @@ function PasswordField({
 }
 
 export default function LoginPage() {
-  const router = useRouter();
   const { addToast } = useToast();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -88,13 +86,21 @@ export default function LoginPage() {
       const data = await login(email, password);
       persistSession(data);
       addToast("Welcome back! Redirecting…", "success");
+      // Hard navigation on purpose — NOT router.push. The client router's
+      // prefetch cache may already hold /dashboard from a public page that
+      // linked to it (landing/pricing render those links whenever a stale
+      // localStorage token exists). Prefetched while the cookie proxy.ts
+      // gates on was absent, that entry IS the middleware's 307 to /login,
+      // and a client-side push replays it with no network request — the
+      // just-logged-in user lands right back here. A full load bypasses the
+      // router cache and hits the middleware with the fresh cookie.
       // BETA MODE: everyone lands on the dashboard — no plan-based routing
       // through /pricing (and no status round-trip). Revert when beta ends.
       if (BETA_MODE) {
-        router.push("/dashboard");
+        window.location.assign("/dashboard");
       } else {
         const { plan } = await getSubscriptionStatus();
-        router.push(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
+        window.location.assign(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Login failed. Please try again.";

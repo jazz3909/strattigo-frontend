@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signup, login, persistSession } from "../lib/api";
 import { getSubscriptionStatus } from "../lib/stripe";
@@ -101,7 +100,6 @@ function PasswordField({
 
 export default function SignupPage() {
   const { addToast } = useToast();
-  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -134,13 +132,17 @@ export default function SignupPage() {
       await signup(email, password);
       const data = await login(email, password);
       persistSession(data);
+      // Hard navigation on purpose — NOT router.push; see app/login/page.tsx
+      // for why (a prefetched middleware redirect for /dashboard would be
+      // replayed from the client router cache and bounce the new user back
+      // to the auth pages).
       // BETA MODE: signup auto-provisions Pro, so everyone goes straight to
       // the dashboard — no plan check, no /pricing stop. Revert when beta ends.
       if (BETA_MODE) {
-        router.push("/dashboard");
+        window.location.assign("/dashboard");
       } else {
         const { plan } = await getSubscriptionStatus();
-        router.push(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
+        window.location.assign(plan === "pro" || plan === "annual" ? "/dashboard" : "/pricing");
       }
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Sign up failed. Please try again.";
